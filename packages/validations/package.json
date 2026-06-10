@@ -1,0 +1,9 @@
+{
+  "name": "@repo/validations",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./index.ts",
+  "scripts": { "typecheck": "tsc --noEmit" },
+  "dependencies": { "zod": "^3.22.0" },
+  "peerDependencies": { "@repo/constants": "workspace:*" }
+}
