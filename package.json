@@ -1,5 +1,5 @@
 {
-  "name": "personal-olympics",
+  "name": "social-olympics",
   "private": true,
   "scripts": {
     "dev": "turbo run dev",
@@ -9,11 +9,16 @@
     "test": "turbo run test",
     "test:e2e": "turbo run test:e2e",
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
-    "prepare": "husky"
+    "prepare": "husky",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset",
+    "db:types": "supabase gen types typescript --local --schema public > packages/types/src/database/index.ts"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.0.0",
     "@commitlint/config-conventional": "^19.0.0",
+    "@supabase/cli": "^1.0.0",
     "husky": "^9.0.0",
     "prettier": "^3.0.0",
     "prettier-plugin-tailwindcss": "^0.6.0",
@@ -21,7 +26,7 @@
   },
   "packageManager": "pnpm@9.0.0",
   "engines": {
-    "node": ">=20.0.0",
+    "node": ">=26.0.0",
     "pnpm": ">=9.0.0"
   }
 }
