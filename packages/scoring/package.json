@@ -1,0 +1,14 @@
+{
+  "name": "@repo/scoring",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./index.ts",
+  "scripts": { "typecheck": "tsc --noEmit" },
+  "dependencies": {
+    "@repo/types": "workspace:*",
+    "@repo/constants": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "^1.6.0"
+  }
+}

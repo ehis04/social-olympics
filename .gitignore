@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+.next/
+dist/
+.expo/
+build/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Supabase
+supabase/.branches
+supabase/.temp
+
+# Testing
+coverage/
+playwright-report/
+test-results/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+
+# Turbo
+.turbo/
+
+/docs
+
+*.tsbuildinfo
+.eslintcache
+.vercel/
