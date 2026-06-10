@@ -1,0 +1,8 @@
+node_modules/
+.next/
+dist/
+.expo/
+build/
+coverage/
+supabase/migrations/*.sql
+packages/types/src/database/index.ts
