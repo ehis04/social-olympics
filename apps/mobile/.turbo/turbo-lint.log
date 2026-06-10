@@ -1,0 +1,4 @@
+
+> mobile@0.0.1 lint /home/eo4/projects/social_olympics/social-olympics/apps/mobile
+> eslint . --ext .ts,.tsx --no-error-on-unmatched-pattern
+
