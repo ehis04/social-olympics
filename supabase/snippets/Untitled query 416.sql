@@ -1,0 +1,1 @@
+SELECT COUNT(*) FROM public.event_points_config;
