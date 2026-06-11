@@ -3,7 +3,11 @@
   "version": "0.0.1",
   "private": true,
   "main": "./index.ts",
-  "scripts": { "typecheck": "tsc --noEmit" },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
   "dependencies": {
     "@repo/types": "workspace:*",
     "@repo/constants": "workspace:*"
