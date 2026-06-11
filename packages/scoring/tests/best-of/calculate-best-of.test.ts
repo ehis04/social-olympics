@@ -13,8 +13,8 @@ describe('calculateBestOf', () => {
     );
     const best = calculateBestOf(results, 10);
     expect(best).toHaveLength(10);
-    expect(best[0].totalPoints).toBe(15);
-    expect(best[9].totalPoints).toBe(6);
+    expect(best[0]?.totalPoints).toBe(15);
+    expect(best[9]?.totalPoints).toBe(6);
   });
 
   it('results with equal points are both eligible for top N', () => {

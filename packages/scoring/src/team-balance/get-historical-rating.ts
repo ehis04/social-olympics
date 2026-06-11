@@ -9,11 +9,11 @@ export interface HistoricalResult {
 }
 
 function isLowerBetter(resultType: string): boolean {
-  return RESULT_TYPE_CONFIG[resultType as keyof typeof RESULT_TYPE_CONFIG]?.lowerIsBetter ?? false;
+  return (RESULT_TYPE_CONFIG as Record<string, { lowerIsBetter?: boolean }>)[resultType]?.lowerIsBetter ?? false;
 }
 
 function getGroupSlugs(eventSlug: string): string[] {
-  for (const group of Object.values(SIMILARITY_GROUPS)) {
+  for (const group of Object.values(SIMILARITY_GROUPS) as string[][]) {
     if (group.includes(eventSlug)) return group;
   }
   return [eventSlug]; // standalone: exact match only
@@ -53,7 +53,10 @@ export function getHistoricalRating(
     // If this specific event has only one participant, skip (no comparison possible)
     if (eventResults.length === 1) continue;
 
-    const lowerBetter = isLowerBetter(profileEventResults[0].resultType);
+    const firstResult = profileEventResults[0];
+    if (firstResult === undefined) continue;
+
+    const lowerBetter = isLowerBetter(firstResult.resultType);
     const values = eventResults.map((r) => r.resultValuePrimary);
     const best = lowerBetter ? Math.min(...values) : Math.max(...values);
     const worst = lowerBetter ? Math.max(...values) : Math.min(...values);
