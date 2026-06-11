@@ -26,10 +26,10 @@ export function rankEntries(entries: LeaderboardInput[]): RankedEntry[] {
   let currentRank = 1;
 
   for (let i = 0; i < sorted.length; i++) {
-    const entry = sorted[i];
-    const prev = sorted[i - 1];
+    const entry = sorted[i] as LeaderboardInput;
+    const prev = sorted[i - 1] as LeaderboardInput | undefined;
 
-    if (i > 0 && entry.totalPoints !== prev.totalPoints) {
+    if (i > 0 && prev !== undefined && entry.totalPoints !== prev.totalPoints) {
       currentRank++;
     }
 

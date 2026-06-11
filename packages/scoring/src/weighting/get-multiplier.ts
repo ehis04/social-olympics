@@ -14,5 +14,9 @@ export function getWeightMultiplier(weightTag: WeightTag, customMultiplier?: num
     }
     return customMultiplier;
   }
-  return WEIGHT_TAG_MULTIPLIERS[weightTag];
+  const multiplier = WEIGHT_TAG_MULTIPLIERS[weightTag];
+  if (multiplier === undefined) {
+    throw new Error(`Unknown weight tag: ${weightTag}`);
+  }
+  return multiplier;
 }

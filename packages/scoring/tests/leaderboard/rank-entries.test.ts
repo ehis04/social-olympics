@@ -23,13 +23,15 @@ describe('rankEntries', () => {
   it('two players tied for 1st → both rank 1, next player is rank 2 (dense)', () => {
     const entries = [makeEntry('a', 50), makeEntry('b', 50), makeEntry('c', 30)];
     const ranked = rankEntries(entries);
-    const [a, b, c] = ranked;
-    expect(a.rank).toBe(1);
-    expect(b.rank).toBe(1);
-    expect(a.isTied).toBe(true);
-    expect(b.isTied).toBe(true);
-    expect(c.rank).toBe(2); // dense — NOT rank 3
-    expect(c.isTied).toBe(false);
+    const a = ranked.find((r) => r.profileId === 'a');
+    const b = ranked.find((r) => r.profileId === 'b');
+    const c = ranked.find((r) => r.profileId === 'c');
+    expect(a?.rank).toBe(1);
+    expect(b?.rank).toBe(1);
+    expect(a?.isTied).toBe(true);
+    expect(b?.isTied).toBe(true);
+    expect(c?.rank).toBe(2); // dense — NOT rank 3
+    expect(c?.isTied).toBe(false);
   });
 
   it('three players tied → all rank 1, next is rank 2', () => {
@@ -47,9 +49,9 @@ describe('rankEntries', () => {
   it('uses gold count as display sort within tied points', () => {
     const entries = [makeEntry('a', 50, 1), makeEntry('b', 50, 3)];
     const ranked = rankEntries(entries);
-    expect(ranked[0].profileId).toBe('b'); // more golds sorts first
-    expect(ranked[0].rank).toBe(1);
-    expect(ranked[1].rank).toBe(1);
+    expect(ranked[0]?.profileId).toBe('b'); // more golds sorts first
+    expect(ranked[0]?.rank).toBe(1);
+    expect(ranked[1]?.rank).toBe(1);
   });
 
   it('returns empty array for empty input', () => {

@@ -30,7 +30,10 @@ export function balanceTeams(
   let teamIndex = 0;
 
   for (const player of sorted) {
-    teams[teamIndex].push(player);
+    const team = teams[teamIndex];
+    if (team !== undefined) {
+      team.push(player);
+    }
     teamIndex += direction;
     if (teamIndex >= numTeams) {
       direction = -1;
@@ -41,14 +44,15 @@ export function balanceTeams(
     }
   }
 
-  const rawStrengths = teams.map((t) => calculateTeamStrength(t.map((p) => p.strengthRating)));
+  const rawStrengths: number[] = teams.map((t) =>
+    calculateTeamStrength(t.map((p) => p.strengthRating)),
+  );
 
   // Scale uneven teams for tolerance check
-  const scaledStrengths = teams.map((t, i) =>
-    t.length < teamSize
-      ? scaleUnevenTeam(rawStrengths[i], t.length, teamSize)
-      : rawStrengths[i],
-  );
+  const scaledStrengths: number[] = teams.map((t, i) => {
+    const raw = rawStrengths[i] ?? 0;
+    return t.length < teamSize ? scaleUnevenTeam(raw, t.length, teamSize) : raw;
+  });
 
   const tolerance = checkBalanceTolerance(scaledStrengths);
 

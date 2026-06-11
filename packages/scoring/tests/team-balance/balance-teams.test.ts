@@ -11,8 +11,8 @@ describe('balanceTeams', () => {
     const players = makePlayers([10, 9, 8, 7, 6, 5, 4, 3, 2, 1]);
     const result = balanceTeams(players, 5);
     expect(result.teams).toHaveLength(2);
-    expect(result.teams[0].players).toHaveLength(5);
-    expect(result.teams[1].players).toHaveLength(5);
+    expect(result.teams[0]?.players).toHaveLength(5);
+    expect(result.teams[1]?.players).toHaveLength(5);
     expect(result.withinTolerance).toBe(true);
   });
 
@@ -24,9 +24,6 @@ describe('balanceTeams', () => {
   });
 
   it('snake draft produces balanced teams (not sequential assignment)', () => {
-    // [10,9,8,7,6,5] in 3 teams:
-    // Sequential: A=[10,7]=17, B=[9,6]=15, C=[8,5]=13 — imbalanced
-    // Snake:      A=[10,5]=15, B=[9,6]=15, C=[8,7]=15 — balanced
     const players = makePlayers([10, 9, 8, 7, 6, 5]);
     const result = balanceTeams(players, 2);
     expect(result.teams).toHaveLength(3);
@@ -34,7 +31,7 @@ describe('balanceTeams', () => {
     expect(Math.max(...strengths) - Math.min(...strengths)).toBeLessThanOrEqual(1);
   });
 
-  it('uneven teams: 11 players, teamSize=6 → teams of 6 and 5, disclaimer present', () => {
+  it('uneven teams: 11 players, teamSize=6 → teams of 6 and 5', () => {
     const players = makePlayers([10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 8]);
     const result = balanceTeams(players, 6);
     expect(result.teams).toHaveLength(2);
@@ -46,8 +43,8 @@ describe('balanceTeams', () => {
     const players = makePlayers([8, 6]);
     const result = balanceTeams(players, 1);
     expect(result.teams).toHaveLength(2);
-    expect(result.teams[0].players).toHaveLength(1);
-    expect(result.teams[1].players).toHaveLength(1);
+    expect(result.teams[0]?.players).toHaveLength(1);
+    expect(result.teams[1]?.players).toHaveLength(1);
   });
 
   it('assigns correct team names A, B, C', () => {
