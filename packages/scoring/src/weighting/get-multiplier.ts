@@ -1,13 +1,6 @@
 // Returns the numeric weight multiplier for a given weight tag.
-import { CUSTOM_WEIGHT_MAX, CUSTOM_WEIGHT_MIN } from '@repo/constants';
+import { CUSTOM_WEIGHT_MAX, CUSTOM_WEIGHT_MIN, WEIGHT_TAG_MULTIPLIERS } from '@repo/constants';
 import type { WeightTag } from '@repo/types';
-
-const PRESET_MULTIPLIERS: Record<Exclude<WeightTag, 'custom'>, number> = {
-  not_important: 0.5,
-  standard: 1.0,
-  important: 1.5,
-  very_important: 2.0,
-};
 
 export function getWeightMultiplier(weightTag: WeightTag, customMultiplier?: number): number {
   if (weightTag === 'custom') {
@@ -21,5 +14,5 @@ export function getWeightMultiplier(weightTag: WeightTag, customMultiplier?: num
     }
     return customMultiplier;
   }
-  return PRESET_MULTIPLIERS[weightTag];
+  return WEIGHT_TAG_MULTIPLIERS[weightTag];
 }
