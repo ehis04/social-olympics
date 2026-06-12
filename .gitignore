@@ -39,3 +39,4 @@ Thumbs.db
 .eslintcache
 .vercel/
 *:Zone.Identifier
+.venv/
