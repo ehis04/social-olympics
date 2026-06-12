@@ -3,10 +3,16 @@
   "version": "0.0.1",
   "private": true,
   "main": "./index.ts",
-  "scripts": { "typecheck": "tsc --noEmit" },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:integration": "vitest run --reporter=verbose"
+  },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
+    "@supabase/ssr": "^0.12.0",
     "@repo/types": "workspace:*",
-    "@repo/constants": "workspace:*"
+    "@repo/constants": "workspace:*",
+    "@repo/scoring": "workspace:*"
   }
 }
