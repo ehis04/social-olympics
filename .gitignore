@@ -40,3 +40,4 @@ Thumbs.db
 .vercel/
 *:Zone.Identifier
 .venv/
+supabase/snippets/
