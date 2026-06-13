@@ -10,6 +10,7 @@ export default defineConfig({
     exclude: isCI
       ? ['**/node_modules/**', '**/tests/**']
       : ['**/node_modules/**'],
+    passWithNoTests: true,
     testTimeout: 15000,
   },
 });
