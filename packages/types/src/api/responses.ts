@@ -12,8 +12,9 @@ export interface ApiResponse<T> {
 }
 
 export interface PaginatedResponse<T> {
-  data: T[];
-  count: number;
-  cursor?: string;
-  has_more: boolean;
+  data: T[] | null;
+  error: ApiError | null;
+  hasMore: boolean;
+  nextCursor?: string | undefined;
+  count?: number;
 }

@@ -12,7 +12,8 @@
     "lint": {},
     "test": {
       "dependsOn": ["^build"],
-      "outputs": ["coverage/**"]
+      "env": ["NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "CI"],
+      "outputs": []
     },
     "test:e2e": {
       "dependsOn": ["build"]
