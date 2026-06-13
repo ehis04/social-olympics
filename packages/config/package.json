@@ -2,5 +2,8 @@
   "name": "@repo/config",
   "version": "0.0.1",
   "private": true,
-  "files": ["eslint", "typescript", "tailwind"]
+  "files": ["eslint", "typescript", "tailwind"],
+  "devDependencies": {
+    "tailwindcss": "^3.4.0"
+  }
 }
