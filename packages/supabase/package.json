@@ -6,7 +6,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:integration": "vitest run --reporter=verbose"
+    "test:integration": "CI=false vitest run --reporter=verbose"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
@@ -14,5 +14,8 @@
     "@repo/types": "workspace:*",
     "@repo/constants": "workspace:*",
     "@repo/scoring": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "^1.6.0"
   }
 }
