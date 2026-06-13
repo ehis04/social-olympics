@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Primary — forest green */
+    --color-primary: #2D6A4F;
+    --color-primary-dark: #1B4332;
+    --color-primary-light: #B7E4C7;
+    --color-primary-muted: #F0FAF4;
+
+    /* Achievement — gold only for medals/trophies */
+    --color-gold: #C9A84C;
+    --color-gold-light: #FDF3DC;
+    --color-silver: #9BA4B4;
+    --color-bronze: #CD7F32;
+
+    /* Neutrals */
+    --color-black: #0A0A0A;
+    --color-grey-800: #1F2937;
+    --color-grey-600: #4B5563;
+    --color-grey-400: #9CA3AF;
+    --color-grey-200: #E5E7EB;
+    --color-grey-100: #F3F4F6;
+    --color-white: #FFFFFF;
+
+    /* Status */
+    --color-success: #16A34A;
+    --color-warning: #D97706;
+    --color-error: #DC2626;
+    --color-info: #2563EB;
+  }
+
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  body {
+    background-color: var(--color-white);
+    color: var(--color-black);
+  }
+
+  /* Result values always use mono */
+  .result-value {
+    font-family: 'JetBrains Mono', Menlo, monospace;
+  }
+}
