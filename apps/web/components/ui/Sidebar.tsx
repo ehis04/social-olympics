@@ -8,7 +8,7 @@ const NAV_LINKS = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/competitions/discover', label: 'Discover', icon: Compass },
   { href: '/messages', label: 'Messages', icon: MessageSquare },
-];
+] as const;
 
 export default function Sidebar({ className }: { className?: string }) {
   const pathname = usePathname();
