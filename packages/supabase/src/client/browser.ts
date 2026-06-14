@@ -1,5 +1,6 @@
-// Browser Supabase client for React client components and React Native.
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+// Browser Supabase client for React client components.
+import { createBrowserClient as createSSRBrowserClient } from '@supabase/ssr';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@repo/types';
 
 let client: SupabaseClient<Database> | undefined;
@@ -14,6 +15,6 @@ export function createBrowserClient(): SupabaseClient<Database> {
     throw new Error('Missing Supabase URL or anon key environment variables');
   }
 
-  client = createClient<Database>(url, key);
+  client = createSSRBrowserClient<Database>(url, key);
   return client;
 }
