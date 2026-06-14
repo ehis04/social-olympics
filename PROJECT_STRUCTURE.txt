@@ -1,0 +1,561 @@
+.
+├── .env.example
+├── .github
+│   ├── PULL_REQUEST_TEMPLATE
+│   │   └── default.md
+│   └── workflows
+│       ├── ci.yml
+│       └── supabase-migrations.yml
+├── .gitignore
+├── .husky
+│   ├── _
+│   │   ├── .gitignore
+│   │   ├── applypatch-msg
+│   │   ├── commit-msg
+│   │   ├── h
+│   │   ├── husky.sh
+│   │   ├── post-applypatch
+│   │   ├── post-checkout
+│   │   ├── post-commit
+│   │   ├── post-merge
+│   │   ├── post-rewrite
+│   │   ├── pre-applypatch
+│   │   ├── pre-auto-gc
+│   │   ├── pre-commit
+│   │   ├── pre-merge-commit
+│   │   ├── pre-push
+│   │   ├── pre-rebase
+│   │   └── prepare-commit-msg
+│   ├── commit-msg
+│   └── pre-commit
+├── .npmrc
+├── .nvmrc
+├── .prettierignore
+├── .prettierrc
+├── .vscode
+│   ├── extensions.json
+│   ├── launch.json
+│   └── settings.json
+├── PROJECT_STRUCTURE.txt
+├── apps
+│   ├── mobile
+│   │   ├── .eslintrc.js
+│   │   ├── .expo
+│   │   │   ├── README.md
+│   │   │   └── devices.json
+│   │   ├── index.ts
+│   │   ├── package.json
+│   │   └── tsconfig.json
+│   └── web
+│       ├── (app)
+│       │   ├── dashboard
+│       │   │   └── page.tsx
+│       │   └── layout.tsx
+│       ├── (auth)
+│       │   ├── forgot-password
+│       │   │   └── page.tsx
+│       │   ├── layout.tsx
+│       │   ├── login
+│       │   │   └── page.tsx
+│       │   └── register
+│       │       └── page.tsx
+│       ├── (marketing)
+│       │   ├── about
+│       │   │   └── page.tsx
+│       │   ├── layout.tsx
+│       │   └── terms
+│       │       └── page.tsx
+│       ├── .env.local
+│       ├── .eslintrc.js
+│       ├── api
+│       │   └── auth
+│       │       ├── callback
+│       │       │   └── route.ts
+│       │       └── signout
+│       │           └── route.ts
+│       ├── app
+│       │   ├── (app)
+│       │   │   └── dashboard
+│       │   ├── (auth)
+│       │   │   ├── forgot-password
+│       │   │   ├── login
+│       │   │   └── register
+│       │   ├── (marketing)
+│       │   │   ├── about
+│       │   │   └── terms
+│       │   ├── .gitkeep
+│       │   ├── api
+│       │   │   └── auth
+│       │   │       ├── callback
+│       │   │       └── signout
+│       │   ├── error.tsx
+│       │   ├── layout.tsx
+│       │   ├── loading.tsx
+│       │   ├── not-found.tsx
+│       │   ├── page.tsx
+│       │   └── providers.tsx
+│       ├── components
+│       │   ├── auth
+│       │   │   ├── AuthGuard.tsx
+│       │   │   ├── ForgotPasswordForm.tsx
+│       │   │   ├── LoginForm.tsx
+│       │   │   └── RegisterForm.tsx
+│       │   └── ui
+│       │       ├── Navbar.tsx
+│       │       └── Sidebar.tsx
+│       ├── constants
+│       │   ├── config
+│       │   │   └── index.ts
+│       │   ├── routes
+│       │   │   └── index.ts
+│       │   └── ui
+│       │       └── index.ts
+│       ├── env.local.example
+│       ├── error.tsx
+│       ├── hooks
+│       │   └── auth
+│       │       ├── useAuth.ts
+│       │       ├── useRequireAuth.ts
+│       │       └── useSignOut.ts
+│       ├── layout.tsx
+│       ├── lib
+│       │   ├── query-client.ts
+│       │   ├── supabase
+│       │   │   ├── admin.ts
+│       │   │   ├── browser.ts
+│       │   │   ├── server.ts
+│       │   │   └── supabase-middleware.ts
+│       │   └── toast.ts
+│       ├── loading.tsx
+│       ├── middleware.ts
+│       ├── next-env.d.ts
+│       ├── next.config.mjs
+│       ├── not-found.tsx
+│       ├── package.json
+│       ├── postcss.config.js
+│       ├── providers.tsx
+│       ├── public
+│       │   ├── icons
+│       │   │   └── favicon.ico
+│       │   └── images
+│       │       ├── default-avatar.png
+│       │       └── logo.svg
+│       ├── stores
+│       │   ├── auth
+│       │   │   └── index.ts
+│       │   ├── competition
+│       │   │   └── index.ts
+│       │   └── ui
+│       │       └── index.ts
+│       ├── styles
+│       │   └── globals.css
+│       ├── tailwind.config.ts
+│       ├── tests
+│       │   └── utils
+│       │       ├── formatters
+│       │       │   ├── date.test.ts
+│       │       │   └── result.test.ts
+│       │       └── helpers
+│       │           ├── competition.test.ts
+│       │           └── results.test.ts
+│       ├── tsconfig.json
+│       ├── utils
+│       │   ├── formatters
+│       │   │   ├── date.ts
+│       │   │   ├── points.ts
+│       │   │   └── result.ts
+│       │   └── helpers
+│       │       ├── competition.ts
+│       │       └── results.ts
+│       ├── vitest.config.ts
+│       └── vitest.setup.ts
+├── commitlint.config.js
+├── docs
+│   ├── CONTRIBUTING.md
+│   ├── SETUP.md
+│   ├── V2_IDEAS.txt
+│   └── decisions
+│       ├── 001-monorepo-turborepo.md
+│       ├── 002-supabase-over-firebase.md
+│       ├── 003-tanstack-query.md
+│       ├── 004-scoring-package.md
+│       └── 005-zustand-state.md
+├── global.d.ts
+├── package.json
+├── packages
+│   ├── config
+│   │   ├── eslint
+│   │   │   ├── index.js
+│   │   │   ├── next.js
+│   │   │   └── react-native.js
+│   │   ├── package.json
+│   │   ├── tailwind
+│   │   │   ├── base.ts
+│   │   │   └── web.ts
+│   │   └── typescript
+│   │       ├── base.json
+│   │       ├── nextjs.json
+│   │       └── react-native.json
+│   ├── constants
+│   │   ├── index.ts
+│   │   ├── package.json
+│   │   ├── src
+│   │   │   ├── competitions
+│   │   │   │   ├── invite.ts
+│   │   │   │   └── status.ts
+│   │   │   ├── events
+│   │   │   │   ├── categories.ts
+│   │   │   │   ├── result-types.ts
+│   │   │   │   └── similarity-groups.ts
+│   │   │   ├── platform
+│   │   │   │   ├── files.ts
+│   │   │   │   └── limits.ts
+│   │   │   └── scoring
+│   │   │       ├── bonuses.ts
+│   │   │       ├── points.ts
+│   │   │       └── weighting.ts
+│   │   └── tsconfig.json
+│   ├── scoring
+│   │   ├── index.ts
+│   │   ├── package.json
+│   │   ├── src
+│   │   │   ├── best-of
+│   │   │   │   ├── calculate-best-of.ts
+│   │   │   │   └── count-eligible.ts
+│   │   │   ├── index.ts
+│   │   │   ├── leaderboard
+│   │   │   │   ├── build-leaderboard.ts
+│   │   │   │   ├── calculate-member-score.ts
+│   │   │   │   ├── medal-counts.ts
+│   │   │   │   └── rank-entries.ts
+│   │   │   ├── points
+│   │   │   │   ├── apply-bonuses.ts
+│   │   │   │   ├── calculate-points.ts
+│   │   │   │   └── participation-points.ts
+│   │   │   ├── team-balance
+│   │   │   │   ├── balance-teams.ts
+│   │   │   │   ├── calculate-team-strength.ts
+│   │   │   │   ├── check-tolerance.ts
+│   │   │   │   ├── get-historical-rating.ts
+│   │   │   │   └── scale-uneven-team.ts
+│   │   │   ├── tiebreakers
+│   │   │   │   ├── check-tie.ts
+│   │   │   │   ├── resolve-by-margin.ts
+│   │   │   │   └── resolve-by-medals.ts
+│   │   │   ├── weighting
+│   │   │   │   ├── get-multiplier.ts
+│   │   │   │   └── validate-multiplier.ts
+│   │   │   └── weightlifting
+│   │   │       ├── assign-places.ts
+│   │   │       └── process-bid-round.ts
+│   │   ├── tests
+│   │   │   ├── .gitkeep
+│   │   │   ├── best-of
+│   │   │   │   ├── calculate-best-of.test.ts
+│   │   │   │   └── count-eligible.test.ts
+│   │   │   ├── leaderboard
+│   │   │   │   ├── build-leaderboard.test.ts
+│   │   │   │   ├── calculate-member-score.test.ts
+│   │   │   │   ├── medal-counts.test.ts
+│   │   │   │   └── rank-entries.test.ts
+│   │   │   ├── points
+│   │   │   │   ├── apply-bonuses.test.ts
+│   │   │   │   ├── calculate-points.test.ts
+│   │   │   │   └── participation-points.test.ts
+│   │   │   ├── team-balance
+│   │   │   │   ├── balance-teams.test.ts
+│   │   │   │   ├── calculate-team-strength.test.ts
+│   │   │   │   ├── check-tolerance.test.ts
+│   │   │   │   ├── get-historical-rating.test.ts
+│   │   │   │   └── scale-uneven-team.test.ts
+│   │   │   ├── tiebreakers
+│   │   │   │   ├── check-tie.test.ts
+│   │   │   │   ├── resolve-by-margin.test.ts
+│   │   │   │   └── resolve-by-medals.test.ts
+│   │   │   ├── weighting
+│   │   │   │   ├── get-multiplier.test.ts
+│   │   │   │   └── validate-multiplier.test.ts
+│   │   │   └── weightlifting
+│   │   │       ├── assign-places.test.ts
+│   │   │       └── process-bid-round.test.ts
+│   │   ├── tsconfig.json
+│   │   └── vitest.config.ts
+│   ├── supabase
+│   │   ├── index.ts
+│   │   ├── package.json
+│   │   ├── src
+│   │   │   ├── client
+│   │   │   │   ├── admin.ts
+│   │   │   │   ├── browser.ts
+│   │   │   │   ├── middleware.ts
+│   │   │   │   └── server.ts
+│   │   │   ├── index.ts
+│   │   │   ├── mutations
+│   │   │   │   ├── competitions
+│   │   │   │   │   ├── add-member.ts
+│   │   │   │   │   ├── complete-competition.ts
+│   │   │   │   │   ├── create-competition.ts
+│   │   │   │   │   ├── create-ghost-profile.ts
+│   │   │   │   │   ├── update-competition.ts
+│   │   │   │   │   └── update-member-role.ts
+│   │   │   │   ├── events
+│   │   │   │   │   ├── add-competition-event.ts
+│   │   │   │   │   ├── create-custom-event.ts
+│   │   │   │   │   ├── remove-competition-event.ts
+│   │   │   │   │   ├── reorder-events.ts
+│   │   │   │   │   ├── start-event.ts
+│   │   │   │   │   └── update-competition-event.ts
+│   │   │   │   ├── moderation
+│   │   │   │   │   ├── create-report.ts
+│   │   │   │   │   └── resolve-report.ts
+│   │   │   │   ├── results
+│   │   │   │   │   ├── confirm-result.ts
+│   │   │   │   │   ├── process-bid-round.ts
+│   │   │   │   │   ├── raise-dispute.ts
+│   │   │   │   │   ├── resolve-dispute.ts
+│   │   │   │   │   ├── submit-result.ts
+│   │   │   │   │   └── submit-weightlifting-bid.ts
+│   │   │   │   ├── social
+│   │   │   │   │   ├── add-feed-comment.ts
+│   │   │   │   │   ├── add-reaction.ts
+│   │   │   │   │   ├── delete-message.ts
+│   │   │   │   │   ├── mark-notifications-read.ts
+│   │   │   │   │   ├── register-push-token.ts
+│   │   │   │   │   ├── remove-reaction.ts
+│   │   │   │   │   ├── send-message.ts
+│   │   │   │   │   ├── submit-performance-vote.ts
+│   │   │   │   │   ├── submit-strength-vote.ts
+│   │   │   │   │   └── submit-tiebreaker-nomination.ts
+│   │   │   │   └── users
+│   │   │   │       ├── claim-ghost-profile.ts
+│   │   │   │       ├── create-profile.ts
+│   │   │   │       ├── update-profile.ts
+│   │   │   │       └── upload-avatar.ts
+│   │   │   ├── queries
+│   │   │   │   ├── competitions
+│   │   │   │   │   ├── get-competition-by-invite-code.ts
+│   │   │   │   │   ├── get-competition-members.ts
+│   │   │   │   │   ├── get-competition.ts
+│   │   │   │   │   ├── get-public-competitions.ts
+│   │   │   │   │   └── get-user-competitions.ts
+│   │   │   │   ├── events
+│   │   │   │   │   ├── get-competition-event.ts
+│   │   │   │   │   ├── get-competition-events.ts
+│   │   │   │   │   └── get-events-library.ts
+│   │   │   │   ├── leaderboard
+│   │   │   │   │   ├── get-leaderboard.ts
+│   │   │   │   │   └── get-team-leaderboard.ts
+│   │   │   │   ├── moderation
+│   │   │   │   │   └── get-reports.ts
+│   │   │   │   ├── results
+│   │   │   │   │   ├── get-results-for-event.ts
+│   │   │   │   │   ├── get-results-for-member.ts
+│   │   │   │   │   └── get-weightlifting-bids.ts
+│   │   │   │   ├── social
+│   │   │   │   │   ├── get-conversations.ts
+│   │   │   │   │   ├── get-direct-messages.ts
+│   │   │   │   │   ├── get-feed.ts
+│   │   │   │   │   ├── get-group-chat.ts
+│   │   │   │   │   └── get-notifications.ts
+│   │   │   │   └── users
+│   │   │   │       ├── get-personal-bests.ts
+│   │   │   │       ├── get-profile-by-display-name.ts
+│   │   │   │       └── get-profile.ts
+│   │   │   └── realtime
+│   │   │       ├── chat
+│   │   │       │   ├── subscribe-direct-messages.ts
+│   │   │       │   └── subscribe-group-chat.ts
+│   │   │       ├── feed
+│   │   │       │   └── subscribe-feed.ts
+│   │   │       └── leaderboard
+│   │   │           └── subscribe-leaderboard.ts
+│   │   ├── tests
+│   │   │   ├── helpers
+│   │   │   │   ├── admin-client.ts
+│   │   │   │   └── auth-users.ts
+│   │   │   ├── mutations
+│   │   │   │   ├── results.test.ts
+│   │   │   │   └── social.test.ts
+│   │   │   └── queries
+│   │   │       └── competitions.test.ts
+│   │   ├── tsconfig.json
+│   │   └── vitest.config.ts
+│   ├── types
+│   │   ├── index.ts
+│   │   ├── package.json
+│   │   ├── src
+│   │   │   ├── api
+│   │   │   │   ├── requests.ts
+│   │   │   │   └── responses.ts
+│   │   │   ├── competition
+│   │   │   │   ├── competition.ts
+│   │   │   │   └── member.ts
+│   │   │   ├── database
+│   │   │   │   ├── enums.ts
+│   │   │   │   └── index.ts
+│   │   │   ├── events
+│   │   │   │   ├── competition-event.ts
+│   │   │   │   └── event.ts
+│   │   │   ├── moderation
+│   │   │   │   ├── admin.ts
+│   │   │   │   └── report.ts
+│   │   │   ├── results
+│   │   │   │   ├── dispute.ts
+│   │   │   │   ├── result.ts
+│   │   │   │   └── weightlifting.ts
+│   │   │   ├── scoring
+│   │   │   │   ├── leaderboard.ts
+│   │   │   │   ├── points.ts
+│   │   │   │   ├── team-balance.ts
+│   │   │   │   └── tiebreaker.ts
+│   │   │   ├── social
+│   │   │   │   ├── feed.ts
+│   │   │   │   ├── message.ts
+│   │   │   │   └── notification.ts
+│   │   │   └── users
+│   │   │       ├── auth.ts
+│   │   │       └── profile.ts
+│   │   └── tsconfig.json
+│   ├── ui
+│   │   ├── index.ts
+│   │   ├── package.json
+│   │   ├── src
+│   │   │   ├── components
+│   │   │   │   ├── avatar
+│   │   │   │   │   ├── Avatar.tsx
+│   │   │   │   │   └── Avatar.types.ts
+│   │   │   │   ├── badge
+│   │   │   │   │   ├── Badge.tsx
+│   │   │   │   │   └── Badge.types.ts
+│   │   │   │   ├── button
+│   │   │   │   │   ├── Button.tsx
+│   │   │   │   │   └── Button.types.ts
+│   │   │   │   ├── card
+│   │   │   │   │   ├── Card.tsx
+│   │   │   │   │   └── Card.types.ts
+│   │   │   │   ├── flag
+│   │   │   │   │   ├── Flag.tsx
+│   │   │   │   │   └── Flag.types.ts
+│   │   │   │   ├── input
+│   │   │   │   │   ├── Input.tsx
+│   │   │   │   │   └── Input.types.ts
+│   │   │   │   ├── medal
+│   │   │   │   │   ├── Medal.tsx
+│   │   │   │   │   └── Medal.types.ts
+│   │   │   │   ├── modal
+│   │   │   │   │   ├── Modal.tsx
+│   │   │   │   │   └── Modal.types.ts
+│   │   │   │   ├── podium
+│   │   │   │   │   ├── Podium.tsx
+│   │   │   │   │   └── Podium.types.ts
+│   │   │   │   ├── progress
+│   │   │   │   │   ├── Progress.tsx
+│   │   │   │   │   └── Progress.types.ts
+│   │   │   │   ├── skeleton
+│   │   │   │   │   ├── Skeleton.tsx
+│   │   │   │   │   └── Skeleton.types.ts
+│   │   │   │   ├── tabs
+│   │   │   │   │   ├── Tabs.tsx
+│   │   │   │   │   └── Tabs.types.ts
+│   │   │   │   └── timer
+│   │   │   │       ├── Timer.tsx
+│   │   │   │       └── Timer.types.ts
+│   │   │   └── tokens
+│   │   │       ├── colours
+│   │   │       │   └── index.ts
+│   │   │       ├── shadows
+│   │   │       │   └── index.ts
+│   │   │       ├── spacing
+│   │   │       │   └── index.ts
+│   │   │       └── typography
+│   │   │           └── index.ts
+│   │   └── tsconfig.json
+│   └── validations
+│       ├── index.ts
+│       ├── package.json
+│       ├── src
+│       │   ├── competition
+│       │   │   ├── create.ts
+│       │   │   ├── invite.ts
+│       │   │   └── update.ts
+│       │   ├── events
+│       │   │   ├── create-competition-event.ts
+│       │   │   └── create-custom-event.ts
+│       │   ├── moderation
+│       │   │   └── report.ts
+│       │   ├── results
+│       │   │   ├── confirm.ts
+│       │   │   ├── dispute.ts
+│       │   │   ├── submit.ts
+│       │   │   └── weightlifting-bid.ts
+│       │   └── users
+│       │       ├── login.ts
+│       │       ├── profile.ts
+│       │       └── register.ts
+│       └── tsconfig.json
+├── pnpm-lock.yaml
+├── pnpm-workspace.yaml
+├── requirements.txt
+├── supabase
+│   ├── .branches
+│   │   └── _current_branch
+│   ├── .gitignore
+│   ├── .temp
+│   │   ├── cli-latest
+│   │   ├── gotrue-version
+│   │   ├── linked-project.json
+│   │   ├── pooler-url
+│   │   ├── postgres-version
+│   │   ├── project-ref
+│   │   ├── rest-version
+│   │   ├── storage-migration
+│   │   └── storage-version
+│   ├── config.toml
+│   ├── functions
+│   │   ├── _shared
+│   │   │   ├── auth.ts
+│   │   │   ├── cors.ts
+│   │   │   └── supabase-client.ts
+│   │   ├── calculate_scores
+│   │   │   └── index.ts
+│   │   ├── close-voting
+│   │   │   └── index.ts
+│   │   ├── confirm_result
+│   │   │   └── index.ts
+│   │   ├── generate-podium
+│   │   │   └── index.ts
+│   │   ├── process-tiebreaker
+│   │   │   └── index.ts
+│   │   └── send-notification
+│   │       └── index.ts
+│   ├── migrations
+│   │   ├── 00001_create_enums.sql
+│   │   ├── 00002_create_users.sql
+│   │   ├── 00003_create_career_stats.sql
+│   │   ├── 00004_create_event_library.sql
+│   │   ├── 00005_create_personal_bests.sql
+│   │   ├── 00006_create_competitions.sql
+│   │   ├── 00007_create_competition_members.sql
+│   │   ├── 00008_create_competition_events.sql
+│   │   ├── 00009_create_teams.sql
+│   │   ├── 00010_create_results.sql
+│   │   ├── 00011_create_weightlifting.sql
+│   │   ├── 00012_create_scoring.sql
+│   │   ├── 00013_create_voting.sql
+│   │   ├── 00014_create_social.sql
+│   │   ├── 00015_create_platform.sql
+│   │   ├── 00016_create_indexes.sql
+│   │   ├── 00017_rls_policies.sql
+│   │   ├── 00018_functions.sql
+│   │   ├── 00019_triggers.sql
+│   │   ├── 00020_seed_event_categories.sql
+│   │   ├── 00021_seed_events.sql
+│   │   └── 00022_seed_points_config.sql
+│   ├── snippets
+│   │   └── Untitled query 416.sql
+│   └── tests
+│       ├── Ris.test.sql
+│       └── Triggers.test.sql
+└── turbo.json
+
+172 directories, 386 files
