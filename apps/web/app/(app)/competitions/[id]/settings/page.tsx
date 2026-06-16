@@ -1,8 +1,9 @@
-// Settings page — host-only; renders the settings form with current competition data
+// Settings page — host-only; renders settings form and competition completion controls
 import { redirect, notFound } from 'next/navigation';
 import { getServerClient } from '@/lib/supabase/server';
 import { getCompetition, getCompetitionMembers } from '@repo/supabase';
 import CompetitionSettingsForm from '@/components/competition/CompetitionSettingsForm';
+import { CompleteCompetitionButton } from '@/components/podium/CompleteCompetitionButton';
 import ROUTES from '@/constants/routes';
 import type { Database } from '@repo/types';
 
@@ -20,9 +21,7 @@ interface Props {
 
 export default async function SettingsPage({ params }: Props) {
   const client = getServerClient();
-  const {
-    data: { user },
-  } = await client.auth.getUser();
+  const { data: { user } } = await client.auth.getUser();
 
   const { data: compData } = await getCompetition(client, params.id);
   if (!compData) return notFound();
@@ -42,11 +41,27 @@ export default async function SettingsPage({ params }: Props) {
     .order('sequence_order');
   const competitionEvents = (eventsData ?? []) as CompetitionEventRow[];
 
+  const canComplete =
+    competition.status !== 'complete' && competition.status !== 'archived';
+
   return (
-    <CompetitionSettingsForm
-      competition={competition}
-      members={members}
-      competitionEvents={competitionEvents}
-    />
+    <div className="space-y-8">
+      <CompetitionSettingsForm
+        competition={competition}
+        members={members}
+        competitionEvents={competitionEvents}
+      />
+
+      {canComplete && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-5">
+          <h3 className="mb-1 text-sm font-semibold text-red-800">Finalise competition</h3>
+          <p className="mb-4 text-sm text-red-700">
+            This will lock all results, assign final ranks to every competitor, and reveal the
+            podium. This action cannot be undone.
+          </p>
+          <CompleteCompetitionButton competitionId={competition.id} />
+        </div>
+      )}
+    </div>
   );
 }
