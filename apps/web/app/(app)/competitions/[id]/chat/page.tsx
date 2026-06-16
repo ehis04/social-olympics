@@ -1,8 +1,25 @@
-// Chat tab placeholder — replaced in Phase 7
-export default function ChatPage() {
-  return (
-    <div className="rounded-lg border border-dashed border-grey-200 bg-grey-50 p-10 text-center">
-      <p className="text-sm font-semibold text-grey-500">Chat coming in Phase 7</p>
-    </div>
-  );
+// Competition chat page — group chat for a competition
+import { redirect } from 'next/navigation';
+import { getServerClient } from '@/lib/supabase/server';
+import { getCompetition } from '@repo/supabase';
+import { GroupChatView } from '@/components/chat/GroupChatView';
+import ROUTES from '@/constants/routes';
+import type { Database } from '@repo/types';
+import type { Route } from 'next';
+
+type CompetitionRow = Database['public']['Tables']['competitions']['Row'];
+
+interface Props {
+  params: { id: string };
+}
+
+export default async function ChatPage({ params }: Props) {
+  const client = getServerClient();
+  const { data: { user } } = await client.auth.getUser();
+  if (!user) redirect(ROUTES.LOGIN as Route);
+
+  const { data: compData } = await getCompetition(client, params.id);
+  if (!compData) redirect(ROUTES.DASHBOARD as Route);
+
+  return <GroupChatView competition={compData as CompetitionRow} />;
 }
