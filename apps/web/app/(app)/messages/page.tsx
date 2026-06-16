@@ -1,10 +1,19 @@
-export const metadata = { title: 'Messages — Social Olympics' };
+// Messages page — DM conversation inbox
+import { redirect } from 'next/navigation';
+import { getServerClient } from '@/lib/supabase/server';
+import { ConversationList } from '@/components/chat/ConversationList';
+import ROUTES from '@/constants/routes';
+import type { Route } from 'next';
 
-export default function MessagesPage() {
+export default async function MessagesPage() {
+  const client = getServerClient();
+  const { data: { user } } = await client.auth.getUser();
+  if (!user) redirect(ROUTES.LOGIN as Route);
+
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-grey-800">Messages</h1>
-      <p className="mt-2 text-sm text-grey-600">Your conversations will appear here.</p>
+    <div className="mx-auto max-w-2xl space-y-4">
+      <h1 className="text-xl font-semibold text-grey-900">Messages</h1>
+      <ConversationList />
     </div>
   );
 }
