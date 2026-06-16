@@ -11,6 +11,7 @@ const ROUTES = {
   COMPETITION_EVENTS: (id: string) => `/competitions/${id}/events` as Route,
   COMPETITION_CHAT: (id: string) => `/competitions/${id}/chat` as Route,
   COMPETITION_MEMBERS: (id: string) => `/competitions/${id}/members` as Route,
+  COMPETITION_PODIUM: (id: string) => `/competitions/${id}/podium` as Route,
   COMPETITION_SETTINGS: (id: string) => `/competitions/${id}/settings` as Route,
   EVENT_DETAIL: (compId: string, eventId: string) =>
     `/competitions/${compId}/events/${eventId}` as Route,
