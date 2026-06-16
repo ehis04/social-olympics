@@ -5,7 +5,6 @@ import { getCompetition, getCompetitionMembers } from '@repo/supabase';
 import CompetitionHeader from '@/components/competition/CompetitionHeader';
 import TabBar from '@/components/ui/TabBar';
 import ROUTES from '@/constants/routes';
-import { toast } from '@/lib/toast';
 import type { Database } from '@repo/types';
 
 type CompetitionRow = Database['public']['Tables']['competitions']['Row'];
@@ -20,9 +19,7 @@ interface Props {
 
 export default async function CompetitionDetailLayout({ children, params }: Props) {
   const client = getServerClient();
-  const {
-    data: { user },
-  } = await client.auth.getUser();
+  const { data: { user } } = await client.auth.getUser();
 
   const { data: compData, error } = await getCompetition(client, params.id);
   if (error || !compData) return notFound();
@@ -39,6 +36,8 @@ export default async function CompetitionDetailLayout({ children, params }: Prop
 
   const isHost = competition.host_id === user!.id;
   const isCohost = competition.cohost_id === user!.id;
+  const isFinished =
+    competition.status === 'complete' || competition.status === 'archived';
 
   const tabs = [
     { label: 'Feed', href: ROUTES.COMPETITION_FEED(params.id) },
@@ -46,6 +45,9 @@ export default async function CompetitionDetailLayout({ children, params }: Prop
     { label: 'Events', href: ROUTES.COMPETITION_EVENTS(params.id) },
     { label: 'Chat', href: ROUTES.COMPETITION_CHAT(params.id) },
     { label: 'Members', href: ROUTES.COMPETITION_MEMBERS(params.id) },
+    ...(isFinished
+      ? [{ label: 'Podium', href: ROUTES.COMPETITION_PODIUM(params.id) }]
+      : []),
     ...(isHost || isCohost
       ? [{ label: 'Settings', href: ROUTES.COMPETITION_SETTINGS(params.id) }]
       : []),
