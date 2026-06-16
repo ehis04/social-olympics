@@ -1,7 +1,6 @@
-// POST /api/competitions/[id]/complete — mark competition complete and assign final ranks
+// POST /api/competitions/[id]/archive — move a complete competition to archived
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerClient } from '@/lib/supabase/server';
-import { createAdminClient, completeCompetition } from '@repo/supabase';
 import type { Database } from '@repo/types';
 
 type CompetitionRow = Database['public']['Tables']['competitions']['Row'];
@@ -26,16 +25,24 @@ export async function POST(_req: NextRequest, { params }: Params) {
   const competition = compData as Pick<CompetitionRow, 'host_id' | 'status'>;
 
   if (competition.host_id !== user.id) {
-    return NextResponse.json({ error: 'Only the host can complete a competition' }, { status: 403 });
+    return NextResponse.json({ error: 'Only the host can archive a competition' }, { status: 403 });
   }
 
-  if (competition.status === 'complete' || competition.status === 'archived') {
-    return NextResponse.json({ error: 'Competition is already finished' }, { status: 409 });
+  if (competition.status !== 'complete') {
+    return NextResponse.json(
+      { error: 'Only complete competitions can be archived' },
+      { status: 409 },
+    );
   }
 
-  const adminClient = createAdminClient();
-  const { data, error } = await completeCompetition(adminClient, params.id);
-  if (error) return NextResponse.json({ error: 'Failed to complete competition' }, { status: 500 });
+  const { data, error } = await client
+    .from('competitions')
+    .update({ status: 'archived' })
+    .eq('id', params.id)
+    .select()
+    .single();
+
+  if (error) return NextResponse.json({ error: 'Failed to archive competition' }, { status: 500 });
 
   return NextResponse.json({ data });
 }
