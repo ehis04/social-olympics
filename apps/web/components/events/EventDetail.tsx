@@ -13,11 +13,41 @@ import { getPlaceSuffix, canSubmitResult } from '@/utils/helpers/results';
 import { ResultSubmissionForm } from './ResultSubmissionForm';
 import { ConfirmResultsPanel } from './ConfirmResultsPanel';
 import { DisputePanel } from './DisputePanel';
+import { PerformanceVotePanel } from './PerformanceVotePanel';
+import { StrengthVoteWidget } from './StrengthVoteWidget';
+import { TeamAssignmentPanel } from './TeamAssignmentPanel';
 import ROUTES from '@/constants/routes';
 import type { Database } from '@repo/types';
 
 type CompetitionRow = Database['public']['Tables']['competitions']['Row'];
 type MemberRole = Database['public']['Enums']['member_role'];
+
+interface Competitor {
+  profileId: string;
+  displayName: string;
+  avatarUrl: string | null;
+}
+
+interface TeamMemberRating {
+  teamMemberId: string;
+  profileId: string;
+  displayName: string;
+  avatarUrl: string | null;
+  strengthRating: number;
+  ratingSource: string;
+  submissionRound: 1 | 2;
+}
+
+interface RatedPlayer {
+  profileId: string;
+  displayName: string;
+  strengthRating: number;
+}
+
+interface AssignedTeam {
+  teamId: string;
+  members: RatedPlayer[];
+}
 
 interface EventDetailProps {
   event: Record<string, unknown>;
@@ -27,6 +57,11 @@ interface EventDetailProps {
   currentUserId: string | null;
   isHost: boolean;
   memberRole: MemberRole | null;
+  pendingStrengthRatings?: TeamMemberRating[];
+  ratedPlayers?: RatedPlayer[];
+  existingTeams?: AssignedTeam[] | null;
+  existingMvpVote?: string | null;
+  existingWorstVote?: string | null;
 }
 
 function getStatusBanner(status: string) {
@@ -72,6 +107,11 @@ export function EventDetail({
   currentUserId,
   isHost,
   memberRole,
+  pendingStrengthRatings = [],
+  ratedPlayers = [],
+  existingTeams = null,
+  existingMvpVote = null,
+  existingWorstVote = null,
 }: EventDetailProps) {
   const router = useRouter();
   const [isStarting, setIsStarting] = useState(false);
@@ -87,14 +127,14 @@ export function EventDetail({
   const competitionEventId = event.id as string;
   const weightTag = (event.weight_tag as string) ?? 'standard';
   const weightMultiplier = (event.weight_multiplier as number) ?? 1;
+  const isTeamEvent = !!(event.is_team_event as boolean | undefined);
+
   const isPending = status === 'pending';
   const isActive = status === 'active';
   const isResultsPending = status === 'results_pending';
-  const isDisputedStatus = status === 'disputed';
   const isConfirmed = status === 'confirmed';
 
-  const canStart = isHost && isPending &&
-    ['open', 'active'].includes(competition.status);
+  const canStart = isHost && isPending && ['open', 'active'].includes(competition.status);
 
   const userHasSubmitted = results.some(
     (r) => (r.profiles as Record<string, unknown> | null)?.id === currentUserId ||
@@ -114,6 +154,23 @@ export function EventDetail({
   const canDispute = !isHost && !!currentUserResult && isResultsPending &&
     event.dispute_window_closes_at != null &&
     new Date(event.dispute_window_closes_at as string) > new Date();
+
+  const showVoting = isConfirmed && memberRole !== null && !isHost;
+  const showStrengthVoting = isTeamEvent && isActive && memberRole !== null && !isHost &&
+    pendingStrengthRatings.length > 0;
+  const showTeamAssignment = isTeamEvent && isHost && isActive;
+
+  const competitors: Competitor[] = members
+    .map((m) => {
+      const profile = m.profile as Record<string, unknown> | null;
+      if (!profile) return null;
+      return {
+        profileId: profile.id as string,
+        displayName: profile.display_name as string,
+        avatarUrl: (profile.avatar_url as string | null) ?? null,
+      };
+    })
+    .filter((c): c is Competitor => c !== null);
 
   async function handleStart() {
     setIsStarting(true);
@@ -157,6 +214,11 @@ export function EventDetail({
                   {weightMultiplier}×
                 </span>
               )}
+              {isTeamEvent && (
+                <span className="ml-2 rounded bg-grey-100 px-1.5 py-0.5 text-xs font-medium text-grey-600">
+                  Team event
+                </span>
+              )}
             </p>
           </div>
           {canStart && (
@@ -173,6 +235,26 @@ export function EventDetail({
       </div>
 
       {getStatusBanner(status)}
+
+      {/* Strength voting for peers */}
+      {showStrengthVoting && currentUserId && (
+        <StrengthVoteWidget
+          competitionId={competition.id}
+          competitionEventId={competitionEventId}
+          pendingRatings={pendingStrengthRatings}
+          currentUserId={currentUserId}
+        />
+      )}
+
+      {/* Team assignment for host */}
+      {showTeamAssignment && (
+        <TeamAssignmentPanel
+          competitionId={competition.id}
+          competitionEventId={competitionEventId}
+          ratedPlayers={ratedPlayers}
+          existingTeams={existingTeams}
+        />
+      )}
 
       {/* Submit result */}
       {showSubmit && !showSubmitForm && (
@@ -229,13 +311,14 @@ export function EventDetail({
               const displayName = (profile?.display_name as string) ?? 'Unknown';
               const avatarUrl = profile?.avatar_url as string | null;
               const place = result.finishing_place as number | null;
-              const rawValue = result.result_value as number | null;
+              const rawValue = result.result_value_primary as number | null;
               const points = result.points_awarded as number | null;
               const confirmed = !!result.confirmed_at;
               const isCurrentUser =
                 (profile?.id as string) === currentUserId || result.profile_id === currentUserId;
+              const isDisputed = result.disputed_at != null;
               const canDisputeThis =
-                !isHost && isCurrentUser && canDispute && confirmed && !isDisputedStatus;
+                !isHost && isCurrentUser && canDispute && confirmed && !isDisputed;
 
               return (
                 <li
@@ -297,6 +380,20 @@ export function EventDetail({
           </ul>
         )}
       </div>
+
+      {/* Performance voting */}
+      {showVoting && currentUserId && (
+        <PerformanceVotePanel
+          competitionId={competition.id}
+          competitionEventId={competitionEventId}
+          competitors={competitors}
+          mvpEnabled={competition.mvp_voting_enabled}
+          worstPerformerEnabled={competition.worst_performer_enabled}
+          currentUserId={currentUserId}
+          existingMvpVote={existingMvpVote}
+          existingWorstVote={existingWorstVote}
+        />
+      )}
 
       {/* Dispute panel */}
       {showDisputePanel && (
