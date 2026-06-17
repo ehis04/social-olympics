@@ -1,6 +1,48 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createMiddlewareClient } from '@/lib/supabase/middleware';
+import { apiLimiter, authLimiter, reportLimiter } from '@/lib/rate-limit';
+
+const BLOCKED_KEYWORDS = [
+  'fuck', 'shit', 'cunt', 'nigger', 'nigga', 'faggot', 'retard',
+  'kike', 'spic', 'chink', 'whore', 'bitch', 'asshole', 'bastard',
+];
+
+function containsBlockedKeyword(text: string): boolean {
+  const lower = text.toLowerCase();
+  return BLOCKED_KEYWORDS.some((kw) => lower.includes(kw));
+}
+
+function getTextPayloadField(body: Record<string, unknown>): string | null {
+  if (typeof body.content === 'string') return body.content;
+  if (typeof body.name === 'string') return body.name;
+  if (typeof body.description === 'string') return body.description;
+  if (typeof body.message === 'string') return body.message;
+  if (typeof body.display_name === 'string') return body.display_name;
+  return null;
+}
+
+function rateLimitResponse(reset: number): NextResponse {
+  const retryAfter = Math.ceil((reset - Date.now()) / 1000);
+  return NextResponse.json(
+    { data: null, error: { code: 'RATE_LIMITED', message: 'Too many requests — please slow down.' } },
+    {
+      status: 429,
+      headers: {
+        'Retry-After': String(retryAfter),
+        'X-RateLimit-Reset': String(reset),
+      },
+    },
+  );
+}
+
+function getIp(request: NextRequest): string {
+  return (
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+    request.headers.get('x-real-ip') ??
+    'unknown'
+  );
+}
 
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next({ request });
@@ -22,12 +64,49 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/terms') ||
     pathname === '/';
 
+  // Auth route rate limiting — keyed by IP
+  if (isAuthRoute && request.method === 'POST') {
+    const ip = getIp(request);
+    const { success, reset } = await authLimiter.limit(ip);
+    if (!success) return rateLimitResponse(reset);
+  }
+
   if (!user && !isAuthRoute && !isPublicRoute) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
   if (user && isAuthRoute) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
+
+  // API mutation rate limiting and keyword filter — authenticated users only
+  if (user && request.method === 'POST' && pathname.startsWith('/api/')) {
+    // Report submissions have a tighter limit
+    if (pathname === '/api/report') {
+      const { success, reset } = await reportLimiter.limit(user.id);
+      if (!success) return rateLimitResponse(reset);
+    } else {
+      const { success, reset } = await apiLimiter.limit(user.id);
+      if (!success) return rateLimitResponse(reset);
+    }
+
+    // Keyword filter — only for JSON bodies
+    if (request.headers.get('content-type')?.includes('application/json')) {
+      try {
+        const cloned = request.clone();
+        const body = (await cloned.json()) as Record<string, unknown>;
+        const textField = getTextPayloadField(body);
+
+        if (textField && containsBlockedKeyword(textField)) {
+          return NextResponse.json(
+            { data: null, error: { code: 'CONTENT_BLOCKED', message: 'Your message contains language that is not permitted on this platform.' } },
+            { status: 422 },
+          );
+        }
+      } catch {
+        // Non-JSON or empty body — skip filter
+      }
+    }
   }
 
   return response;
