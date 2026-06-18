@@ -94,7 +94,7 @@ export function EventDetail({
   const isConfirmed = status === 'confirmed';
 
   const canStart = isHost && isPending &&
-    ['open', 'active'].includes(competition.status);
+    ['setup', 'open', 'active'].includes(competition.status);
 
   const userHasSubmitted = results.some(
     (r) => (r.profiles as Record<string, unknown> | null)?.id === currentUserId ||
