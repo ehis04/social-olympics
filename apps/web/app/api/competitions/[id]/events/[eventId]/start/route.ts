@@ -23,10 +23,10 @@ export async function POST(_request: Request, { params }: RouteParams) {
   const isHostOrCohost = competition.host_id === user.id || competition.cohost_id === user.id;
   if (!isHostOrCohost) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-  const allowedCompStatuses = ['open', 'active'];
+  const allowedCompStatuses = ['setup', 'open', 'active'];
   if (!allowedCompStatuses.includes(competition.status)) {
     return NextResponse.json(
-      { error: 'Competition must be open or active to start an event' },
+      { error: 'Competition must be in setup, open, or active to start an event' },
       { status: 409 },
     );
   }

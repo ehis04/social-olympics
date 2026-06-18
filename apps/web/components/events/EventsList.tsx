@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Play } from 'lucide-react';
+import ROUTES from '@/constants/routes';
 import { toast } from '@/lib/toast';
 
 interface EventLibraryItem {
@@ -38,7 +40,7 @@ export function EventsList({
   const router = useRouter();
   const [pendingEventId, setPendingEventId] = useState<string | null>(null);
   const typedEvents = events as CompetitionEvent[];
-  const canStartEvents = isHost && ['open', 'active'].includes(competitionStatus ?? '');
+  const canStartEvents = isHost && ['setup', 'open', 'active'].includes(competitionStatus ?? '');
 
   async function startEvent(eventId: string) {
     setPendingEventId(eventId);
@@ -55,6 +57,7 @@ export function EventsList({
       }
 
       toast.success('Event started');
+      router.push(ROUTES.EVENT_DETAIL(competitionId, eventId));
       router.refresh();
     } catch {
       toast.error('Something went wrong');
@@ -95,9 +98,9 @@ export function EventsList({
             const status = competitionEvent.status ?? 'pending';
             const isPending = status === 'pending';
             const canStart = !!eventId && canStartEvents && isPending;
-
-            return (
-              <li key={eventId ?? index} className="flex items-center gap-4 px-4 py-3">
+            const eventHref = eventId ? ROUTES.EVENT_DETAIL(competitionId, eventId) : null;
+            const eventContent = (
+              <>
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-muted text-xs font-bold text-primary">
                   {competitionEvent.sequence_order ?? index + 1}
                 </div>
@@ -119,6 +122,21 @@ export function EventsList({
                       : ''}
                   </p>
                 </div>
+              </>
+            );
+
+            return (
+              <li key={eventId ?? index} className="flex items-center gap-4 px-4 py-3">
+                {eventHref ? (
+                  <Link
+                    href={eventHref}
+                    className="flex min-w-0 flex-1 items-center gap-4 rounded-md -m-2 p-2 transition-colors hover:bg-grey-50"
+                  >
+                    {eventContent}
+                  </Link>
+                ) : (
+                  <div className="flex min-w-0 flex-1 items-center gap-4">{eventContent}</div>
+                )}
 
                 {canStart && (
                   <button

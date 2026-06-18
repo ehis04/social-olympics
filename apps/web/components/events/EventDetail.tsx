@@ -134,7 +134,8 @@ export function EventDetail({
   const isResultsPending = status === 'results_pending';
   const isConfirmed = status === 'confirmed';
 
-  const canStart = isHost && isPending && ['open', 'active'].includes(competition.status);
+  const canStart = isHost && isPending &&
+    ['setup', 'open', 'active'].includes(competition.status);
 
   const userHasSubmitted = results.some(
     (r) => (r.profiles as Record<string, unknown> | null)?.id === currentUserId ||

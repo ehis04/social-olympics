@@ -13,6 +13,7 @@ build/
 .env
 .env.local
 .env.*.local
+.env.e2e
 
 # Supabase
 supabase/.branches
@@ -22,6 +23,7 @@ supabase/.temp
 coverage/
 playwright-report/
 test-results/
+**/e2e/.auth/
 
 # OS
 .DS_Store

@@ -45,6 +45,12 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   const { content } = await req.json() as { content?: string };
   if (!content?.trim()) return NextResponse.json({ error: 'Content required' }, { status: 400 });
+  if (containsBlockedContent(content)) {
+    return NextResponse.json(
+      { error: { code: 'CONTENT_BLOCKED', message: 'Message contains blocked content' } },
+      { status: 422 },
+    );
+  }
 
   const { error } = await sendMessage(client, {
     sender_profile_id: user.id,
@@ -88,4 +94,8 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   if (error) return NextResponse.json({ error: 'Failed to delete message' }, { status: 500 });
 
   return NextResponse.json({ data: { success: true } });
+}
+
+function containsBlockedContent(content: string): boolean {
+  return /\bfuck(?:ing)?\b/i.test(content);
 }

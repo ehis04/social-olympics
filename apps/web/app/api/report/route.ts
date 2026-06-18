@@ -1,61 +1,84 @@
-// POST /api/report — submit a moderation report
+// POST /api/report — submit a moderation report for review.
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { getServerClient } from '@/lib/supabase/server';
 import { createReport } from '@repo/supabase';
 
-type ReportTargetType = 'competition' | 'profile' | 'feed_item' | 'message';
+const CreateReportSchema = z.object({
+  target_type: z.enum(['competition', 'profile', 'message', 'feed_item']),
+  target_id: z.string().uuid(),
+  competition_id: z.string().uuid().optional(),
+  reason: z.string().min(5).max(500),
+});
 
-interface RequestBody {
-  target_type: ReportTargetType;
-  target_id: string;
-  competition_id?: string;
-  reason: string;
+function getReportErrorStatus(code?: string): number {
+  if (code?.startsWith('23') || code?.startsWith('PGRST')) {
+    return 422;
+  }
+
+  return 500;
 }
-
-const VALID_TARGET_TYPES: ReportTargetType[] = ['competition', 'profile', 'feed_item', 'message'];
-const MAX_REASON_LENGTH = 500;
 
 export async function POST(request: NextRequest) {
   const client = getServerClient();
-  const { data: { user } } = await client.auth.getUser();
-  if (!user) return NextResponse.json({ data: null, error: { code: 'UNAUTHORISED', message: 'Unauthorised' } }, { status: 401 });
+  const {
+    data: { user },
+  } = await client.auth.getUser();
 
-  let body: RequestBody;
+  if (!user) {
+    return NextResponse.json(
+      { data: null, error: { code: 'UNAUTHORISED', message: 'Unauthorised' } },
+      { status: 401 },
+    );
+  }
+
+  let body: unknown;
   try {
-    body = (await request.json()) as RequestBody;
+    body = await request.json();
   } catch {
-    return NextResponse.json({ data: null, error: { code: 'BAD_REQUEST', message: 'Invalid request body' } }, { status: 400 });
+    return NextResponse.json(
+      { data: null, error: { code: 'BAD_REQUEST', message: 'Invalid request body' } },
+      { status: 400 },
+    );
   }
 
-  const { target_type, target_id, competition_id, reason } = body;
+  const parsed = CreateReportSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      {
+        data: null,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: parsed.error.issues[0]?.message ?? 'Invalid report data',
+        },
+      },
+      { status: 422 },
+    );
+  }
 
-  if (!target_type || !VALID_TARGET_TYPES.includes(target_type)) {
-    return NextResponse.json({ data: null, error: { code: 'BAD_REQUEST', message: 'Invalid target_type' } }, { status: 400 });
-  }
-  if (!target_id) {
-    return NextResponse.json({ data: null, error: { code: 'BAD_REQUEST', message: 'target_id is required' } }, { status: 400 });
-  }
-  if (!reason || reason.trim().length === 0) {
-    return NextResponse.json({ data: null, error: { code: 'BAD_REQUEST', message: 'reason is required' } }, { status: 400 });
-  }
-  if (reason.length > MAX_REASON_LENGTH) {
-    return NextResponse.json({ data: null, error: { code: 'BAD_REQUEST', message: `reason must be ${MAX_REASON_LENGTH} characters or fewer` } }, { status: 400 });
-  }
+  const { competition_id, ...reportData } = parsed.data;
+  const competitionId = competition_id ?? (reportData.target_type === 'competition' ? reportData.target_id : undefined);
 
-  // Prevent self-reporting
-  if (target_type === 'profile' && target_id === user.id) {
-    return NextResponse.json({ data: null, error: { code: 'BAD_REQUEST', message: 'Cannot report yourself' } }, { status: 400 });
+  if (reportData.target_type === 'profile' && reportData.target_id === user.id) {
+    return NextResponse.json(
+      { data: null, error: { code: 'BAD_REQUEST', message: 'Cannot report yourself' } },
+      { status: 400 },
+    );
   }
 
   const { data, error } = await createReport(client, {
+    ...reportData,
     reporter_profile_id: user.id,
-    target_type,
-    target_id,
-    competition_id: competition_id ?? null,
-    reason: reason.trim(),
     status: 'pending',
+    ...(competitionId ? { competition_id: competitionId } : {}),
   });
 
-  if (error) return NextResponse.json({ data: null, error }, { status: 500 });
+  if (error) {
+    return NextResponse.json(
+      { data: null, error },
+      { status: getReportErrorStatus(error.code) },
+    );
+  }
+
   return NextResponse.json({ data, error: null }, { status: 201 });
 }
