@@ -864,10 +864,12 @@ export type Database = {
       }
       reports: {
         Row: {
+          competition_id: string | null
           created_at: string
           id: string
           reason: string
           reporter_profile_id: string
+          resolution_action: string | null
           resolved_at: string | null
           reviewed_by: string | null
           status: Database["public"]["Enums"]["report_status"]
@@ -875,10 +877,12 @@ export type Database = {
           target_type: Database["public"]["Enums"]["report_target_type"]
         }
         Insert: {
+          competition_id?: string | null
           created_at?: string
           id?: string
           reason: string
           reporter_profile_id: string
+          resolution_action?: string | null
           resolved_at?: string | null
           reviewed_by?: string | null
           status?: Database["public"]["Enums"]["report_status"]
@@ -886,10 +890,12 @@ export type Database = {
           target_type: Database["public"]["Enums"]["report_target_type"]
         }
         Update: {
+          competition_id?: string | null
           created_at?: string
           id?: string
           reason?: string
           reporter_profile_id?: string
+          resolution_action?: string | null
           resolved_at?: string | null
           reviewed_by?: string | null
           status?: Database["public"]["Enums"]["report_status"]
@@ -897,6 +903,13 @@ export type Database = {
           target_type?: Database["public"]["Enums"]["report_target_type"]
         }
         Relationships: [
+          {
+            foreignKeyName: "reports_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "reports_reporter_profile_id_fkey"
             columns: ["reporter_profile_id"]
@@ -1392,7 +1405,7 @@ export type Database = {
       rating_source: "historical" | "peer_voted" | "host_set"
       reaction_target_type: "feed_item" | "message"
       report_status: "pending" | "reviewed" | "actioned" | "dismissed"
-      report_target_type: "competition" | "profile" | "message"
+      report_target_type: "competition" | "profile" | "message" | "feed_item"
       result_type:
       | "time"
       | "distance"
@@ -1564,7 +1577,7 @@ export const Constants = {
       rating_source: ["historical", "peer_voted", "host_set"],
       reaction_target_type: ["feed_item", "message"],
       report_status: ["pending", "reviewed", "actioned", "dismissed"],
-      report_target_type: ["competition", "profile", "message"],
+      report_target_type: ["competition", "profile", "message", "feed_item"],
       result_type: [
         "time",
         "distance",
@@ -1598,4 +1611,3 @@ export const Constants = {
     },
   },
 } as const
-
