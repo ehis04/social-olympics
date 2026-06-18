@@ -2,4 +2,4 @@
 > web@0.0.1 lint /home/eo4/projects/social_olympics/social-olympics/apps/web
 > next lint
 
-[32m✔ No ESLint warnings or errors[39m
+✔ No ESLint warnings or errors
