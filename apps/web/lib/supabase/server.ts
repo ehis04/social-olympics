@@ -1,5 +1,3 @@
-'use server';
-
 import { cookies } from 'next/headers';
 import { createServerClient } from '@repo/supabase';
 

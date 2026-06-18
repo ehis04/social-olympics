@@ -25,12 +25,15 @@ export async function resolveReport(
 
     if (error) return { data: null, error: { code: error.code, message: error.message } };
 
+    const report = data as { competition_id?: string | null } | null;
+    const competitionId = payload.competition_id ?? report?.competition_id ?? undefined;
+
     // Archive competition if action is remove_competition
-    if (payload.action === 'remove_competition' && payload.competition_id) {
+    if (payload.action === 'remove_competition' && competitionId) {
       await adminClient
         .from('competitions')
         .update({ status: 'archived' })
-        .eq('id', payload.competition_id);
+        .eq('id', competitionId);
     }
 
     // suspend_host: flagged in report row for v1 — handled manually
