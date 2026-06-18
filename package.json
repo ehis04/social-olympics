@@ -8,6 +8,8 @@
     "lint": "turbo run lint",
     "test": "turbo run test",
     "test:e2e": "turbo run test:e2e",
+    "mobile:expo": "pnpm --dir apps/mobile exec expo",
+    "mobile:install": "pnpm --dir apps/mobile exec expo install",
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
     "prepare": "husky",
     "db:start": "supabase start",
