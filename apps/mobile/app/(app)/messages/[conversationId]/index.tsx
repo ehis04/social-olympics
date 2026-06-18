@@ -1,5 +1,5 @@
-// Group chat screen — realtime messages, inverted list, keyboard-avoiding input.
-import { useEffect, useRef, useState } from 'react';
+// DM thread — realtime direct messages between two users.
+import { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -12,37 +12,55 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
-import { Send } from 'lucide-react-native';
+import { ChevronLeft, Send } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase/client';
-import { getGroupChat, subscribeGroupChat, sendMessage, deleteMessage } from '@repo/supabase';
+import { getDirectMessages, subscribeDirectMessages, sendMessage, deleteMessage, getProfile } from '@repo/supabase';
 import { useAuthStore } from '@/stores/auth';
 import { formatRelativeTime } from '@/utils/formatters/date';
+import { useQuery } from '@tanstack/react-query';
+import type { Database } from '@repo/types';
 
-interface ChatMessage {
+type ProfileRow = Database['public']['Tables']['profiles']['Row'];
+
+interface DMMessage {
   id: string;
   content: string;
   created_at: string;
   sender_profile_id: string;
+  recipient_profile_id: string;
   deleted_at: string | null;
   sender: { id: string; display_name: string; avatar_url: string | null } | null;
 }
 
-export default function ChatScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+export default function MessageThreadScreen() {
+  const { conversationId } = useLocalSearchParams<{ conversationId: string }>();
+  const router = useRouter();
   const { profile } = useAuthStore();
   const queryClient = useQueryClient();
   const [messageText, setMessageText] = useState('');
   const [sending, setSending] = useState(false);
-  const flatListRef = useRef<FlatList>(null);
+
+  // conversationId is "{idA}_{idB}" sorted alphabetically
+  const [idA, idB] = conversationId.split('_') as [string, string];
+  const partnerId = idA === profile?.id ? idB : idA;
+
+  const { data: partnerData } = useQuery({
+    queryKey: ['profile', partnerId],
+    queryFn: async () => {
+      const { data } = await getProfile(supabase, partnerId);
+      return data as ProfileRow | null;
+    },
+    enabled: !!partnerId,
+  });
 
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery({
-      queryKey: ['competition', id, 'chat'],
+      queryKey: ['dm', conversationId],
       queryFn: async ({ pageParam }) => {
-        const result = await getGroupChat(supabase, id, {
+        const result = await getDirectMessages(supabase, idA, idB, {
           ...(pageParam ? { cursor: pageParam as string } : {}),
         });
         return result;
@@ -55,29 +73,28 @@ export default function ChatScreen() {
     });
 
   useEffect(() => {
-    const unsubscribe = subscribeGroupChat(supabase, id, () => {
-      void queryClient.invalidateQueries({ queryKey: ['competition', id, 'chat'] });
+    const unsubscribe = subscribeDirectMessages(supabase, idA, idB, () => {
+      void queryClient.invalidateQueries({ queryKey: ['dm', conversationId] });
     });
     return () => unsubscribe();
-  }, [id, queryClient]);
+  }, [idA, idB, conversationId, queryClient]);
 
-  // Messages arrive newest-first from query, reverse for display (newest at bottom)
-  const allMessages = data?.pages.flatMap((p) => (p.data as ChatMessage[] | null) ?? []) ?? [];
+  const allMessages = data?.pages.flatMap((p) => (p.data as DMMessage[] | null) ?? []) ?? [];
   const messages = [...allMessages].reverse();
 
   async function handleSend() {
     const trimmed = messageText.trim();
-    if (!trimmed || sending) return;
+    if (!trimmed || sending || !profile?.id) return;
     setSending(true);
     setMessageText('');
     await sendMessage(supabase, {
-      competition_id: id,
-      sender_profile_id: profile?.id ?? '',
+      sender_profile_id: profile.id,
+      recipient_profile_id: partnerId,
       content: trimmed,
-      message_type: 'group_chat',
+      message_type: 'direct_message',
     });
     setSending(false);
-    queryClient.invalidateQueries({ queryKey: ['competition', id, 'chat'] });
+    queryClient.invalidateQueries({ queryKey: ['dm', conversationId] });
   }
 
   function confirmDelete(messageId: string) {
@@ -88,17 +105,14 @@ export default function ChatScreen() {
         style: 'destructive',
         onPress: async () => {
           await deleteMessage(supabase, messageId);
-          queryClient.invalidateQueries({ queryKey: ['competition', id, 'chat'] });
+          queryClient.invalidateQueries({ queryKey: ['dm', conversationId] });
         },
       },
     ]);
   }
 
-  function renderMessage({ item }: { item: ChatMessage }) {
+  function renderMessage({ item }: { item: DMMessage }) {
     const isOwn = item.sender_profile_id === profile?.id;
-    const displayName = item.sender?.display_name ?? 'Unknown';
-    const avatarUrl = item.sender?.avatar_url ?? null;
-
     return (
       <TouchableOpacity
         onLongPress={() => isOwn && confirmDelete(item.id)}
@@ -107,21 +121,18 @@ export default function ChatScreen() {
         <View className={`flex-row items-end gap-2 mb-3 ${isOwn ? 'flex-row-reverse' : ''}`}>
           {!isOwn && (
             <View className="w-7 h-7 rounded-full bg-neutral-200 overflow-hidden">
-              {avatarUrl ? (
-                <Image source={{ uri: avatarUrl }} style={{ width: 28, height: 28 }} />
+              {partnerData?.avatar_url ? (
+                <Image source={{ uri: partnerData.avatar_url }} style={{ width: 28, height: 28 }} />
               ) : (
                 <View className="w-7 h-7 rounded-full bg-primary-muted items-center justify-center">
                   <Text className="text-xs font-bold text-primary">
-                    {(displayName[0] ?? '?').toUpperCase()}
+                    {(partnerData?.display_name?.[0] ?? '?').toUpperCase()}
                   </Text>
                 </View>
               )}
             </View>
           )}
           <View className={`max-w-[75%] ${isOwn ? 'items-end' : 'items-start'}`}>
-            {!isOwn && (
-              <Text className="text-xs text-neutral-500 mb-0.5 ml-1">{displayName}</Text>
-            )}
             <View
               className={`rounded-2xl px-3 py-2 ${
                 isOwn ? 'bg-primary rounded-br-sm' : 'bg-neutral-100 rounded-bl-sm'
@@ -142,17 +153,36 @@ export default function ChatScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={['bottom']}>
+      {/* Header */}
+      <View className="flex-row items-center px-4 py-3 border-b border-neutral-200">
+        <TouchableOpacity onPress={() => router.back()} className="mr-3">
+          <ChevronLeft size={22} color="#6B7280" />
+        </TouchableOpacity>
+        <View className="w-8 h-8 rounded-full bg-neutral-200 overflow-hidden mr-2">
+          {partnerData?.avatar_url ? (
+            <Image source={{ uri: partnerData.avatar_url }} style={{ width: 32, height: 32 }} />
+          ) : (
+            <View className="w-8 h-8 rounded-full bg-primary-muted items-center justify-center">
+              <Text className="text-xs font-bold text-primary">
+                {(partnerData?.display_name?.[0] ?? '?').toUpperCase()}
+              </Text>
+            </View>
+          )}
+        </View>
+        <Text className="text-base font-semibold text-neutral-800">
+          {partnerData?.display_name ?? '…'}
+        </Text>
+      </View>
+
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
         <FlatList
-          ref={flatListRef}
           data={messages}
           keyExtractor={(item) => item.id}
           contentContainerClassName="px-4 pt-4 pb-2"
-          inverted={false}
           onEndReached={() => hasNextPage && fetchNextPage()}
           onEndReachedThreshold={0.2}
           ListHeaderComponent={
@@ -162,9 +192,7 @@ export default function ChatScreen() {
                 onPress={() => fetchNextPage()}
                 disabled={isFetchingNextPage}
               >
-                <Text className="text-xs text-primary font-medium">
-                  {isFetchingNextPage ? 'Loading…' : 'Load earlier messages'}
-                </Text>
+                <Text className="text-xs text-primary font-medium">Load earlier</Text>
               </TouchableOpacity>
             ) : null
           }
@@ -182,7 +210,6 @@ export default function ChatScreen() {
           renderItem={renderMessage}
         />
 
-        {/* Message input */}
         <View className="flex-row items-end gap-2 border-t border-neutral-200 bg-white px-4 py-3">
           <TextInput
             className="flex-1 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-2.5 text-sm text-neutral-900"
