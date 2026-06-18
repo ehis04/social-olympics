@@ -1,13 +1,14 @@
-// Profile tab — own profile, career stats, personal bests, edit button.
-import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+// Other user's profile — avatar, stats, personal bests, Message button.
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
-import { Settings } from 'lucide-react-native';
+import { MessageCircle } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase/client';
 import { getProfile, getPersonalBests } from '@repo/supabase';
 import { useAuthStore } from '@/stores/auth';
+import { MOBILE_ROUTES } from '@/constants/routes';
 import type { Database } from '@repo/types';
 
 type ProfileRow = Database['public']['Tables']['profiles']['Row'] & {
@@ -27,7 +28,6 @@ interface PersonalBest {
   category_name: string | null;
   best_value: number | null;
   result_type: string | null;
-  achieved_at: string | null;
 }
 
 function getFlagEmoji(code: string | null): string {
@@ -45,76 +45,95 @@ function StatPill({ label, value }: { label: string; value: number | string }) {
   );
 }
 
-export default function ProfileScreen() {
-  const { profile: authProfile } = useAuthStore();
+export default function OtherProfileScreen() {
+  const { profileId } = useLocalSearchParams<{ profileId: string }>();
   const router = useRouter();
+  const { profile: myProfile } = useAuthStore();
 
-  const { data: profileData, refetch, isRefetching } = useQuery({
-    queryKey: ['profile', authProfile?.id],
+  const { data: profileData, isLoading } = useQuery({
+    queryKey: ['profile', profileId],
     queryFn: async () => {
-      const { data } = await getProfile(supabase, authProfile?.id ?? '');
+      const { data } = await getProfile(supabase, profileId);
       return data as ProfileRow | null;
     },
-    enabled: !!authProfile?.id,
+    enabled: !!profileId,
   });
 
   const { data: pbData } = useQuery({
-    queryKey: ['profile', authProfile?.id, 'personal-bests'],
+    queryKey: ['profile', profileId, 'personal-bests'],
     queryFn: async () => {
-      const { data } = await getPersonalBests(supabase, authProfile?.id ?? '');
+      const { data } = await getPersonalBests(supabase, profileId);
       return (data ?? []) as PersonalBest[];
     },
-    enabled: !!authProfile?.id,
+    enabled: !!profileId,
   });
+
+  if (isLoading) {
+    return (
+      <SafeAreaView className="flex-1 items-center justify-center bg-white">
+        <ActivityIndicator color="#2D6A4F" />
+      </SafeAreaView>
+    );
+  }
+
+  if (!profileData) {
+    return (
+      <SafeAreaView className="flex-1 items-center justify-center bg-white">
+        <Text className="text-neutral-500">Profile not found</Text>
+      </SafeAreaView>
+    );
+  }
 
   const profile = profileData;
   const personalBests = pbData ?? [];
-  const stats = profile?.career_stats;
-  const flag = getFlagEmoji(profile?.country_code ?? null);
+  const stats = profile.career_stats;
+  const flag = getFlagEmoji(profile.country_code ?? null);
+  const isOwnProfile = profile.id === myProfile?.id;
+
+  // Build conversation ID as sorted pair
+  const conversationId = [myProfile?.id ?? '', profileId].sort().join('_');
 
   return (
     <SafeAreaView className="flex-1 bg-neutral-50">
-      <ScrollView
-        refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#2D6A4F" />
-        }
-      >
-        {/* Header */}
+      <ScrollView>
         <View className="bg-white px-4 pt-6 pb-5 border-b border-neutral-200">
           <View className="flex-row items-start justify-between mb-4">
-            <View className="flex-row items-center gap-4">
+            <View className="flex-row items-center gap-4 flex-1">
               <View className="w-20 h-20 rounded-full bg-neutral-200 overflow-hidden border-4 border-white shadow">
-                {profile?.avatar_url ? (
+                {profile.avatar_url ? (
                   <Image source={{ uri: profile.avatar_url }} style={{ width: 80, height: 80 }} />
                 ) : (
                   <View className="w-20 h-20 rounded-full bg-primary-muted items-center justify-center">
                     <Text className="text-3xl font-bold text-primary">
-                      {(profile?.display_name?.[0] ?? '?').toUpperCase()}
+                      {(profile.display_name?.[0] ?? '?').toUpperCase()}
                     </Text>
                   </View>
                 )}
               </View>
               <View className="flex-1">
                 <Text className="text-xl font-bold text-neutral-900">
-                  {profile?.display_name ?? '—'}
+                  {profile.display_name}
                   {flag ? ` ${flag}` : ''}
                 </Text>
-                {profile?.city ? (
+                {profile.city ? (
                   <Text className="text-sm text-neutral-500">{profile.city}</Text>
                 ) : null}
-                {profile?.bio ? (
-                  <Text className="text-sm text-neutral-600 mt-1" numberOfLines={2}>
+                {profile.bio ? (
+                  <Text className="text-sm text-neutral-600 mt-1" numberOfLines={3}>
                     {profile.bio}
                   </Text>
                 ) : null}
               </View>
             </View>
-            <TouchableOpacity
-              className="border border-neutral-200 rounded-lg p-2"
-              onPress={() => router.push('/(app)/profile/settings' as never)}
-            >
-              <Settings size={18} color="#6B7280" />
-            </TouchableOpacity>
+            {!isOwnProfile && (
+              <TouchableOpacity
+                className="flex-row items-center gap-1.5 border border-neutral-200 rounded-lg px-3 py-2 ml-2"
+                onPress={() => router.push(MOBILE_ROUTES.MESSAGE_THREAD(conversationId))}
+              >
+                <MessageCircle size={16} color="#2D6A4F" />
+                <Text className="text-sm font-medium text-neutral-700">Message</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {stats && (
@@ -129,7 +148,6 @@ export default function ProfileScreen() {
           )}
         </View>
 
-        {/* Personal bests */}
         <View className="px-4 pt-5">
           <Text className="text-base font-semibold text-neutral-800 mb-3">Personal Bests</Text>
           {personalBests.length === 0 ? (
