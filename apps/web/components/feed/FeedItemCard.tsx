@@ -1,6 +1,6 @@
 'use client';
 
-// FeedItemCard — activity feed entry with inline reactions and collapsible comments
+// FeedItemCard — activity feed entry with inline reactions, collapsible comments, and report button
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -8,6 +8,7 @@ import { MessageCircle, Send } from 'lucide-react';
 import ROUTES from '@/constants/routes';
 import { useAuth } from '@/hooks/auth/useAuth';
 import { toast } from '@/lib/toast';
+import { ReportButton } from '@/components/moderation/ReportButton';
 import type { FeedItem } from '@/types/social';
 
 interface FeedComment {
@@ -26,6 +27,7 @@ interface FeedReaction {
 
 interface Props {
   item: FeedItem;
+  competitionId?: string;
   comments?: FeedComment[];
   reactions?: FeedReaction[];
 }
@@ -76,7 +78,7 @@ function SmallAvatar({ profile }: { profile: { display_name: string; avatar_url:
   );
 }
 
-export function FeedItemCard({ item, comments: initialComments = [], reactions: initialReactions = [] }: Props) {
+export function FeedItemCard({ item, competitionId, comments: initialComments = [], reactions: initialReactions = [] }: Props) {
   const { user } = useAuth();
   const actor = item.actor;
   const subject = item.subject;
@@ -153,6 +155,7 @@ export function FeedItemCard({ item, comments: initialComments = [], reactions: 
   }
 
   const activeReactions = reactions.filter((r) => r.count > 0);
+  const isOwnItem = actor?.id === user?.id;
 
   return (
     <div className="rounded-lg border border-grey-100 bg-white shadow-sm">
@@ -195,6 +198,14 @@ export function FeedItemCard({ item, comments: initialComments = [], reactions: 
           </p>
           <p className="mt-0.5 text-xs text-grey-400">{timeAgo(item.created_at)}</p>
         </div>
+
+        {!isOwnItem && (
+          <ReportButton
+            targetType="feed_item"
+            targetId={item.id}
+            {...(competitionId ? { competitionId } : {})}
+          />
+        )}
       </div>
 
       {/* Reactions bar */}
