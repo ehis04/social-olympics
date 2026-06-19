@@ -19,7 +19,9 @@ export default function AppLayout() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="competitions/[id]" />
-      <Stack.Screen name="profile/[id]" />
+      <Stack.Screen name="profile/[profileId]" />
+      <Stack.Screen name="profile/settings" />
+      <Stack.Screen name="messages/index" />
       <Stack.Screen name="messages/[conversationId]" />
       <Stack.Screen name="claim/[ghostProfileId]" />
       <Stack.Screen
