@@ -1,7 +1,9 @@
 // Client providers — auth listener, push notifications, toast setup.
 import { useEffect } from 'react';
 import Toast from 'react-native-toast-message';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase/client';
+import { queryClient } from '@/lib/query-client';
 import { useAuthStore } from '@/stores/auth';
 import { getProfile } from '@repo/supabase';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
@@ -44,10 +46,10 @@ export function Providers({ children }: ProvidersProps) {
   }, [setSession, setProfile, setLoading, clearAuth]);
 
   return (
-    <>
+    <QueryClientProvider client={queryClient}>
       <PushNotificationSetup />
       {children}
       <Toast />
-    </>
+    </QueryClientProvider>
   );
 }

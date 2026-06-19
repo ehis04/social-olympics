@@ -12,7 +12,7 @@ interface EventsPageProps {
 }
 
 export default async function EventsPage({ params }: EventsPageProps) {
-  const client = getServerClient();
+  const client = await getServerClient();
   const {
     data: { user },
   } = await client.auth.getUser();

@@ -9,7 +9,7 @@ import type { ProfileRow } from '@/types/profile';
 import type { Route } from 'next';
 
 export default async function ProfileSettingsPage() {
-  const client = getServerClient();
+  const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();
   if (!user) redirect(ROUTES.LOGIN as Route);
 

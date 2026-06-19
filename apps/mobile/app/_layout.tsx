@@ -1,24 +1,15 @@
-// Auth stack — no tab bar, redirects to dashboard when already authenticated.
-import { useEffect } from 'react';
-import { Stack, useRouter } from 'expo-router';
-import { useAuthStore } from '@/stores/auth';
+import { Stack } from 'expo-router';
+import { Providers } from './providers';
+import '../global.css';
 
-export default function AuthLayout() {
-  const router = useRouter();
-  const { session, loading } = useAuthStore();
-
-  useEffect(() => {
-    if (!loading && session) {
-      router.replace('/(app)/(tabs)/dashboard');
-    }
-  }, [session, loading, router]);
-
+export default function RootLayout() {
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-        animation: 'slide_from_right',
-      }}
-    />
+    <Providers>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(app)" />
+      </Stack>
+    </Providers>
   );
 }

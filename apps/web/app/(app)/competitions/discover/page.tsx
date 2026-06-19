@@ -20,7 +20,7 @@ interface PageProps {
 }
 
 export default async function DiscoverPage({ searchParams }: PageProps) {
-  const client = getServerClient();
+  const client = await getServerClient();
   const filters: CompetitionSearchParams = { limit: 20 };
 
   if (searchParams.q) filters.q = searchParams.q;

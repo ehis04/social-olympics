@@ -5,7 +5,7 @@ import { getServerClient } from '@/lib/supabase/server';
 import { uploadAvatar } from '@repo/supabase';
 
 export async function POST(req: NextRequest) {
-  const serverClient = getServerClient();
+  const serverClient = await getServerClient();
   const { data: { user } } = await serverClient.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
 

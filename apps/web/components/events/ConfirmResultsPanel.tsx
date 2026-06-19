@@ -1,7 +1,7 @@
 'use client';
 
 // ConfirmResultsPanel — host reviews submitted results, assigns places, and confirms.
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
 import { X, GripVertical } from 'lucide-react';
 import { toast } from '@/lib/toast';
@@ -55,13 +55,11 @@ export function ConfirmResultsPanel({
   onClose,
   onConfirmed,
 }: ConfirmResultsPanelProps) {
-  const [ranked, setRanked] = useState<RankedResult[]>([]);
+  const [ranked, setRanked] = useState<RankedResult[]>(() =>
+    autoRank(results, resultType),
+  );
   const [isConfirming, setIsConfirming] = useState(false);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
-
-  useEffect(() => {
-    setRanked(autoRank(results, resultType));
-  }, [results, resultType]);
 
   function moveUp(idx: number) {
     if (idx === 0) return;

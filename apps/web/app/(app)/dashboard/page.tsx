@@ -13,7 +13,7 @@ export const metadata = { title: 'Dashboard — Social Olympics' };
 type CompetitionSummary = Database['public']['Tables']['competitions']['Row'];
 
 export default async function DashboardPage() {
-  const client = getServerClient();
+  const client = await getServerClient();
   const {
     data: { user },
   } = await client.auth.getUser();

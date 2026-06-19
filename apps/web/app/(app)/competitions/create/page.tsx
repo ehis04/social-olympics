@@ -12,7 +12,7 @@ type EventWithCategory = EventRow & {
 };
 
 export default async function CreateCompetitionPage() {
-  const client = getServerClient();
+  const client = await getServerClient();
   const { data } = await getEventsLibrary(client);
   const events = (data ?? []) as EventWithCategory[];
 

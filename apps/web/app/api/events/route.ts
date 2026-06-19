@@ -4,7 +4,7 @@ import { getServerClient } from '@/lib/supabase/server';
 import { getEventsLibrary } from '@repo/supabase';
 
 export async function GET(request: Request) {
-  const client = getServerClient();
+  const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
 

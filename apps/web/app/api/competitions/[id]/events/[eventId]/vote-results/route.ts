@@ -17,7 +17,7 @@ interface VoteResultRow {
 }
 
 export async function GET(_req: NextRequest, { params }: Params) {
-  const client = getServerClient();
+  const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();
   if (!user) return NextResponse.json({ data: null, error: { code: 'UNAUTHORISED', message: 'Unauthorised' } }, { status: 401 });
 
