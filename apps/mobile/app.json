@@ -20,7 +20,11 @@
         "foregroundImage": "./assets/icons/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.socialolympics.app"
+      "package": "com.socialolympics.app",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "bundler": "metro"
@@ -50,7 +54,13 @@
     ],
     "scheme": "socialolympics",
     "extra": {
-      "eas": { "projectId": "YOUR_EAS_PROJECT_ID" }
-    }
+      "eas": {
+        "projectId": "f8b71a58-11fb-4d91-90ff-b988696ad623"
+      },
+      "router": {
+        "origin": false
+      }
+    },
+    "owner": "ehisoghinas-organization"
   }
 }

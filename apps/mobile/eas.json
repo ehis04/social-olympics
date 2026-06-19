@@ -3,22 +3,12 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal",
-      "env": {
-        "EXPO_PUBLIC_SUPABASE_URL": "",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "",
-        "EXPO_PUBLIC_API_BASE_URL": ""
-      }
+      "distribution": "internal"
     },
     "preview": {
       "distribution": "internal",
       "ios": { "simulator": false },
-      "android": { "buildType": "apk" },
-      "env": {
-        "EXPO_PUBLIC_SUPABASE_URL": "",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "",
-        "EXPO_PUBLIC_API_BASE_URL": ""
-      }
+      "android": { "buildType": "apk" }
     },
     "production": {
       "ios": {
@@ -26,27 +16,12 @@
         "resourceClass": "m-medium"
       },
       "android": {
-        "buildType": "aab",
+        "buildType": "app-bundle",
         "resourceClass": "medium"
-      },
-      "env": {
-        "EXPO_PUBLIC_SUPABASE_URL": "",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "",
-        "EXPO_PUBLIC_API_BASE_URL": ""
       }
     }
   },
   "submit": {
-    "production": {
-      "ios": {
-        "appleId": "",
-        "ascAppId": "",
-        "appleTeamId": ""
-      },
-      "android": {
-        "serviceAccountKeyPath": "./google-service-account.json",
-        "track": "internal"
-      }
-    }
+    "production": {}
   }
 }
