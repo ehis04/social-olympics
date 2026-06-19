@@ -1,1 +1,1 @@
-// placeholder
+import 'expo-router/entry';

@@ -8,7 +8,7 @@ import type { Database } from '@repo/types';
 type CompetitionRow = Database['public']['Tables']['competitions']['Row'];
 
 export async function POST(req: NextRequest) {
-  const client = getServerClient();
+  const client = await getServerClient();
   const {
     data: { user },
   } = await client.auth.getUser();

@@ -37,7 +37,7 @@ const WEIGHT_TAG_MULTIPLIERS: Record<WeightTag, number> = {
 };
 
 export async function GET(request: NextRequest) {
-  const client = getServerClient();
+  const client = await getServerClient();
   const { searchParams } = new URL(request.url);
   const limit = Math.min(Number(searchParams.get('limit') ?? '20'), 50);
   const cursor = searchParams.get('cursor') ?? undefined;
@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const client = getServerClient();
+  const client = await getServerClient();
   const {
     data: { user },
   } = await client.auth.getUser();

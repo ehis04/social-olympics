@@ -10,7 +10,7 @@ interface Params {
 }
 
 export async function POST(_req: NextRequest, { params }: Params) {
-  const client = getServerClient();
+  const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
 

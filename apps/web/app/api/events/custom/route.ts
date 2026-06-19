@@ -15,7 +15,7 @@ interface CustomEventBody {
 }
 
 export async function POST(request: Request) {
-  const client = getServerClient();
+  const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
 

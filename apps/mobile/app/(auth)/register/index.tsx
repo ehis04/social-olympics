@@ -20,6 +20,41 @@ import type { z } from 'zod';
 
 type RegisterForm = z.infer<typeof RegisterSchema>;
 
+function formatDateOfBirthInput(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 8);
+  const day = digits.slice(0, 2);
+  const month = digits.slice(2, 4);
+  const year = digits.slice(4, 8);
+
+  return [day, month, year].filter(Boolean).join('-');
+}
+
+function toIsoDateOfBirth(value: string): string {
+  const [day, month, year] = value.split('-');
+
+  if (!day || !month || !year) {
+    return value;
+  }
+
+  return `${year}-${month}-${day}`;
+}
+
+function getEmailRedirectTo(): string | undefined {
+  const explicitRedirectUrl = process.env.EXPO_PUBLIC_AUTH_REDIRECT_URL;
+
+  if (explicitRedirectUrl) {
+    return explicitRedirectUrl;
+  }
+
+  const baseUrl = process.env.EXPO_PUBLIC_API_BASE_URL;
+
+  if (!baseUrl) {
+    return undefined;
+  }
+
+  return `${baseUrl.replace(/\/$/, '')}/api/auth/callback`;
+}
+
 export default function RegisterScreen() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
@@ -41,13 +76,15 @@ export default function RegisterScreen() {
 
   async function onSubmit(values: RegisterForm) {
     setAuthError(null);
+    const emailRedirectTo = getEmailRedirectTo();
     const { error } = await supabase.auth.signUp({
       email: values.email,
       password: values.password,
       options: {
+        ...(emailRedirectTo ? { emailRedirectTo } : {}),
         data: {
           display_name: values.display_name,
-          date_of_birth: values.date_of_birth,
+          date_of_birth: toIsoDateOfBirth(values.date_of_birth),
         },
       },
     });
@@ -125,10 +162,13 @@ export default function RegisterScreen() {
               render={({ field: { onChange, onBlur, value } }) => (
                 <TextInput
                   className="border border-neutral-200 rounded-lg px-4 py-3 text-neutral-900 bg-neutral-50"
-                  placeholder="YYYY-MM-DD"
-                  keyboardType="numeric"
+                  placeholder="DD-MM-YYYY"
+                  keyboardType={
+                    Platform.OS === 'ios' ? 'numbers-and-punctuation' : 'numeric'
+                  }
                   onBlur={onBlur}
-                  onChangeText={onChange}
+                  onChangeText={(text) => onChange(formatDateOfBirthInput(text))}
+                  maxLength={10}
                   value={value}
                 />
               )}

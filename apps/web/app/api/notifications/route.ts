@@ -4,7 +4,7 @@ import { getServerClient } from '@/lib/supabase/server';
 import { getNotifications, markNotificationsRead } from '@repo/supabase';
 
 export async function GET(_req: NextRequest) {
-  const client = getServerClient();
+  const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
 
@@ -15,7 +15,7 @@ export async function GET(_req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const client = getServerClient();
+  const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
 

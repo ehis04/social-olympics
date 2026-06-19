@@ -20,7 +20,7 @@ function getReportErrorStatus(code?: string): number {
 }
 
 export async function POST(request: NextRequest) {
-  const client = getServerClient();
+  const client = await getServerClient();
   const {
     data: { user },
   } = await client.auth.getUser();

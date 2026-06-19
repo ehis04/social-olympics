@@ -7,7 +7,7 @@
     "icon": "./assets/icons/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/images/splash.png",
+      "image": "./assets/icons/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -50,7 +50,8 @@
         {
           "photosPermission": "Allow Social Olympics to access your photos to upload an avatar."
         }
-      ]
+      ],
+      "expo-font"
     ],
     "scheme": "socialolympics",
     "extra": {

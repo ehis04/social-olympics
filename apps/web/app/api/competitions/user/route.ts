@@ -4,7 +4,7 @@ import { getServerClient } from '@/lib/supabase/server';
 import { getUserCompetitions } from '@repo/supabase';
 
 export async function GET(req: NextRequest) {
-  const client = getServerClient();
+  const client = await getServerClient();
   const {
     data: { user },
   } = await client.auth.getUser();

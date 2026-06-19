@@ -6,7 +6,7 @@ import ROUTES from '@/constants/routes';
 import type { Route } from 'next';
 
 export default async function MessagesPage() {
-  const client = getServerClient();
+  const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();
   if (!user) redirect(ROUTES.LOGIN as Route);
 

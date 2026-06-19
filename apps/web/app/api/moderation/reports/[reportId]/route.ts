@@ -18,7 +18,7 @@ const ADMIN_PROFILE_IDS = (process.env.ADMIN_PROFILE_IDS ?? '').split(',').filte
 const VALID_ACTIONS: ReportAction[] = ['suspend_host', 'warn_user', 'remove_competition', 'dismiss'];
 
 export async function PATCH(request: NextRequest, { params }: Params) {
-  const client = getServerClient();
+  const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();
   if (!user) return NextResponse.json({ data: null, error: { code: 'UNAUTHORISED', message: 'Unauthorised' } }, { status: 401 });
 

@@ -63,6 +63,7 @@ export async function middleware(request: NextRequest) {
   const isPublicRoute =
     pathname.startsWith('/about') ||
     pathname.startsWith('/terms') ||
+    pathname.startsWith('/api/auth/callback') ||
     pathname === '/';
 
   if (isAuthRoute && request.method === 'POST') {

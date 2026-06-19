@@ -5,19 +5,20 @@ import { getGroupChat, getCompetitionMembers, sendMessage, deleteMessage } from 
 import type { Database } from '@repo/types';
 
 type MemberRow = Database['public']['Tables']['competition_members']['Row'];
+type ServerClient = Awaited<ReturnType<typeof getServerClient>>;
 
 interface Params {
   params: { id: string };
 }
 
-async function getMemberOrFail(client: ReturnType<typeof getServerClient>, competitionId: string, userId: string) {
+async function getMemberOrFail(client: ServerClient, competitionId: string, userId: string) {
   const { data: membersData } = await getCompetitionMembers(client, competitionId);
   const members = (membersData ?? []) as MemberRow[];
   return members.find((m) => m.profile_id === userId) ?? null;
 }
 
 export async function GET(req: NextRequest, { params }: Params) {
-  const client = getServerClient();
+  const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
 
@@ -36,7 +37,7 @@ export async function GET(req: NextRequest, { params }: Params) {
 }
 
 export async function POST(req: NextRequest, { params }: Params) {
-  const client = getServerClient();
+  const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
 
@@ -64,7 +65,7 @@ export async function POST(req: NextRequest, { params }: Params) {
 }
 
 export async function DELETE(req: NextRequest, { params }: Params) {
-  const client = getServerClient();
+  const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
 

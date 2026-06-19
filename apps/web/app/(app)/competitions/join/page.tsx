@@ -11,15 +11,13 @@ import { toast } from '@/lib/toast';
 export default function JoinPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [code, setCode] = useState('');
+  const initialCode = searchParams.get('code')?.toUpperCase() ?? '';
+  const [code, setCode] = useState(initialCode);
   const [isJoining, setIsJoining] = useState(false);
 
-  // Pre-fill from invite link ?code= param and auto-submit
   useEffect(() => {
-    const urlCode = searchParams.get('code')?.toUpperCase() ?? '';
-    if (urlCode) {
-      setCode(urlCode);
-      handleJoin(urlCode);
+    if (initialCode) {
+      handleJoin(initialCode);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

@@ -15,7 +15,7 @@ interface Props {
 }
 
 export default async function DMThreadPage({ params }: Props) {
-  const client = getServerClient();
+  const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();
   if (!user) redirect(ROUTES.LOGIN as Route);
 

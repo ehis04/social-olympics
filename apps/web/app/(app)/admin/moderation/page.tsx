@@ -11,7 +11,7 @@ export const metadata = { title: 'Moderation Queue — Admin' };
 const ADMIN_PROFILE_IDS = (process.env.ADMIN_PROFILE_IDS ?? '').split(',').filter(Boolean);
 
 export default async function ModerationPage() {
-  const client = getServerClient();
+  const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();
   if (!user) redirect('/login' as Route);
 

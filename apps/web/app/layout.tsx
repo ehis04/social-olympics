@@ -1,11 +1,10 @@
-import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import Providers from './providers';
 import '../styles/globals.css';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
-export const metadata: Metadata = {
+export const metadata = {
   title: 'Social Olympics',
   description: 'Create and compete in custom Olympic-style competitions',
 };

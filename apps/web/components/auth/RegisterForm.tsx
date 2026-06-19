@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -48,15 +48,15 @@ export default function RegisterForm() {
 
   const {
     register,
+    control,
     handleSubmit,
-    watch,
     formState: { errors, isSubmitting },
     setError,
   } = useForm<RegisterInput>({
     resolver: zodResolver(RegisterSchema),
   });
 
-  const passwordValue = watch('password', '');
+  const passwordValue = useWatch({ control, name: 'password', defaultValue: '' });
   const strength = getPasswordStrength(passwordValue);
 
   async function onSubmit(values: RegisterInput) {
@@ -65,6 +65,7 @@ export default function RegisterForm() {
       email: values.email,
       password: values.password,
       options: {
+        emailRedirectTo: `${window.location.origin}/api/auth/callback`,
         data: {
           display_name: values.display_name,
           date_of_birth: values.date_of_birth,
