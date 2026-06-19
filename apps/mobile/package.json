@@ -1,14 +1,19 @@
 {
   "name": "mobile",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "expo start",
+    "dev:ios": "expo start --ios",
+    "dev:android": "expo start --android",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint . --ext .ts,.tsx --no-error-on-unmatched-pattern"
+    "lint": "eslint . --ext .ts,.tsx --no-error-on-unmatched-pattern",
+    "build:preview": "eas build --profile preview --platform all",
+    "build:prod": "eas build --profile production --platform all",
+    "submit:ios": "eas submit --platform ios",
+    "submit:android": "eas submit --platform android"
   },
   "dependencies": {
-    "@expo-google-fonts/inter": "^0.4.2",
     "@hookform/resolvers": "^3.3.0",
     "@repo/constants": "workspace:*",
     "@repo/scoring": "workspace:*",
@@ -20,8 +25,9 @@
     "@tanstack/react-query": "^5.0.0",
     "expo": "^51.0.0",
     "expo-camera": "^15.0.0",
-    "expo-clipboard": "~6.0.3",
+    "expo-clipboard": "^6.0.0",
     "expo-constants": "^16.0.0",
+    "expo-device": "^6.0.2",
     "expo-font": "^12.0.0",
     "expo-haptics": "^13.0.0",
     "expo-image": "^1.12.0",
@@ -30,7 +36,6 @@
     "expo-router": "^3.5.0",
     "expo-secure-store": "^13.0.0",
     "expo-sharing": "^12.0.0",
-    "expo-splash-screen": "^0.27.7",
     "lucide-react-native": "^0.383.0",
     "nativewind": "^4.0.0",
     "react": "^18.2.0",

@@ -1,4 +1,4 @@
-// Competition settings screen — host-only; form fields and completion danger zone.
+// Competition settings screen — host-only; form fields, QR invite code, and completion danger zone.
 import { useState, useEffect } from 'react';
 import {
   View,
@@ -19,7 +19,8 @@ import { apiCall } from '@/lib/api/client';
 import { toast } from '@/lib/toast';
 import { useAuthStore } from '@/stores/auth';
 import { MOBILE_ROUTES } from '@/constants/routes';
-import { triggerSuccess } from '@/utils/helpers/haptics';
+import { triggerSuccess, triggerError } from '@/utils/helpers/haptics';
+import { InviteQRCode } from '@/components/competition/InviteQRCode';
 import type { Database } from '@repo/types';
 
 type CompetitionRow = Database['public']['Tables']['competitions']['Row'];
@@ -79,10 +80,7 @@ export default function SettingsScreen() {
       }),
     });
     setSaving(false);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
+    if (error) { toast.error(error.message); triggerError(); return; }
     triggerSuccess();
     toast.success('Settings saved');
     queryClient.invalidateQueries({ queryKey: ['competition', id] });
@@ -94,25 +92,16 @@ export default function SettingsScreen() {
       'This will lock all results, assign final ranks, and reveal the podium. This cannot be undone.',
       [
         { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Finalise',
-          style: 'destructive',
-          onPress: handleComplete,
-        },
+        { text: 'Finalise', style: 'destructive', onPress: handleComplete },
       ]
     );
   }
 
   async function handleComplete() {
     setCompleting(true);
-    const { error } = await apiCall(`/api/competitions/${id}/complete`, {
-      method: 'POST',
-    });
+    const { error } = await apiCall(`/api/competitions/${id}/complete`, { method: 'POST' });
     setCompleting(false);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
+    if (error) { toast.error(error.message); triggerError(); return; }
     triggerSuccess();
     toast.success('Competition finalised!');
     queryClient.invalidateQueries({ queryKey: ['competition', id] });
@@ -172,11 +161,7 @@ export default function SettingsScreen() {
               <Text className="text-sm font-semibold text-neutral-800">Public</Text>
               <Text className="text-xs text-neutral-500">Visible on Discover page</Text>
             </View>
-            <Switch
-              value={isPublic}
-              onValueChange={setIsPublic}
-              trackColor={{ true: '#2D6A4F' }}
-            />
+            <Switch value={isPublic} onValueChange={setIsPublic} trackColor={{ true: '#2D6A4F' }} />
           </View>
         </View>
 
@@ -191,6 +176,16 @@ export default function SettingsScreen() {
             <Text className="text-white font-semibold">Save Changes</Text>
           )}
         </TouchableOpacity>
+
+        {/* QR invite code */}
+        {compData?.invite_code ? (
+          <View className="bg-white rounded-lg border border-neutral-200 p-5">
+            <Text className="text-sm font-bold text-neutral-800 mb-4">Invite Players</Text>
+            <InviteQRCode
+              inviteCode={compData.invite_code}
+            />
+          </View>
+        ) : null}
 
         {/* Danger zone */}
         {canComplete && (
