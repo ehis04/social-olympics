@@ -1,15 +1,21 @@
-// Client providers — auth listener, notification handler, toast setup.
+// Client providers — auth listener, push notifications, toast setup.
 import { useEffect } from 'react';
 import Toast from 'react-native-toast-message';
 import { supabase } from '@/lib/supabase/client';
 import { useAuthStore } from '@/stores/auth';
 import { getProfile } from '@repo/supabase';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import type { Database } from '@repo/types';
 
 type ProfileRow = Database['public']['Tables']['profiles']['Row'];
 
 interface ProvidersProps {
   children: React.ReactNode;
+}
+
+function PushNotificationSetup() {
+  usePushNotifications();
+  return null;
 }
 
 export function Providers({ children }: ProvidersProps) {
@@ -39,6 +45,7 @@ export function Providers({ children }: ProvidersProps) {
 
   return (
     <>
+      <PushNotificationSetup />
       {children}
       <Toast />
     </>
