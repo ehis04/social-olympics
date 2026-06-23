@@ -45,7 +45,7 @@ function rateLimitResponse(reset: number): NextResponse {
   );
 }
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const response = NextResponse.next({ request });
   const supabase = createMiddlewareClient(request, response);
 
