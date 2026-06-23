@@ -51,7 +51,7 @@ jobs:
             "UPSTASH_REDIS_REST_URL": "${{ secrets.UPSTASH_REDIS_REST_URL }}",
             "UPSTASH_REDIS_REST_TOKEN": "${{ secrets.UPSTASH_REDIS_REST_TOKEN }}",
             "ADMIN_PROFILE_IDS": "${{ secrets.ADMIN_PROFILE_IDS }}"
-          }' | pnpm exec wrangler secret bulk
+          }' | pnpm exec wrangler secret bulk --env=""
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

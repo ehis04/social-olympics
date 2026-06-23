@@ -2,13 +2,8 @@ name = "social-olympics"
 main = ".open-next/worker.js"
 compatibility_date = "2025-09-01"
 compatibility_flags = ["nodejs_compat"]
+workers_dev = true
 
 [assets]
 directory = ".open-next/assets"
 binding = "ASSETS"
-
-[env.production]
-name = "social-olympics"
-
-[env.staging]
-name = "social-olympics-staging"
