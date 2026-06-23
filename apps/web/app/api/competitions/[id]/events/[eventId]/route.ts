@@ -1,22 +1,24 @@
 // PATCH /api/competitions/[id]/events/[eventId] — update. DELETE — remove.
 import { NextResponse } from 'next/server';
 import { getServerClient } from '@/lib/supabase/server';
-import { getCompetition, updateCompetitionEvent, removeCompetitionEvent } from '@repo/supabase';
+import { createAdminClient, getCompetition, updateCompetitionEvent, removeCompetitionEvent } from '@repo/supabase';
 import type { Database } from '@repo/types';
 
 type CompetitionRow = Database['public']['Tables']['competitions']['Row'];
 type CompEventRow = Database['public']['Tables']['competition_events']['Row'];
 
 interface RouteParams {
-  params: { id: string; eventId: string };
+  params: Promise<{ id: string; eventId: string }>;
 }
 
 export async function PATCH(request: Request, { params }: RouteParams) {
+  const { id, eventId } = await params;
   const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
 
-  const { data: compData, error: compError } = await getCompetition(client, params.id);
+  const adminClient = createAdminClient();
+  const { data: compData, error: compError } = await getCompetition(adminClient, id);
   if (compError || !compData) return NextResponse.json({ error: 'Competition not found' }, { status: 404 });
 
   const competition = compData as CompetitionRow;
@@ -36,7 +38,19 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     body.weight_multiplier = weightTagToMultiplier(body.weight_tag as string);
   }
 
-  const { data, error } = await updateCompetitionEvent(client, params.eventId, body);
+  const allowedFields = [
+    'name_override',
+    'weight_tag',
+    'weight_multiplier',
+    'scheduled_at',
+    'location',
+    'details',
+  ];
+  const payload = Object.fromEntries(
+    Object.entries(body).filter(([key]) => allowedFields.includes(key)),
+  );
+
+  const { data, error } = await updateCompetitionEvent(adminClient, eventId, payload);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json({ data });
@@ -47,7 +61,7 @@ export async function DELETE(_request: Request, { params }: RouteParams) {
   const { data: { user } } = await client.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
 
-  const { data: compData, error: compError } = await getCompetition(client, params.id);
+  const { data: compData, error: compError } = await getCompetition(client, (await params).id);
   if (compError || !compData) return NextResponse.json({ error: 'Competition not found' }, { status: 404 });
 
   const competition = compData as CompetitionRow;
@@ -56,7 +70,7 @@ export async function DELETE(_request: Request, { params }: RouteParams) {
   const { data: eventData } = await client
     .from('competition_events')
     .select('status')
-    .eq('id', params.eventId)
+    .eq('id', (await params).eventId)
     .single();
 
   const ev = eventData as Pick<CompEventRow, 'status'> | null;
@@ -73,13 +87,13 @@ export async function DELETE(_request: Request, { params }: RouteParams) {
   const { count } = await client
     .from('results')
     .select('id', { count: 'exact', head: true })
-    .eq('competition_event_id', params.eventId);
+    .eq('competition_event_id', (await params).eventId);
 
   if ((count ?? 0) > 0) {
     return NextResponse.json({ error: 'Cannot remove an event that has results' }, { status: 409 });
   }
 
-  const { error } = await removeCompetitionEvent(client, params.eventId);
+  const { error } = await removeCompetitionEvent(client, (await params).eventId);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json({ data: null }, { status: 200 });

@@ -18,7 +18,7 @@ type LeaderboardMember = CompetitionMemberRow & {
 };
 
 interface Props {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export default async function LeaderboardPage({ params }: Props) {
@@ -29,8 +29,8 @@ export default async function LeaderboardPage({ params }: Props) {
   if (!user) redirect('/login' as Route);
 
   const [{ data: compData }, { data: leaderboardData }] = await Promise.all([
-    getCompetition(client, params.id),
-    getLeaderboard(client, params.id),
+    getCompetition(client, (await params).id),
+    getLeaderboard(client, (await params).id),
   ]);
 
   if (!compData) redirect('/dashboard' as Route);

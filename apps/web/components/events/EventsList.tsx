@@ -10,6 +10,7 @@ import { toast } from '@/lib/toast';
 interface EventLibraryItem {
   name?: string | null;
   result_type?: string | null;
+  is_team_event?: boolean | null;
   event_categories?: { name?: string | null } | null;
 }
 
@@ -42,7 +43,7 @@ export function EventsList({
   const typedEvents = events as CompetitionEvent[];
   const canStartEvents = isHost && ['setup', 'open', 'active'].includes(competitionStatus ?? '');
 
-  async function startEvent(eventId: string) {
+  async function startEvent(eventId: string, isTeamEvent: boolean) {
     setPendingEventId(eventId);
 
     try {
@@ -56,9 +57,13 @@ export function EventsList({
         return;
       }
 
-      toast.success('Event started');
-      router.push(ROUTES.EVENT_DETAIL(competitionId, eventId));
-      router.refresh();
+      if (isTeamEvent) {
+        toast.success('Event started');
+        router.push(ROUTES.EVENT_DETAIL(competitionId, eventId));
+        router.refresh();
+      } else {
+        router.push(ROUTES.EVENT_RECORD(competitionId, eventId));
+      }
     } catch {
       toast.error('Something went wrong');
     } finally {
@@ -141,7 +146,7 @@ export function EventsList({
                 {canStart && (
                   <button
                     type="button"
-                    onClick={() => startEvent(eventId)}
+                    onClick={() => startEvent(eventId, !!(event as EventLibraryItem | null)?.is_team_event)}
                     disabled={pendingEventId === eventId}
                     className="inline-flex items-center gap-1.5 rounded bg-primary px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-primary-dark disabled:opacity-60"
                   >

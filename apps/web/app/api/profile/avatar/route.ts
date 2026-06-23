@@ -1,8 +1,26 @@
 // POST /api/profile/avatar — upload avatar image for the authenticated user
 import { NextRequest, NextResponse } from 'next/server';
-import { createBrowserClient } from '@repo/supabase';
 import { getServerClient } from '@/lib/supabase/server';
-import { uploadAvatar } from '@repo/supabase';
+import { createAdminClient, uploadAvatar } from '@repo/supabase';
+
+async function ensureAvatarBucket() {
+  const adminClient = createAdminClient();
+  const { data } = await adminClient.storage.getBucket('avatars');
+
+  if (!data) {
+    const { error } = await adminClient.storage.createBucket('avatars', {
+      public: true,
+      fileSizeLimit: 5 * 1024 * 1024,
+      allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+    });
+
+    if (error && !error.message.toLowerCase().includes('already exists')) {
+      return { adminClient, error };
+    }
+  }
+
+  return { adminClient, error: null };
+}
 
 export async function POST(req: NextRequest) {
   const serverClient = await getServerClient();
@@ -26,9 +44,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Only JPEG, PNG, or WebP accepted' }, { status: 400 });
   }
 
-  // uploadAvatar needs a client with the user's auth context — use server client
-  const { data: url, error } = await uploadAvatar(serverClient, user.id, file);
-  if (error) return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
+  const { adminClient, error: bucketError } = await ensureAvatarBucket();
+  if (bucketError) return NextResponse.json({ error: bucketError.message }, { status: 500 });
+
+  const { data: url, error } = await uploadAvatar(adminClient, user.id, file);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json({ data: { avatar_url: url } });
 }

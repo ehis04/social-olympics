@@ -9,7 +9,7 @@ import type { Database } from '@repo/types';
 type CompetitionRow = Database['public']['Tables']['competitions']['Row'];
 
 interface Params {
-  params: { id: string; tiebreakerId: string };
+  params: Promise<{ id: string; tiebreakerId: string }>;
 }
 
 interface TiebreakerRow {
@@ -41,7 +41,7 @@ export async function POST(_request: NextRequest, { params }: Params) {
   const { data: { user } } = await client.auth.getUser();
   if (!user) return NextResponse.json({ data: null, error: { code: 'UNAUTHORISED', message: 'Unauthorised' } }, { status: 401 });
 
-  const { data: compData, error: compError } = await getCompetition(client, params.id);
+  const { data: compData, error: compError } = await getCompetition(client, (await params).id);
   if (compError || !compData) return NextResponse.json({ data: null, error: { code: 'NOT_FOUND', message: 'Competition not found' } }, { status: 404 });
 
   const competition = compData as CompetitionRow;
@@ -50,8 +50,8 @@ export async function POST(_request: NextRequest, { params }: Params) {
   const { data: tbData, error: tbError } = await client
     .from('tiebreakers')
     .select('id, profile_id_a, profile_id_b, status')
-    .eq('id', params.tiebreakerId)
-    .eq('competition_id', params.id)
+    .eq('id', (await params).tiebreakerId)
+    .eq('competition_id', (await params).id)
     .single();
 
   if (tbError || !tbData) return NextResponse.json({ data: null, error: { code: 'NOT_FOUND', message: 'Tiebreaker not found' } }, { status: 404 });
@@ -63,7 +63,7 @@ export async function POST(_request: NextRequest, { params }: Params) {
   const { data: nominationsData } = await client
     .from('tiebreaker_nominations')
     .select('nominating_profile_id, nominated_event_id, revealed_at')
-    .eq('tiebreaker_id', params.tiebreakerId)
+    .eq('tiebreaker_id', (await params).tiebreakerId)
     .not('revealed_at', 'is', null);
 
   const nominations = (nominationsData ?? []) as NominationRow[];
@@ -126,7 +126,7 @@ export async function POST(_request: NextRequest, { params }: Params) {
       resolved_by: resolvedBy,
       winner_profile_id: winner,
     })
-    .eq('id', params.tiebreakerId);
+    .eq('id', (await params).tiebreakerId);
 
   return NextResponse.json({ data: { winner_profile_id: winner, resolved_by: resolvedBy }, error: null });
 }

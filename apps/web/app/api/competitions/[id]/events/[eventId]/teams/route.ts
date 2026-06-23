@@ -9,7 +9,7 @@ import type { Database } from '@repo/types';
 type CompetitionRow = Database['public']['Tables']['competitions']['Row'];
 
 interface Params {
-  params: { id: string; eventId: string };
+  params: Promise<{ id: string; eventId: string }>;
 }
 
 interface RequestBody {
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest, { params }: Params) {
   const { data: { user } } = await client.auth.getUser();
   if (!user) return NextResponse.json({ data: null, error: { code: 'UNAUTHORISED', message: 'Unauthorised' } }, { status: 401 });
 
-  const { data: compData, error: compError } = await getCompetition(client, params.id);
+  const { data: compData, error: compError } = await getCompetition(client, (await params).id);
   if (compError || !compData) return NextResponse.json({ data: null, error: { code: 'NOT_FOUND', message: 'Competition not found' } }, { status: 404 });
 
   const competition = compData as CompetitionRow;
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest, { params }: Params) {
   const { data: teamMembersData, error: tmError } = await client
     .from('teams')
     .select('team_members(id, profile_id, strength_rating, confirmed_at)')
-    .eq('competition_event_id', params.eventId);
+    .eq('competition_event_id', (await params).eventId);
 
   if (tmError) return NextResponse.json({ data: null, error: { code: tmError.code, message: tmError.message } }, { status: 500 });
 
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest, { params }: Params) {
       const { data: teamRow, error: teamError } = await client
         .from('teams')
         .insert({
-          competition_event_id: params.eventId,
+          competition_event_id: (await params).eventId,
           name: `Team ${String.fromCharCode(65 + index)}`,
         })
         .select()

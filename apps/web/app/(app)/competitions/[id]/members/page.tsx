@@ -7,11 +7,11 @@ import type { Database } from '@repo/types';
 
 type CompetitionRow = Database['public']['Tables']['competitions']['Row'];
 type MemberWithProfile = Database['public']['Tables']['competition_members']['Row'] & {
-  profile: Database['public']['Tables']['profiles']['Row'] | null;
+  profile: Pick<Database['public']['Tables']['profiles']['Row'], 'id' | 'display_name' | 'avatar_url' | 'country_code' | 'is_ghost'> | null;
 };
 
 interface Props {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export default async function MembersPage({ params }: Props) {
@@ -20,11 +20,11 @@ export default async function MembersPage({ params }: Props) {
     data: { user },
   } = await client.auth.getUser();
 
-  const { data: compData } = await getCompetition(client, params.id);
+  const { data: compData } = await getCompetition(client, (await params).id);
   if (!compData) return notFound();
   const competition = compData as CompetitionRow;
 
-  const { data: membersData } = await getCompetitionMembers(client, params.id);
+  const { data: membersData } = await getCompetitionMembers(client, (await params).id);
   const members = (membersData ?? []) as MemberWithProfile[];
 
   const currentMember = members.find((m) => m.profile_id === user!.id) ?? null;
@@ -34,7 +34,7 @@ export default async function MembersPage({ params }: Props) {
   return (
     <MembersList
       members={members}
-      competitionId={params.id}
+      competitionId={(await params).id}
       inviteCode={competition.invite_code ?? ''}
       currentMemberId={currentMember?.id ?? null}
       isHost={isHost}

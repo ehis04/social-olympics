@@ -1,14 +1,14 @@
 // GET/POST/DELETE /api/competitions/[id]/chat — group chat messages
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerClient } from '@/lib/supabase/server';
-import { getGroupChat, getCompetitionMembers, sendMessage, deleteMessage } from '@repo/supabase';
+import { createAdminClient, getGroupChat, getCompetitionMembers, sendMessage, deleteMessage } from '@repo/supabase';
 import type { Database } from '@repo/types';
 
 type MemberRow = Database['public']['Tables']['competition_members']['Row'];
 type ServerClient = Awaited<ReturnType<typeof getServerClient>>;
 
 interface Params {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 async function getMemberOrFail(client: ServerClient, competitionId: string, userId: string) {
@@ -22,7 +22,8 @@ export async function GET(req: NextRequest, { params }: Params) {
   const { data: { user } } = await client.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
 
-  const member = await getMemberOrFail(client, params.id, user.id);
+  const adminClient = createAdminClient();
+  const member = await getMemberOrFail(adminClient, (await params).id, user.id);
   if (!member) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const url = new URL(req.url);
@@ -30,7 +31,7 @@ export async function GET(req: NextRequest, { params }: Params) {
   const limit = Number(url.searchParams.get('limit') ?? 30);
   const pagination = cursor ? { cursor, limit } : { limit };
 
-  const result = await getGroupChat(client, params.id, pagination);
+  const result = await getGroupChat(adminClient, (await params).id, pagination);
   if (result.error) return NextResponse.json({ error: 'Failed to fetch messages' }, { status: 500 });
 
   return NextResponse.json({ data: result.data, hasMore: result.hasMore, nextCursor: result.nextCursor });
@@ -41,7 +42,8 @@ export async function POST(req: NextRequest, { params }: Params) {
   const { data: { user } } = await client.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
 
-  const member = await getMemberOrFail(client, params.id, user.id);
+  const adminClient = createAdminClient();
+  const member = await getMemberOrFail(adminClient, (await params).id, user.id);
   if (!member) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const { content } = await req.json() as { content?: string };
@@ -53,9 +55,9 @@ export async function POST(req: NextRequest, { params }: Params) {
     );
   }
 
-  const { error } = await sendMessage(client, {
+  const { error } = await sendMessage(adminClient, {
     sender_profile_id: user.id,
-    competition_id: params.id,
+    competition_id: (await params).id,
     message_type: 'group_chat',
     content: content.trim(),
   });
@@ -68,11 +70,12 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
+  const adminClient = createAdminClient();
 
   const { messageId } = await req.json() as { messageId?: string };
   if (!messageId) return NextResponse.json({ error: 'messageId required' }, { status: 400 });
 
-  const { data: msg } = await client
+  const { data: msg } = await adminClient
     .from('messages')
     .select('sender_profile_id')
     .eq('id', messageId)
@@ -80,10 +83,10 @@ export async function DELETE(req: NextRequest, { params }: Params) {
 
   if (!msg) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  const isHost = await client
+  const isHost = await adminClient
     .from('competitions')
     .select('host_id, cohost_id')
-    .eq('id', params.id)
+    .eq('id', (await params).id)
     .single()
     .then(({ data }) => data?.host_id === user.id || data?.cohost_id === user.id);
 
@@ -91,7 +94,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  const { error } = await deleteMessage(client, messageId);
+  const { error } = await deleteMessage(adminClient, messageId);
   if (error) return NextResponse.json({ error: 'Failed to delete message' }, { status: 500 });
 
   return NextResponse.json({ data: { success: true } });

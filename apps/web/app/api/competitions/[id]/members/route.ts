@@ -8,7 +8,7 @@ type CompetitionRow = Database['public']['Tables']['competitions']['Row'];
 type MemberRole = Database['public']['Enums']['member_role'];
 
 interface Params {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export async function GET(req: NextRequest, { params }: Params) {
@@ -22,12 +22,12 @@ export async function GET(req: NextRequest, { params }: Params) {
   const { data: member } = await client
     .from('competition_members')
     .select('id')
-    .eq('competition_id', params.id)
+    .eq('competition_id', (await params).id)
     .eq('profile_id', user.id)
     .single();
   if (!member) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-  const { data, error } = await getCompetitionMembers(client, params.id);
+  const { data, error } = await getCompetitionMembers(client, (await params).id);
   if (error) return NextResponse.json({ error: 'Failed to fetch members' }, { status: 500 });
 
   return NextResponse.json({ data });
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   } = await client.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
 
-  const { data: compData } = await getCompetition(client, params.id);
+  const { data: compData } = await getCompetition(client, (await params).id);
   if (!compData) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   const competition = compData as CompetitionRow;
 
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
     const role: MemberRole = body.role ?? 'competitor';
-    const { error } = await addMember(client, params.id, body.profile_id, role);
+    const { error } = await addMember(client, (await params).id, body.profile_id, role);
     if (error) return NextResponse.json({ error: 'Failed to add member' }, { status: 500 });
     return NextResponse.json({ data: { success: true } }, { status: 201 });
   }
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   const { data: existing } = await client
     .from('competition_members')
     .select('id, status')
-    .eq('competition_id', params.id)
+    .eq('competition_id', (await params).id)
     .eq('profile_id', user.id)
     .single();
 
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: 'Already a member' }, { status: 409 });
   }
 
-  const { error } = await addMember(client, params.id, user.id, 'competitor');
+  const { error } = await addMember(client, (await params).id, user.id, 'competitor');
   if (error) return NextResponse.json({ error: 'Failed to join competition' }, { status: 500 });
 
   return NextResponse.json({ data: { success: true } }, { status: 201 });

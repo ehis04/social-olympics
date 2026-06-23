@@ -4,7 +4,7 @@ import { getServerClient } from '@/lib/supabase/server';
 import { submitStrengthVote } from '@repo/supabase';
 
 interface Params {
-  params: { id: string; eventId: string };
+  params: Promise<{ id: string; eventId: string }>;
 }
 
 interface RequestBody {
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest, { params }: Params) {
   const { data: memberData } = await client
     .from('competition_members')
     .select('id')
-    .eq('competition_id', params.id)
+    .eq('competition_id', (await params).id)
     .eq('profile_id', user.id)
     .single();
 

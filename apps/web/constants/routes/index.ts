@@ -15,7 +15,10 @@ const ROUTES = {
   COMPETITION_SETTINGS: (id: string) => `/competitions/${id}/settings` as Route,
   EVENT_DETAIL: (compId: string, eventId: string) =>
     `/competitions/${compId}/events/${eventId}` as Route,
+  EVENT_RECORD: (compId: string, eventId: string) =>
+    `/competitions/${compId}/events/${eventId}/record` as Route,
   PROFILE: (id: string) => `/profile/${id}` as Route,
+  PROFILE_SEARCH: '/profile/search',
   PROFILE_SETTINGS: '/profile/settings',
   MESSAGES: '/messages',
   MESSAGE_THREAD: (id: string) => `/messages/${id}` as Route,

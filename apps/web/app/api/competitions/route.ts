@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getServerClient } from '@/lib/supabase/server';
-import { addCompetitionEvent, addMember, createCompetition, getPublicCompetitions } from '@repo/supabase';
+import { addCompetitionEvent, addMember, createAdminClient, createCompetition, createGhostProfile, getPublicCompetitions } from '@repo/supabase';
 import type { Database } from '@repo/types';
 
 type CompetitionRow = Database['public']['Tables']['competitions']['Row'];
@@ -26,6 +26,11 @@ const CreateCompetitionRequestSchema = z.object({
     }),
   ).default({}),
   inviteEmails: z.array(z.string().email()).default([]),
+  // Members to add directly (follows + ghost profiles)
+  followProfileIds: z.array(z.string().uuid()).default([]),
+  ghostMembers: z.array(z.object({ tempId: z.string(), displayName: z.string().min(2).max(30) })).default([]),
+  // eventLibraryId → array of tempIds or profileIds
+  eventAssignments: z.record(z.array(z.string())).default({}),
 });
 
 const WEIGHT_TAG_MULTIPLIERS: Record<WeightTag, number> = {
@@ -88,7 +93,8 @@ export async function POST(request: NextRequest) {
   }
 
   const input = parsed.data;
-  const { data: competitionData, error: competitionError } = await createCompetition(client, {
+  const adminClient = createAdminClient();
+  const { data: competitionData, error: competitionError } = await createCompetition(adminClient, {
     name: input.name,
     host_id: user.id,
     is_public: input.is_public,
@@ -110,11 +116,40 @@ export async function POST(request: NextRequest) {
   }
 
   const competition = competitionData as CompetitionRow;
-  const memberResult = await addMember(client, competition.id, user.id, 'competitor');
+  // Add host as member
+  const memberResult = await addMember(adminClient, competition.id, user.id, 'competitor');
   if (memberResult.error) {
     return NextResponse.json({ error: 'Competition created, but failed to add host as member' }, { status: 500 });
   }
 
+  // Add directly-specified follow members (best-effort — don't fail the whole request on one bad ID)
+  await Promise.all(
+    input.followProfileIds.map((profileId) =>
+      addMember(adminClient, competition.id, profileId, 'competitor').catch(() => null),
+    ),
+  );
+
+  // Create ghost profiles and collect tempId → realProfileId map
+  const tempIdToProfileId: Record<string, string> = {};
+  const createdGhostAuthIds: string[] = [];
+  for (const profileId of input.followProfileIds) {
+    tempIdToProfileId[`follow:${profileId}`] = profileId;
+  }
+  tempIdToProfileId[`host`] = user.id;
+
+  await Promise.all(
+    input.ghostMembers.map(async ({ tempId, displayName }) => {
+      const { data } = await createGhostProfile(adminClient, displayName, competition.id);
+      if (data) {
+        const d = data as { profile: { id: string } };
+        tempIdToProfileId[tempId] = d.profile.id;
+        createdGhostAuthIds.push(d.profile.id);
+      }
+    }),
+  );
+
+  // Create competition events and build eventLibraryId → competitionEventId map
+  const eventIdMap: Record<string, string> = {};
   const eventErrors: string[] = [];
   await Promise.all(
     input.selectedEventIds.map(async (eventId, index) => {
@@ -125,7 +160,7 @@ export async function POST(request: NextRequest) {
           ? (weight?.weight_multiplier ?? WEIGHT_TAG_MULTIPLIERS.standard)
           : WEIGHT_TAG_MULTIPLIERS[weightTag];
 
-      const { error } = await addCompetitionEvent(client, {
+      const { data: evData, error } = await addCompetitionEvent(adminClient, {
         competition_id: competition.id,
         event_id: eventId,
         sequence_order: index + 1,
@@ -133,15 +168,48 @@ export async function POST(request: NextRequest) {
         weight_multiplier: weightMultiplier,
       });
 
-      if (error) eventErrors.push(`${eventId}: ${error.message}`);
+      if (error) {
+        eventErrors.push(`${eventId}: ${error.message}`);
+      } else if (evData) {
+        eventIdMap[eventId] = (evData as { id: string }).id;
+      }
     }),
   );
 
   if (eventErrors.length > 0) {
+    // Clean up ghost auth users so they don't become orphaned
+    await Promise.all(
+      createdGhostAuthIds.map((id) => adminClient.auth.admin.deleteUser(id).catch(() => null)),
+    );
     return NextResponse.json(
       { error: 'Competition created, but some events failed to add', details: eventErrors },
       { status: 500 },
     );
+  }
+
+  // Store event participant assignments
+  const participantRows: { competition_event_id: string; profile_id: string; assigned_by: string }[] = [];
+  for (const [eventLibraryId, tempIds] of Object.entries(input.eventAssignments)) {
+    const compEventId = eventIdMap[eventLibraryId];
+    if (!compEventId) continue;
+    for (const tempId of tempIds) {
+      const realProfileId = tempIdToProfileId[tempId];
+      if (realProfileId) {
+        participantRows.push({ competition_event_id: compEventId, profile_id: realProfileId, assigned_by: user.id });
+      }
+    }
+  }
+
+  if (participantRows.length > 0) {
+    const { error: assignError } = await adminClient
+      .from('competition_event_participants')
+      .insert(participantRows);
+    if (assignError) {
+      return NextResponse.json(
+        { error: 'Competition created but participant assignments failed', details: assignError.message },
+        { status: 500 },
+      );
+    }
   }
 
   return NextResponse.json({ data: competition, error: null }, { status: 201 });

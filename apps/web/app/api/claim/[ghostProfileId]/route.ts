@@ -4,7 +4,7 @@ import { getServerClient } from '@/lib/supabase/server';
 import { createAdminClient, claimGhostProfile } from '@repo/supabase';
 
 interface Params {
-  params: { ghostProfileId: string };
+  params: Promise<{ ghostProfileId: string }>;
 }
 
 export async function POST(req: NextRequest, { params }: Params) {
@@ -18,7 +18,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   const { data: ghost, error: fetchError } = await client
     .from('profiles')
     .select('id, is_ghost, claimed_by')
-    .eq('id', params.ghostProfileId)
+    .eq('id', (await params).ghostProfileId)
     .single();
 
   if (fetchError || !ghost) {
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   }
 
   const adminClient = createAdminClient();
-  const { error: claimError } = await claimGhostProfile(adminClient, params.ghostProfileId, user.id);
+  const { error: claimError } = await claimGhostProfile(adminClient, (await params).ghostProfileId, user.id);
   if (claimError) {
     return NextResponse.json({ error: 'Failed to claim profile' }, { status: 500 });
   }
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   const { data: memberRow } = await client
     .from('competition_members')
     .select('competition_id')
-    .eq('profile_id', params.ghostProfileId)
+    .eq('profile_id', (await params).ghostProfileId)
     .limit(1)
     .single();
 

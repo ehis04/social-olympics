@@ -9,7 +9,7 @@ type CompetitionRow = Database['public']['Tables']['competitions']['Row'];
 type MemberRow = Database['public']['Tables']['competition_members']['Row'];
 
 interface EventDetailPageProps {
-  params: { id: string; eventId: string };
+  params: Promise<{ id: string; eventId: string }>;
 }
 
 export default async function EventDetailPage({ params }: EventDetailPageProps) {
@@ -22,10 +22,10 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
     { data: membersData },
     { data: resultsData },
   ] = await Promise.all([
-    getCompetitionEvent(client, params.eventId),
-    getCompetition(client, params.id),
-    getCompetitionMembers(client, params.id),
-    getResultsForEvent(client, params.eventId),
+    getCompetitionEvent(client, (await params).eventId),
+    getCompetition(client, (await params).id),
+    getCompetitionMembers(client, (await params).id),
+    getResultsForEvent(client, (await params).eventId),
   ]);
 
   if (eventError || compError || !eventData || !competitionData) {

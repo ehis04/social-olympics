@@ -7,7 +7,7 @@ import type { Database } from '@repo/types';
 type CompetitionRow = Database['public']['Tables']['competitions']['Row'];
 
 interface Params {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export async function POST(_req: NextRequest, { params }: Params) {
@@ -18,7 +18,7 @@ export async function POST(_req: NextRequest, { params }: Params) {
   const { data: compData } = await client
     .from('competitions')
     .select('host_id, status')
-    .eq('id', params.id)
+    .eq('id', (await params).id)
     .single();
 
   if (!compData) return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -34,7 +34,7 @@ export async function POST(_req: NextRequest, { params }: Params) {
   }
 
   const adminClient = createAdminClient();
-  const { data, error } = await completeCompetition(adminClient, params.id);
+  const { data, error } = await completeCompetition(adminClient, (await params).id);
   if (error) return NextResponse.json({ error: 'Failed to complete competition' }, { status: 500 });
 
   return NextResponse.json({ data });

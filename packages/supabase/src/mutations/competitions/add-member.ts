@@ -7,6 +7,7 @@ export async function addMember(
   competitionId: string,
   profileId: string,
   role: string,
+  status: 'active' | 'invited' = 'active',
 ): Promise<ApiResponse<unknown>> {
   try {
     // If competition is active (voting_locked = true), override role to spectator
@@ -24,7 +25,7 @@ export async function addMember(
 
     const { data, error } = await client
       .from('competition_members')
-      .insert({ competition_id: competitionId, profile_id: profileId, role: effectiveRole })
+      .insert({ competition_id: competitionId, profile_id: profileId, role: effectiveRole, status, joined_at: status === 'active' ? new Date().toISOString() : null })
       .select()
       .single();
 

@@ -11,7 +11,7 @@ interface RequestBody {
 }
 
 interface Params {
-  params: { reportId: string };
+  params: Promise<{ reportId: string }>;
 }
 
 const ADMIN_PROFILE_IDS = (process.env.ADMIN_PROFILE_IDS ?? '').split(',').filter(Boolean);
@@ -46,7 +46,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     action: body.action,
     ...(body.competition_id ? { competition_id: body.competition_id } : {}),
   };
-  const { data, error } = await resolveReport(adminClient, params.reportId, resolvePayload);
+  const { data, error } = await resolveReport(adminClient, (await params).reportId, resolvePayload);
 
   if (error) return NextResponse.json({ data: null, error }, { status: 500 });
   return NextResponse.json({ data, error: null });

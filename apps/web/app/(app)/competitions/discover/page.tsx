@@ -1,13 +1,10 @@
-// Discover page — server component that fetches and renders public competitions
+// Discover page — server component that fetches public competitions and the user's joined set
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { getServerClient } from '@/lib/supabase/server';
 import ROUTES from '@/constants/routes';
-import DiscoverCard from '@/components/competition/DiscoverCard';
-import CompetitionFeed from '@/components/competition/CompetitionFeed';
-import EmptyState from '@/components/ui/EmptyState';
-import { Compass } from 'lucide-react';
-import { getPublicCompetitions } from '@repo/supabase';
+import DiscoverGrid from '@/components/competition/DiscoverGrid';
+import { getPublicCompetitions, createAdminClient } from '@repo/supabase';
 import type { CompetitionSearchParams } from '@repo/supabase';
 import type { Database } from '@repo/types';
 
@@ -16,20 +13,39 @@ export const metadata = { title: 'Discover — Social Olympics' };
 type CompetitionRow = Database['public']['Tables']['competitions']['Row'];
 
 interface PageProps {
-  searchParams: { q?: string; country_code?: string; city?: string };
+  searchParams: Promise<{ q?: string; country_code?: string; city?: string }>;
 }
 
 export default async function DiscoverPage({ searchParams }: PageProps) {
+  const params = await searchParams;
   const client = await getServerClient();
-  const filters: CompetitionSearchParams = { limit: 20 };
+  const { data: { user } } = await client.auth.getUser();
 
-  if (searchParams.q) filters.q = searchParams.q;
-  if (searchParams.country_code) filters.country_code = searchParams.country_code;
-  if (searchParams.city) filters.city = searchParams.city;
+  const filters: CompetitionSearchParams = { limit: 50 };
+  if (params.q) filters.q = params.q;
+  if (params.country_code) filters.country_code = params.country_code;
+  if (params.city) filters.city = params.city;
 
-  const { data } = await getPublicCompetitions(client, filters);
+  const adminClient = createAdminClient();
+
+  const [{ data }, membershipsResult, hostedResult] = await Promise.all([
+    getPublicCompetitions(client, filters),
+    user
+      ? adminClient
+          .from('competition_members')
+          .select('competition_id')
+          .eq('profile_id', user.id)
+          .in('status', ['active', 'invited'])
+      : Promise.resolve({ data: [] }),
+    user
+      ? adminClient.from('competitions').select('id').eq('host_id', user.id)
+      : Promise.resolve({ data: [] }),
+  ]);
 
   const competitions = (data ?? []) as CompetitionRow[];
+  const memberIds = ((membershipsResult.data ?? []) as { competition_id: string }[]).map((m) => m.competition_id);
+  const hostedIds = ((hostedResult.data ?? []) as { id: string }[]).map((c) => c.id);
+  const joinedIds = new Set([...memberIds, ...hostedIds]);
 
   return (
     <div>
@@ -44,47 +60,13 @@ export default async function DiscoverPage({ searchParams }: PageProps) {
         </Link>
       </div>
 
-      <CompetitionFeed
-        initialQ={searchParams.q ?? ''}
-        initialCountryCode={searchParams.country_code ?? ''}
-        initialCity={searchParams.city ?? ''}
+      <DiscoverGrid
+        competitions={competitions}
+        joinedIds={[...joinedIds]}
+        initialQ={params.q ?? ''}
+        initialCountryCode={params.country_code ?? ''}
+        initialCity={params.city ?? ''}
       />
-
-      {competitions.length === 0 ? (
-        <EmptyState
-          icon={Compass}
-          heading="No competitions found"
-          description={
-            searchParams.q
-              ? `No public competitions match "${searchParams.q}". Try a different search.`
-              : 'No public competitions yet. Be the first to create one!'
-          }
-          ctaLabel="Create Competition"
-          ctaHref={ROUTES.CREATE_COMPETITION}
-        />
-      ) : (
-        <>
-          <div className="mb-4 text-sm text-grey-500">
-            {competitions.length} competition{competitions.length !== 1 ? 's' : ''} found
-          </div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {competitions.map((competition) => (
-              <DiscoverCard key={competition.id} competition={competition} />
-            ))}
-          </div>
-          <div className="mt-10 text-center">
-            <p className="mb-3 text-sm text-grey-500">
-              Don&apos;t see what you&apos;re looking for?
-            </p>
-            <Link
-              href={ROUTES.CREATE_COMPETITION}
-              className="text-sm font-semibold text-primary hover:underline"
-            >
-              Create your own competition →
-            </Link>
-          </div>
-        </>
-      )}
     </div>
   );
 }

@@ -8,7 +8,7 @@ type CompetitionRow = Database['public']['Tables']['competitions']['Row'];
 type MemberRole = Database['public']['Enums']['member_role'];
 
 interface Params {
-  params: { id: string; memberId: string };
+  params: Promise<{ id: string; memberId: string }>;
 }
 
 export async function PATCH(req: NextRequest, { params }: Params) {
@@ -18,7 +18,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   } = await client.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
 
-  const { data: compData } = await getCompetition(client, params.id);
+  const { data: compData } = await getCompetition(client, (await params).id);
   if (!compData) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   const competition = compData as CompetitionRow;
 
@@ -37,7 +37,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: 'role is required' }, { status: 400 });
   }
 
-  const { error } = await updateMemberRole(client, params.memberId, body.role);
+  const { error } = await updateMemberRole(client, (await params).memberId, body.role);
   if (error) return NextResponse.json({ error: 'Failed to update role' }, { status: 500 });
 
   return NextResponse.json({ data: { success: true } });
@@ -50,7 +50,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   } = await client.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
 
-  const { data: compData } = await getCompetition(client, params.id);
+  const { data: compData } = await getCompetition(client, (await params).id);
   if (!compData) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   const competition = compData as CompetitionRow;
 
@@ -58,8 +58,8 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   const { data: targetMember } = await client
     .from('competition_members')
     .select('id, profile_id')
-    .eq('id', params.memberId)
-    .eq('competition_id', params.id)
+    .eq('id', (await params).memberId)
+    .eq('competition_id', (await params).id)
     .single();
 
   if (!targetMember) return NextResponse.json({ error: 'Member not found' }, { status: 404 });
@@ -81,7 +81,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   const { error } = await client
     .from('competition_members')
     .update({ status: 'withdrawn' })
-    .eq('id', params.memberId);
+    .eq('id', (await params).memberId);
 
   if (error) return NextResponse.json({ error: 'Failed to remove member' }, { status: 500 });
 

@@ -10,7 +10,7 @@ import type { Route } from 'next';
 type CompetitionRow = Database['public']['Tables']['competitions']['Row'];
 
 interface Props {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export default async function FeedPage({ params }: Props) {
@@ -18,7 +18,7 @@ export default async function FeedPage({ params }: Props) {
   const { data: { user } } = await client.auth.getUser();
   if (!user) redirect(ROUTES.LOGIN as Route);
 
-  const { data: compData } = await getCompetition(client, params.id);
+  const { data: compData } = await getCompetition(client, (await params).id);
   if (!compData) redirect(ROUTES.DASHBOARD as Route);
 
   return <FeedView competition={compData as CompetitionRow} />;

@@ -14,18 +14,18 @@ type MemberRow = Database['public']['Tables']['competition_members']['Row'] & {
 
 interface Props {
   children: React.ReactNode;
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export default async function CompetitionDetailLayout({ children, params }: Props) {
   const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();
 
-  const { data: compData, error } = await getCompetition(client, params.id);
+  const { data: compData, error } = await getCompetition(client, (await params).id);
   if (error || !compData) return notFound();
   const competition = compData as CompetitionRow;
 
-  const { data: membersData } = await getCompetitionMembers(client, params.id);
+  const { data: membersData } = await getCompetitionMembers(client, (await params).id);
   const members = (membersData ?? []) as MemberRow[];
 
   const currentMember = members.find((m) => m.profile_id === user!.id) ?? null;
@@ -40,16 +40,16 @@ export default async function CompetitionDetailLayout({ children, params }: Prop
     competition.status === 'complete' || competition.status === 'archived';
 
   const tabs = [
-    { label: 'Feed', href: ROUTES.COMPETITION_FEED(params.id) },
-    { label: 'Leaderboard', href: ROUTES.COMPETITION_LEADERBOARD(params.id) },
-    { label: 'Events', href: ROUTES.COMPETITION_EVENTS(params.id) },
-    { label: 'Chat', href: ROUTES.COMPETITION_CHAT(params.id) },
-    { label: 'Members', href: ROUTES.COMPETITION_MEMBERS(params.id) },
+    { label: 'Feed', href: ROUTES.COMPETITION_FEED((await params).id) },
+    { label: 'Leaderboard', href: ROUTES.COMPETITION_LEADERBOARD((await params).id) },
+    { label: 'Events', href: ROUTES.COMPETITION_EVENTS((await params).id) },
+    { label: 'Chat', href: ROUTES.COMPETITION_CHAT((await params).id) },
+    { label: 'Members', href: ROUTES.COMPETITION_MEMBERS((await params).id) },
     ...(isFinished
-      ? [{ label: 'Podium', href: ROUTES.COMPETITION_PODIUM(params.id) }]
+      ? [{ label: 'Podium', href: ROUTES.COMPETITION_PODIUM((await params).id) }]
       : []),
     ...(isHost || isCohost
-      ? [{ label: 'Settings', href: ROUTES.COMPETITION_SETTINGS(params.id) }]
+      ? [{ label: 'Settings', href: ROUTES.COMPETITION_SETTINGS((await params).id) }]
       : []),
   ];
 

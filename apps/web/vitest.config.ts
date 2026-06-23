@@ -9,6 +9,7 @@ export default defineConfig({
     exclude: [...configDefaults.exclude, 'e2e/**'],
     setupFiles: ['./vitest.setup.ts'],
     globals: true,
+    pool: 'forks',
   },
   resolve: {
     alias: { '@': path.resolve(__dirname, '.') },

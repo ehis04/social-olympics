@@ -28,7 +28,7 @@ interface Finisher {
 }
 
 interface Props {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export default async function PodiumPage({ params }: Props) {
@@ -37,8 +37,8 @@ export default async function PodiumPage({ params }: Props) {
   if (!user) redirect(ROUTES.LOGIN as Route);
 
   const [{ data: compData }, { data: leaderboardData }] = await Promise.all([
-    getCompetition(client, params.id),
-    getLeaderboard(client, params.id),
+    getCompetition(client, (await params).id),
+    getLeaderboard(client, (await params).id),
   ]);
 
   if (!compData) notFound();
@@ -46,7 +46,7 @@ export default async function PodiumPage({ params }: Props) {
   const competition = compData as CompetitionRow;
 
   if (competition.status !== 'complete' && competition.status !== 'archived') {
-    redirect(ROUTES.COMPETITION_LEADERBOARD(params.id));
+    redirect(ROUTES.COMPETITION_LEADERBOARD((await params).id));
   }
 
   const finishers = ((leaderboardData ?? []) as Finisher[]).sort(

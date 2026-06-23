@@ -16,28 +16,28 @@ type CompetitionEventRow = Database['public']['Tables']['competition_events']['R
 };
 
 interface Props {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export default async function SettingsPage({ params }: Props) {
   const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();
 
-  const { data: compData } = await getCompetition(client, params.id);
+  const { data: compData } = await getCompetition(client, (await params).id);
   if (!compData) return notFound();
   const competition = compData as CompetitionRow;
 
-  if (competition.host_id !== user!.id) {
-    redirect(ROUTES.COMPETITION_FEED(params.id));
+  if (competition.host_id !== user!.id && competition.cohost_id !== user!.id) {
+    redirect(ROUTES.COMPETITION_FEED((await params).id));
   }
 
-  const { data: membersData } = await getCompetitionMembers(client, params.id);
+  const { data: membersData } = await getCompetitionMembers(client, (await params).id);
   const members = (membersData ?? []) as MemberWithProfile[];
 
   const { data: eventsData } = await client
     .from('competition_events')
     .select('*, event:events(*)')
-    .eq('competition_id', params.id)
+    .eq('competition_id', (await params).id)
     .order('sequence_order');
   const competitionEvents = (eventsData ?? []) as CompetitionEventRow[];
 

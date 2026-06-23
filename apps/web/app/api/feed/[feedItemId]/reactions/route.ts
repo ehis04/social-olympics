@@ -4,7 +4,7 @@ import { getServerClient } from '@/lib/supabase/server';
 import { addReaction, removeReaction } from '@repo/supabase';
 
 interface Params {
-  params: { feedItemId: string };
+  params: Promise<{ feedItemId: string }>;
 }
 
 interface RequestBody {
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest, { params }: Params) {
 
   const { data, error } = await addReaction(client, {
     target_type: 'feed_item',
-    target_id: params.feedItemId,
+    target_id: (await params).feedItemId,
     profile_id: user.id,
     emoji: body.emoji,
   });
@@ -60,7 +60,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     .from('reactions')
     .select('id')
     .eq('target_type', 'feed_item')
-    .eq('target_id', params.feedItemId)
+    .eq('target_id', (await params).feedItemId)
     .eq('profile_id', user.id)
     .eq('emoji', body.emoji)
     .single();

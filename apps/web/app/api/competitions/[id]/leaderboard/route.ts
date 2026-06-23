@@ -15,7 +15,7 @@ type MemberWithProfile = CompetitionMemberRow & {
 };
 
 interface Params {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export async function GET(_req: NextRequest, { params }: Params) {
@@ -25,12 +25,12 @@ export async function GET(_req: NextRequest, { params }: Params) {
   } = await client.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
 
-  const { data: memberData } = await getCompetitionMembers(client, params.id);
+  const { data: memberData } = await getCompetitionMembers(client, (await params).id);
   const members = (memberData ?? []) as MemberWithProfile[];
   const isMember = members.some((m) => m.profile_id === user.id);
   if (!isMember) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-  const { data, error } = await getLeaderboard(client, params.id);
+  const { data, error } = await getLeaderboard(client, (await params).id);
   if (error) return NextResponse.json({ error: 'Failed to fetch leaderboard' }, { status: 500 });
 
   const entries = (data ?? []) as MemberWithProfile[];

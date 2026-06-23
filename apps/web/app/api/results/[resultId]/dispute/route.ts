@@ -4,7 +4,7 @@ import { getServerClient } from '@/lib/supabase/server';
 import { raiseDispute } from '@repo/supabase';
 
 interface RouteParams {
-  params: { resultId: string };
+  params: Promise<{ resultId: string }>;
 }
 
 export async function POST(request: Request, { params }: RouteParams) {
@@ -16,7 +16,7 @@ export async function POST(request: Request, { params }: RouteParams) {
   const { data: resultData } = await client
     .from('results')
     .select('profile_id, confirmed_at, competition_event_id')
-    .eq('id', params.resultId)
+    .eq('id', (await params).resultId)
     .single();
 
   if (!resultData) return NextResponse.json({ error: 'Result not found' }, { status: 404 });
@@ -59,7 +59,7 @@ export async function POST(request: Request, { params }: RouteParams) {
   }
 
   const { data, error } = await raiseDispute(client, {
-    result_id: params.resultId,
+    result_id: (await params).resultId,
     raised_by: user.id,
     reason: body.reason.trim(),
     status: 'open',

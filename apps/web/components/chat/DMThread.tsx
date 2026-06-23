@@ -4,7 +4,7 @@
 import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { createBrowserClient, subscribeDirectMessages } from '@repo/supabase';
-import { useDirectMessages, useSendDM } from '@/hooks/chat/useChat';
+import { useDirectMessages, useSendDM, useDeleteDM } from '@/hooks/chat/useChat';
 import { useAuth } from '@/hooks/auth/useAuth';
 import { ChatMessageBubble } from './ChatMessageBubble';
 import { MessageInput } from './MessageInput';
@@ -24,6 +24,8 @@ export function DMThread({ partnerId, partner }: Props) {
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useDirectMessages(partnerId);
   const { mutate: sendDM, isPending: isSending } = useSendDM(partnerId);
+  const { mutate: deleteDM } = useDeleteDM(partnerId);
+  const messages = [...(data?.pages.flatMap((p) => p.data) ?? [])].reverse();
 
   useEffect(() => {
     if (!user?.id) return;
@@ -31,15 +33,14 @@ export function DMThread({ partnerId, partner }: Props) {
     const unsubscribe = subscribeDirectMessages(client, user.id, partnerId, (msg) => {
       if (!isChatMessage(msg)) return;
       void queryClient.invalidateQueries({ queryKey: ['dm', partnerId] });
+      void queryClient.invalidateQueries({ queryKey: ['conversations'] });
     });
     return () => unsubscribe();
   }, [user?.id, partnerId, queryClient]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [data?.pages.length]);
-
-  const messages = [...(data?.pages.flatMap((p) => p.data) ?? [])].reverse();
+  }, [messages.length]);
 
   function handleSend(content: string) {
     sendDM(content, { onError: () => toast.error('Failed to send message') });
@@ -84,7 +85,7 @@ export function DMThread({ partnerId, partner }: Props) {
             message={msg}
             isOwn={msg.sender_profile_id === user?.id}
             canDelete={msg.sender_profile_id === user?.id}
-            onDelete={() => {/* DM delete handled via API if needed */}}
+            onDelete={() => deleteDM(msg.id)}
           />
         ))}
 

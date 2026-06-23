@@ -4,14 +4,17 @@
 import Link from 'next/link';
 import type { Route } from 'next';
 import { usePathname, useParams } from 'next/navigation';
-import { LayoutDashboard, Compass, MessageSquare, ChevronRight } from 'lucide-react';
+import { Bell, LayoutDashboard, Compass, MessageSquare, ChevronRight, Users } from 'lucide-react';
 import { useUserCompetitions } from '@/hooks/competition/useUserCompetitions';
+import { useUnreadNotificationCount } from '@/hooks/notifications/useNotifications';
 import ROUTES from '@/constants/routes';
 
 const NAV_LINKS = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/competitions/discover', label: 'Discover', icon: Compass },
+  { href: '/profile/search', label: 'People', icon: Users },
   { href: '/messages', label: 'Messages', icon: MessageSquare },
+  { href: '/notifications', label: 'Notifications', icon: Bell },
 ] as const;
 
 const COMPETITION_TABS = [
@@ -30,6 +33,7 @@ export default function Sidebar({ className }: { className?: string }) {
   const isInsideCompetition = !!competitionId && pathname.includes('/competitions/');
 
   const { competitions } = useUserCompetitions();
+  const unreadNotifications = useUnreadNotificationCount();
 
   return (
     <aside
@@ -50,6 +54,11 @@ export default function Sidebar({ className }: { className?: string }) {
             >
               <Icon size={18} />
               {label}
+              {href === '/notifications' && unreadNotifications > 0 && (
+                <span className="ml-auto rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">
+                  {unreadNotifications > 9 ? '9+' : unreadNotifications}
+                </span>
+              )}
             </Link>
           );
         })}

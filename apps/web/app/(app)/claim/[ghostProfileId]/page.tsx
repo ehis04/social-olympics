@@ -7,7 +7,7 @@ import type { Database } from '@repo/types';
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
 interface Props {
-  params: { ghostProfileId: string };
+  params: Promise<{ ghostProfileId: string }>;
 }
 
 export default async function ClaimPage({ params }: Props) {
@@ -19,7 +19,7 @@ export default async function ClaimPage({ params }: Props) {
   const { data, error } = await client
     .from('profiles')
     .select('*')
-    .eq('id', params.ghostProfileId)
+    .eq('id', (await params).ghostProfileId)
     .eq('is_ghost', true)
     .is('claimed_by', null)
     .single();
@@ -59,7 +59,7 @@ export default async function ClaimPage({ params }: Props) {
           </p>
         </div>
 
-        <ClaimProfileButton ghostProfileId={params.ghostProfileId} />
+        <ClaimProfileButton ghostProfileId={(await params).ghostProfileId} />
 
         <p className="mt-3 text-xs text-grey-400">
           Or{' '}

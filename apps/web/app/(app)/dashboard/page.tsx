@@ -6,7 +6,7 @@ import ROUTES from '@/constants/routes';
 import CompetitionCard from '@/components/competition/CompetitionCard';
 import EmptyState from '@/components/ui/EmptyState';
 import type { Database } from '@repo/types';
-import { getUserCompetitions } from '@repo/supabase';
+import { createAdminClient, getUserCompetitions } from '@repo/supabase';
 
 export const metadata = { title: 'Dashboard — Social Olympics' };
 
@@ -18,7 +18,8 @@ export default async function DashboardPage() {
     data: { user },
   } = await client.auth.getUser();
 
-  const { data } = await getUserCompetitions(client, user!.id);
+  const adminClient = createAdminClient();
+  const { data } = await getUserCompetitions(adminClient, user!.id);
   const competitions = (data ?? []) as CompetitionSummary[];
 
   return (

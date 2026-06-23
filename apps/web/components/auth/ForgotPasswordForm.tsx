@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { z } from 'zod';
 import { createBrowserClient } from '@repo/supabase';
+import { toast } from '@/lib/toast';
 
 const ForgotSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -18,6 +19,7 @@ export default function ForgotPasswordForm() {
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors, isSubmitting },
   } = useForm<ForgotInput>({
     resolver: zodResolver(ForgotSchema),
@@ -25,9 +27,16 @@ export default function ForgotPasswordForm() {
 
   async function onSubmit(values: ForgotInput) {
     const supabase = createBrowserClient();
-    await supabase.auth.resetPasswordForEmail(values.email, {
-      redirectTo: `${window.location.origin}/api/auth/callback?next=/profile/settings`,
+    const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
+      redirectTo: `${window.location.origin}/api/auth/callback?next=/reset-password`,
     });
+
+    if (error) {
+      setError('root', { message: error.message });
+      toast.error(error.message);
+      return;
+    }
+
     // Always show success regardless of whether the email exists (security)
     setSubmitted(true);
   }
@@ -53,6 +62,9 @@ export default function ForgotPasswordForm() {
       <p className="text-sm text-grey-600">
         Enter your email address and we&apos;ll send you a link to reset your password.
       </p>
+      {errors.root && (
+        <p className="rounded bg-red-50 px-3 py-2 text-xs text-error">{errors.root.message}</p>
+      )}
 
       <div className="flex flex-col gap-1">
         <label htmlFor="forgot-email" className="text-xs font-semibold text-grey-800">

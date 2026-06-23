@@ -8,7 +8,7 @@ import { EventsList } from '@/components/events/EventsList';
 type CompetitionRow = Database['public']['Tables']['competitions']['Row'];
 
 interface EventsPageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export default async function EventsPage({ params }: EventsPageProps) {
@@ -19,8 +19,8 @@ export default async function EventsPage({ params }: EventsPageProps) {
 
   const [{ data: eventsData, error: eventsError }, { data: competitionData, error: compError }] =
     await Promise.all([
-      getCompetitionEvents(client, params.id),
-      getCompetition(client, params.id),
+      getCompetitionEvents(client, (await params).id),
+      getCompetition(client, (await params).id),
     ]);
 
   if (eventsError || compError || !competitionData) {
@@ -36,7 +36,7 @@ export default async function EventsPage({ params }: EventsPageProps) {
       events={(eventsData ?? []) as Record<string, unknown>[]}
       isHost={isHost}
       competitionStatus={competition.status}
-      competitionId={params.id}
+      competitionId={(await params).id}
       votingLocked={competition.voting_locked}
     />
   );

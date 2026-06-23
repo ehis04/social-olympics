@@ -7,7 +7,7 @@ import type { Database } from '@repo/types';
 type CompetitionRow = Database['public']['Tables']['competitions']['Row'];
 
 interface RouteParams {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export async function PATCH(request: Request, { params }: RouteParams) {
@@ -15,7 +15,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
   const { data: { user } } = await client.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
 
-  const { data: compData, error: compError } = await getCompetition(client, params.id);
+  const { data: compData, error: compError } = await getCompetition(client, (await params).id);
   if (compError || !compData) return NextResponse.json({ error: 'Competition not found' }, { status: 404 });
 
   const competition = compData as CompetitionRow;
@@ -36,7 +36,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
   const { data: existingEvents } = await client
     .from('competition_events')
     .select('id')
-    .eq('competition_id', params.id);
+    .eq('competition_id', (await params).id);
 
   const existingIds = new Set((existingEvents ?? []).map((e: { id: string }) => e.id));
   const allBelong = body.orderedIds.every((id) => existingIds.has(id));

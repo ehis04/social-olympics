@@ -2,9 +2,9 @@
 import { redirect } from 'next/navigation';
 
 interface Props {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
-export default function CompetitionIndexPage({ params }: Props) {
-  redirect(`/competitions/${params.id}/feed`);
+export default async function CompetitionIndexPage({ params }: Props) {
+  redirect(`/competitions/${(await params).id}/feed`);
 }

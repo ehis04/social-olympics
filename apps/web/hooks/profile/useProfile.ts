@@ -28,8 +28,8 @@ export function useProfile(profileId: string | undefined) {
 
 interface UpdateProfilePayload {
   display_name?: string;
-  bio?: string;
-  country_code?: string;
+  bio?: string | null;
+  country_code?: string | null;
 }
 
 async function patchProfile(payload: UpdateProfilePayload): Promise<ProfileWithStats> {

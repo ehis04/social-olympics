@@ -13,13 +13,14 @@ type EventWithCategory = EventRow & {
 
 export default async function CreateCompetitionPage() {
   const client = await getServerClient();
+  const { data: { user } } = await client.auth.getUser();
   const { data } = await getEventsLibrary(client);
   const events = (data ?? []) as EventWithCategory[];
 
   return (
     <div className="mx-auto max-w-2xl">
       <h1 className="mb-6 text-2xl font-bold text-grey-800">Create Competition</h1>
-      <CreateCompetitionForm events={events} />
+      <CreateCompetitionForm events={events} currentUserId={user?.id ?? ''} />
     </div>
   );
 }

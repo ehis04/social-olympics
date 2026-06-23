@@ -7,7 +7,7 @@ import type { Database } from '@repo/types';
 type CompetitionRow = Database['public']['Tables']['competitions']['Row'];
 
 interface RouteParams {
-  params: { disputeId: string };
+  params: Promise<{ disputeId: string }>;
 }
 
 export async function POST(request: Request, { params }: RouteParams) {
@@ -41,7 +41,7 @@ export async function POST(request: Request, { params }: RouteParams) {
   const { data: disputeData } = await client
     .from('result_disputes')
     .select('status')
-    .eq('id', params.disputeId)
+    .eq('id', (await params).disputeId)
     .single();
 
   if (!disputeData) return NextResponse.json({ error: 'Dispute not found' }, { status: 404 });
@@ -49,7 +49,7 @@ export async function POST(request: Request, { params }: RouteParams) {
     return NextResponse.json({ error: 'Dispute is already resolved' }, { status: 409 });
   }
 
-  const { data, error } = await resolveDispute(client, params.disputeId, body.action);
+  const { data, error } = await resolveDispute(client, (await params).disputeId, body.action);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json({ data });

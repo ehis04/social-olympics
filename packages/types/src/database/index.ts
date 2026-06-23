@@ -125,6 +125,42 @@ export type Database = {
           },
         ]
       }
+      competition_event_participants: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          competition_event_id: string
+          profile_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          competition_event_id: string
+          profile_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          competition_event_id?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_event_participants_competition_event_id_fkey"
+            columns: ["competition_event_id"]
+            isOneToOne: false
+            referencedRelation: "competition_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_event_participants_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       competition_events: {
         Row: {
           cancelled_reason: string | null

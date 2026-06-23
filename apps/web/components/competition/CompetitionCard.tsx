@@ -11,10 +11,11 @@ interface Props {
   competition: CompetitionRow;
   memberCount?: number;
   showJoinButton?: boolean;
+  isJoined?: boolean;
   onJoin?: (id: string) => void;
 }
 
-export default function CompetitionCard({ competition, memberCount, showJoinButton, onJoin }: Props) {
+export default function CompetitionCard({ competition, memberCount, showJoinButton, isJoined = false, onJoin }: Props) {
   const statusColour = STATUS_COLOURS[competition.status as keyof typeof STATUS_COLOURS] ?? 'bg-grey-100 text-grey-600';
 
   return (
@@ -61,14 +62,20 @@ export default function CompetitionCard({ competition, memberCount, showJoinButt
         </div>
       </Link>
 
-      {showJoinButton && onJoin && (
+      {showJoinButton && (
         <div className="border-t border-grey-100 px-5 py-3">
-          <button
-            onClick={() => onJoin(competition.id)}
-            className="w-full rounded bg-primary px-3 py-1.5 text-sm font-semibold text-white hover:bg-primary-dark transition-colors"
-          >
-            Join
-          </button>
+          {isJoined ? (
+            <div className="w-full rounded bg-grey-100 px-3 py-1.5 text-center text-sm font-semibold text-grey-500">
+              Joined
+            </div>
+          ) : (
+            <button
+              onClick={() => onJoin?.(competition.id)}
+              className="w-full rounded bg-primary px-3 py-1.5 text-sm font-semibold text-white hover:bg-primary-dark transition-colors"
+            >
+              Join
+            </button>
+          )}
         </div>
       )}
     </div>
