@@ -9,21 +9,7 @@ import ROUTES from '@/constants/routes';
 import { useAuth } from '@/hooks/auth/useAuth';
 import { toast } from '@/lib/toast';
 import { ReportButton } from '@/components/moderation/ReportButton';
-import type { FeedItem } from '@/types/social';
-
-interface FeedComment {
-  id: string;
-  profile_id: string;
-  content: string;
-  created_at: string;
-  profiles: { id: string; display_name: string; avatar_url: string | null } | null;
-}
-
-interface FeedReaction {
-  emoji: string;
-  count: number;
-  reactedByMe: boolean;
-}
+import type { FeedItem, FeedComment, FeedReaction } from '@/types/social';
 
 interface Props {
   item: FeedItem;

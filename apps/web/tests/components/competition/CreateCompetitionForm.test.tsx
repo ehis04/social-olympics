@@ -10,13 +10,13 @@ vi.mock('next/navigation', () => ({
 
 describe('CreateCompetitionForm', () => {
   it('renders step 1 without errors', () => {
-    render(<CreateCompetitionForm events={[]} />);
-    expect(screen.getByText('Basic Info')).toBeDefined();
+    render(<CreateCompetitionForm events={[]} currentUserId="test-user-id" />);
+    expect(screen.getByText('Info')).toBeDefined();
     expect(screen.getByPlaceholderText(/Office Olympics/i)).toBeDefined();
   });
 
   it('Next button is disabled when name field is empty', () => {
-    render(<CreateCompetitionForm events={[]} />);
+    render(<CreateCompetitionForm events={[]} currentUserId="test-user-id" />);
     const nextBtn = screen.getByRole('button', { name: /next/i });
     // Name is empty by default — clicking Next should show an error, not advance
     fireEvent.click(nextBtn);
@@ -24,7 +24,7 @@ describe('CreateCompetitionForm', () => {
   });
 
   it('shows error when name is fewer than 3 characters', () => {
-    render(<CreateCompetitionForm events={[]} />);
+    render(<CreateCompetitionForm events={[]} currentUserId="test-user-id" />);
     const nameInput = screen.getByPlaceholderText(/Office Olympics/i);
     fireEvent.change(nameInput, { target: { value: 'AB' } });
     fireEvent.click(screen.getByRole('button', { name: /next/i }));

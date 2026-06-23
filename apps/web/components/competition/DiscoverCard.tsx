@@ -11,9 +11,10 @@ type CompetitionRow = Database['public']['Tables']['competitions']['Row'];
 
 interface Props {
   competition: CompetitionRow;
+  isJoined?: boolean;
 }
 
-export default function DiscoverCard({ competition }: Props) {
+export default function DiscoverCard({ competition, isJoined = false }: Props) {
   const router = useRouter();
 
   async function handleJoin(id: string) {
@@ -43,6 +44,7 @@ export default function DiscoverCard({ competition }: Props) {
     <CompetitionCard
       competition={competition}
       showJoinButton
+      isJoined={isJoined}
       onJoin={handleJoin}
     />
   );

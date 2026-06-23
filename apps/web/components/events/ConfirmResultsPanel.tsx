@@ -30,8 +30,8 @@ function autoRank(results: Record<string, unknown>[], resultType: string): Ranke
   const pending = results.filter((r) => !r.confirmed_at);
 
   const sorted = [...pending].sort((a, b) => {
-    const av = (a.result_value as number | null) ?? 0;
-    const bv = (b.result_value as number | null) ?? 0;
+    const av = (a.result_value_primary as number | null) ?? 0;
+    const bv = (b.result_value_primary as number | null) ?? 0;
     return lowerIsBetter ? av - bv : bv - av;
   });
 
@@ -41,7 +41,7 @@ function autoRank(results: Record<string, unknown>[], resultType: string): Ranke
       id: r.id as string,
       displayName: (profile?.display_name as string) ?? 'Unknown',
       avatarUrl: (profile?.avatar_url as string | null) ?? null,
-      rawValue: (r.result_value as number | null) ?? null,
+      rawValue: (r.result_value_primary as number | null) ?? null,
       place: idx + 1,
     };
   });

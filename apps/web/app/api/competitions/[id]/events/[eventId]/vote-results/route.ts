@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerClient } from '@/lib/supabase/server';
 
 interface Params {
-  params: { id: string; eventId: string };
+  params: Promise<{ id: string; eventId: string }>;
 }
 
 interface VoteResultRow {
@@ -24,7 +24,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const { data, error } = await client
     .from('performance_vote_results')
     .select('vote_type, winner_profile_id, profiles!performance_vote_results_winner_profile_id_fkey(id, display_name, avatar_url)')
-    .eq('competition_event_id', params.eventId);
+    .eq('competition_event_id', (await params).eventId);
 
   if (error) return NextResponse.json({ data: null, error: { code: error.code, message: error.message } }, { status: 500 });
 

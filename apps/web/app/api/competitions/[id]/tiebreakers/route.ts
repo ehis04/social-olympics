@@ -10,7 +10,7 @@ type CompetitionRow = Database['public']['Tables']['competitions']['Row'];
 type MemberRow = Database['public']['Tables']['competition_members']['Row'];
 
 interface Params {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 interface RequestBody {
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest, { params }: Params) {
   const { data: { user } } = await client.auth.getUser();
   if (!user) return NextResponse.json({ data: null, error: { code: 'UNAUTHORISED', message: 'Unauthorised' } }, { status: 401 });
 
-  const { data: compData, error: compError } = await getCompetition(client, params.id);
+  const { data: compData, error: compError } = await getCompetition(client, (await params).id);
   if (compError || !compData) return NextResponse.json({ data: null, error: { code: 'NOT_FOUND', message: 'Competition not found' } }, { status: 404 });
 
   const competition = compData as CompetitionRow;
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest, { params }: Params) {
   const { data: membersData } = await client
     .from('competition_members')
     .select('profile_id, gold_count, silver_count, bronze_count')
-    .eq('competition_id', params.id)
+    .eq('competition_id', (await params).id)
     .in('profile_id', [profile_id_a, profile_id_b]);
 
   const members = (membersData ?? []) as Pick<MemberRow, 'profile_id' | 'gold_count' | 'silver_count' | 'bronze_count'>[];
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     const { data: tiebreaker, error: tbError } = await client
       .from('tiebreakers')
       .insert({
-        competition_id: params.id,
+        competition_id: (await params).id,
         profile_id_a,
         profile_id_b,
         status: 'resolved',
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest, { params }: Params) {
   const { data: tiebreaker, error: tbError } = await client
     .from('tiebreakers')
     .insert({
-      competition_id: params.id,
+      competition_id: (await params).id,
       profile_id_a,
       profile_id_b,
       status: 'pending_nomination',
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest, { params }: Params) {
   // Notify both tied competitors via edge function
   await client.functions.invoke('send-notification', {
     body: {
-      competition_id: params.id,
+      competition_id: (await params).id,
       tiebreaker_id: tb.id,
       profile_ids: [profile_id_a, profile_id_b],
       type: 'tiebreaker_required',

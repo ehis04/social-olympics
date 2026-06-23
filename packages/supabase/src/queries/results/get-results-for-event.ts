@@ -9,7 +9,7 @@ export async function getResultsForEvent(
   try {
     const { data, error } = await client
       .from('results')
-      .select('*, profiles!results_profile_id_fkey(id, display_name, avatar_url, country_code), teams(id, name)')
+      .select('*, profiles!results_profile_id_fkey(id, display_name, avatar_url, country_code), teams(id, name), result_disputes(id, status, raised_by, created_at)')
       .eq('competition_event_id', competitionEventId)
       .order('finishing_place', { ascending: true, nullsFirst: false })
       .order('submitted_at', { ascending: true });

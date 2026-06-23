@@ -16,6 +16,7 @@ import { DisputePanel } from './DisputePanel';
 import { PerformanceVotePanel } from './PerformanceVotePanel';
 import { StrengthVoteWidget } from './StrengthVoteWidget';
 import { TeamAssignmentPanel } from './TeamAssignmentPanel';
+import { HostEventManagementPanel } from './HostEventManagementPanel';
 import ROUTES from '@/constants/routes';
 import type { Database } from '@repo/types';
 
@@ -128,6 +129,9 @@ export function EventDetail({
   const weightTag = (event.weight_tag as string) ?? 'standard';
   const weightMultiplier = (event.weight_multiplier as number) ?? 1;
   const isTeamEvent = !!(event.is_team_event as boolean | undefined);
+  const scheduledAt = (event.scheduled_at as string | null | undefined) ?? null;
+  const eventLocation = (event.location as string | null | undefined) ?? null;
+  const eventDetails = (event.details as string | null | undefined) ?? null;
 
   const isPending = status === 'pending';
   const isActive = status === 'active';
@@ -147,12 +151,15 @@ export function EventDetail({
   const pendingResults = results.filter((r) => !r.confirmed_at);
   const confirmedResults = results.filter((r) => !!r.confirmed_at);
   const canConfirm = isHost && isResultsPending && pendingResults.length > 0;
+  const submittedProfileIds = results
+    .map((result) => result.profile_id as string | undefined)
+    .filter((profileId): profileId is string => Boolean(profileId));
 
   const currentUserResult = results.find(
     (r) => (r.profiles as Record<string, unknown> | null)?.id === currentUserId ||
       r.profile_id === currentUserId,
   );
-  const canDispute = !isHost && !!currentUserResult && isResultsPending &&
+  const canDispute = !isHost && !!currentUserResult && isConfirmed &&
     event.dispute_window_closes_at != null &&
     new Date(event.dispute_window_closes_at as string) > new Date();
 
@@ -163,7 +170,9 @@ export function EventDetail({
 
   const competitors: Competitor[] = members
     .map((m) => {
-      const profile = m.profile as Record<string, unknown> | null;
+      const profile =
+        (m.profile as Record<string, unknown> | null) ??
+        (m.profiles as Record<string, unknown> | null);
       if (!profile) return null;
       return {
         profileId: profile.id as string,
@@ -172,6 +181,7 @@ export function EventDetail({
       };
     })
     .filter((c): c is Competitor => c !== null);
+  const participantOptions = competitors;
 
   async function handleStart() {
     setIsStarting(true);
@@ -182,8 +192,11 @@ export function EventDetail({
       );
       const json = (await res.json()) as { error?: string };
       if (!res.ok) { toast.error(json.error ?? 'Failed to start event'); return; }
-      toast.success('Event started');
-      router.refresh();
+      if (!isTeamEvent) {
+        router.push(ROUTES.EVENT_RECORD(competition.id, competitionEventId));
+      } else {
+        router.refresh();
+      }
     } catch {
       toast.error('Something went wrong');
     } finally {
@@ -232,10 +245,62 @@ export function EventDetail({
               {isStarting ? 'Starting…' : 'Start Event'}
             </button>
           )}
+          {isHost && isActive && !isTeamEvent && (
+            <Link
+              href={ROUTES.EVENT_RECORD(competition.id, competitionEventId)}
+              className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark"
+            >
+              Record Results
+            </Link>
+          )}
         </div>
       </div>
 
       {getStatusBanner(status)}
+
+      {isHost && !isConfirmed && (
+        <HostEventManagementPanel
+          competitionId={competition.id}
+          competitionEventId={competitionEventId}
+          resultType={resultType}
+          status={status}
+          scheduledAt={scheduledAt}
+          location={eventLocation}
+          details={eventDetails}
+          members={participantOptions}
+          submittedProfileIds={submittedProfileIds}
+          onSaved={() => router.refresh()}
+          showResultEntry={isTeamEvent}
+        />
+      )}
+
+      {(scheduledAt || eventLocation || eventDetails) && (
+        <section className="rounded-lg border border-grey-200 bg-white p-5">
+          <h2 className="mb-3 text-sm font-semibold text-grey-900">Event information</h2>
+          <dl className="grid gap-3 text-sm md:grid-cols-3">
+            {scheduledAt && (
+              <div>
+                <dt className="font-medium text-grey-500">Scheduled start</dt>
+                <dd className="mt-0.5 text-grey-900">
+                  {new Date(scheduledAt).toLocaleString()}
+                </dd>
+              </div>
+            )}
+            {eventLocation && (
+              <div>
+                <dt className="font-medium text-grey-500">Location</dt>
+                <dd className="mt-0.5 text-grey-900">{eventLocation}</dd>
+              </div>
+            )}
+            {eventDetails && (
+              <div className="md:col-span-3">
+                <dt className="font-medium text-grey-500">Details</dt>
+                <dd className="mt-0.5 whitespace-pre-wrap text-grey-900">{eventDetails}</dd>
+              </div>
+            )}
+          </dl>
+        </section>
+      )}
 
       {/* Strength voting for peers */}
       {showStrengthVoting && currentUserId && (
@@ -317,7 +382,8 @@ export function EventDetail({
               const confirmed = !!result.confirmed_at;
               const isCurrentUser =
                 (profile?.id as string) === currentUserId || result.profile_id === currentUserId;
-              const isDisputed = result.disputed_at != null;
+              const disputes = (result.result_disputes as { status: string }[] | null) ?? [];
+              const isDisputed = disputes.some((d) => d.status === 'open');
               const canDisputeThis =
                 !isHost && isCurrentUser && canDispute && confirmed && !isDisputed;
 

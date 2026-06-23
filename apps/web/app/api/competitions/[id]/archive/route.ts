@@ -6,7 +6,7 @@ import type { Database } from '@repo/types';
 type CompetitionRow = Database['public']['Tables']['competitions']['Row'];
 
 interface Params {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export async function POST(_req: NextRequest, { params }: Params) {
@@ -17,7 +17,7 @@ export async function POST(_req: NextRequest, { params }: Params) {
   const { data: compData } = await client
     .from('competitions')
     .select('host_id, status')
-    .eq('id', params.id)
+    .eq('id', (await params).id)
     .single();
 
   if (!compData) return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -38,7 +38,7 @@ export async function POST(_req: NextRequest, { params }: Params) {
   const { data, error } = await client
     .from('competitions')
     .update({ status: 'archived' })
-    .eq('id', params.id)
+    .eq('id', (await params).id)
     .select()
     .single();
 

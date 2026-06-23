@@ -18,18 +18,18 @@ export default function PrizePoolDisplay({ prizePerPerson, memberCount }: Props)
     <div>
       <p className="mb-2 text-xs font-bold uppercase tracking-wider text-grey-400">Prize Pot</p>
       <p className="mb-2 text-sm text-grey-700">
-        £{fmt(prizePerPerson)} per competitor &mdash; total pot{' '}
-        <span className="font-bold text-grey-800">£{fmt(total)}</span>
+        €{fmt(prizePerPerson)} per competitor &mdash; total pot{' '}
+        <span className="font-bold text-grey-800">€{fmt(total)}</span>
       </p>
       <div className="flex gap-4 text-sm">
         <span>
-          <span className="mr-1">🥇</span>1st &mdash; £{fmt(first)}
+          <span className="mr-1">🥇</span>1st &mdash; €{fmt(first)}
         </span>
         <span>
-          <span className="mr-1">🥈</span>2nd &mdash; £{fmt(second)}
+          <span className="mr-1">🥈</span>2nd &mdash; €{fmt(second)}
         </span>
         <span>
-          <span className="mr-1">🥉</span>3rd &mdash; £{fmt(third)}
+          <span className="mr-1">🥉</span>3rd &mdash; €{fmt(third)}
         </span>
       </div>
       <p className="mt-2 text-xs text-grey-400">

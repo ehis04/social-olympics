@@ -54,8 +54,8 @@ export function ProfileSettingsForm({ profile }: Props) {
     const trimmedBio = bio.trim();
     const payload = {
       display_name: trimmedName,
-      ...(trimmedBio ? { bio: trimmedBio } : {}),
-      ...(countryCode ? { country_code: countryCode } : {}),
+      bio: trimmedBio || null,
+      country_code: countryCode || null,
     };
 
     updateProfile(
@@ -90,12 +90,12 @@ export function ProfileSettingsForm({ profile }: Props) {
           id="bio"
           value={bio}
           onChange={(e) => setBio(e.target.value)}
-          maxLength={200}
+          maxLength={500}
           rows={3}
           placeholder="Tell other competitors a bit about yourself…"
           className="w-full resize-none rounded-lg border border-grey-300 px-3.5 py-2.5 text-sm text-grey-900 placeholder:text-grey-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
         />
-        <p className="text-xs text-grey-400">{bio.length}/200</p>
+        <p className="text-xs text-grey-400">{bio.length}/500</p>
       </div>
 
       <div className="space-y-1.5">
@@ -115,7 +115,7 @@ export function ProfileSettingsForm({ profile }: Props) {
       <button
         type="submit"
         disabled={isPending}
-        className="w-full rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-50"
+        className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60"
       >
         {isPending ? 'Saving…' : 'Save changes'}
       </button>

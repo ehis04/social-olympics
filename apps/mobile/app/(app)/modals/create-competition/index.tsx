@@ -362,7 +362,7 @@ export default function CreateCompetitionModal() {
 
               <View>
                 <Text className="text-sm font-semibold text-neutral-700 mb-1">
-                  Suggested contribution per player (£){' '}
+                  Suggested contribution per player (€){' '}
                   <Text className="text-neutral-400 font-normal">(optional)</Text>
                 </Text>
                 <TextInput
@@ -602,7 +602,7 @@ export default function CreateCompetitionModal() {
                   <View className="flex-row justify-between">
                     <Text className="text-sm text-neutral-600">Prize pot per person</Text>
                     <Text className="text-sm font-semibold text-neutral-800">
-                      £{form.prize_pot_per_person}
+                      €{form.prize_pot_per_person}
                     </Text>
                   </View>
                 ) : null}

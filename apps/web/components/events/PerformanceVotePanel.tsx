@@ -93,6 +93,7 @@ export function PerformanceVotePanel({
   }
 
   const eligibleForMvp = competitors.filter((c) => c.profileId !== currentUserId);
+  const eligibleForWorst = competitors.filter((c) => c.profileId !== currentUserId);
 
   if (!mvpEnabled && !worstPerformerEnabled) return null;
 
@@ -118,7 +119,7 @@ export function PerformanceVotePanel({
           title="Worst Performer"
           icon={<ThumbsDown size={14} className="text-grey-400" />}
           description="Who struggled most in this event?"
-          competitors={competitors}
+          competitors={eligibleForWorst}
           selectedId={votes.worst}
           voteType="worst_performer"
           submitting={submitting === 'worst_performer'}

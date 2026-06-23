@@ -7,11 +7,13 @@ import { Bell, ChevronDown, Menu, User } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth';
 import { useUiStore } from '@/stores/ui';
 import { useSignOut } from '@/hooks/auth/useSignOut';
+import { useUnreadNotificationCount } from '@/hooks/notifications/useNotifications';
 
 export default function Navbar({ className }: { className?: string }) {
   const { profile } = useAuthStore();
   const { toggleSidebar } = useUiStore();
   const { signOut } = useSignOut();
+  const unreadNotifications = useUnreadNotificationCount();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -38,7 +40,14 @@ export default function Navbar({ className }: { className?: string }) {
       </button>
 
       <Link href="/dashboard" className="flex items-center gap-2">
-        <Image src="/images/logo.svg" alt="Social Olympics" width={160} height={36} priority />
+        <Image
+          src="/images/logo.svg"
+          alt="Social Olympics"
+          width={160}
+          height={36}
+          priority
+          style={{ width: 'auto', height: 'auto' }}
+        />
       </Link>
 
       <div className="flex-1" />
@@ -50,7 +59,11 @@ export default function Navbar({ className }: { className?: string }) {
         aria-label="Notifications"
       >
         <Bell size={20} />
-        {/* Badge placeholder — wired up in Phase 7 */}
+        {unreadNotifications > 0 && (
+          <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white">
+            {unreadNotifications > 9 ? '9+' : unreadNotifications}
+          </span>
+        )}
       </Link>
 
       {/* User menu */}

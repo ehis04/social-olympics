@@ -39,7 +39,7 @@ export function ChatMessageBubble({ message, isOwn, canDelete, onDelete }: Props
           className={[
             'rounded-2xl px-3.5 py-2 text-sm',
             isOwn
-              ? 'rounded-br-sm bg-primary-600 text-white'
+              ? 'rounded-br-sm bg-primary text-white'
               : 'rounded-bl-sm bg-grey-100 text-grey-900',
           ].join(' ')}
         >

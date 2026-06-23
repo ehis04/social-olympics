@@ -1,14 +1,15 @@
 // POST /api/competitions/[id]/events/[eventId]/confirm — host confirms ranked results.
 import { NextResponse } from 'next/server';
 import { getServerClient } from '@/lib/supabase/server';
-import { getCompetition, confirmResult } from '@repo/supabase';
+import { createAdminClient, getCompetition, confirmResult } from '@repo/supabase';
+import { createNotifications } from '@/lib/notifications/create-notification';
 import { calculatePoints, getParticipationPoints } from '@repo/scoring';
 import type { Database } from '@repo/types';
 
 type CompetitionRow = Database['public']['Tables']['competitions']['Row'];
 
 interface RouteParams {
-  params: { id: string; eventId: string };
+  params: Promise<{ id: string; eventId: string }>;
 }
 
 interface RankingEntry {
@@ -17,11 +18,13 @@ interface RankingEntry {
 }
 
 export async function POST(request: Request, { params }: RouteParams) {
+  const { id, eventId } = await params;
   const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
 
-  const { data: compData, error: compError } = await getCompetition(client, params.id);
+  const adminClient = createAdminClient();
+  const { data: compData, error: compError } = await getCompetition(adminClient, id);
   if (compError || !compData) return NextResponse.json({ error: 'Competition not found' }, { status: 404 });
 
   const competition = compData as CompetitionRow;
@@ -42,14 +45,15 @@ export async function POST(request: Request, { params }: RouteParams) {
   // Fetch event config for scoring
   const { data: eventData } = await client
     .from('competition_events')
-    .select('weight_multiplier, best_of, total_attempts')
-    .eq('id', params.eventId)
+    .select('weight_multiplier, best_of, total_attempts, events(name)')
+    .eq('id', eventId)
     .single();
 
   const ev = eventData as {
     weight_multiplier: number;
     best_of: number | null;
     total_attempts: number | null;
+    events: { name: string } | null;
   } | null;
 
   if (!ev) return NextResponse.json({ error: 'Event not found' }, { status: 404 });
@@ -58,7 +62,7 @@ export async function POST(request: Request, { params }: RouteParams) {
   const { data: pointsConfig } = await client
     .from('event_points_config')
     .select('finishing_place, points_value')
-    .eq('competition_id', params.id)
+    .eq('competition_id', id)
     .order('finishing_place', { ascending: true });
 
   const placesPoints = (pointsConfig ?? []) as Array<{
@@ -80,7 +84,7 @@ export async function POST(request: Request, { params }: RouteParams) {
           : calculatePoints(place, weightMultiplier);
       const participationPoints = getParticipationPoints(false);
 
-      const { error } = await confirmResult(client, {
+      const { error } = await confirmResult(adminClient, {
         result_id: resultId,
         finishing_place: place,
         points_awarded: pointsAwarded,
@@ -96,10 +100,31 @@ export async function POST(request: Request, { params }: RouteParams) {
   }
 
   // Move event to confirmed
-  await client
+  await adminClient
     .from('competition_events')
-    .update({ status: 'confirmed' })
-    .eq('id', params.eventId);
+    .update({ status: 'confirmed', confirmed_at: new Date().toISOString() })
+    .eq('id', eventId);
+
+  const { data: members } = await adminClient
+    .from('competition_members')
+    .select('profile_id')
+    .eq('competition_id', id)
+    .eq('status', 'active');
+
+  await createNotifications(
+    adminClient,
+    (members ?? []).map((member) => ({
+      profileId: member.profile_id,
+      type: 'event_results_confirmed',
+      title: 'Results confirmed',
+      body: `${ev.events?.name ?? 'Event'} results have been confirmed.`,
+      data: {
+        competition_id: id,
+        competition_event_id: eventId,
+        href: `/competitions/${id}/events/${eventId}`,
+      },
+    })),
+  );
 
   return NextResponse.json({ data: { confirmed: body.rankings.length } });
 }

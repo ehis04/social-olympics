@@ -8,7 +8,8 @@ export async function uploadAvatar(
   file: File,
 ): Promise<ApiResponse<string>> {
   try {
-    const path = `${profileId}/avatar.jpg`;
+    const extension = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
+    const path = `${profileId}/avatar.${extension}`;
 
     const { error: uploadError } = await client.storage
       .from('avatars')

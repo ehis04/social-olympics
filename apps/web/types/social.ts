@@ -6,6 +6,20 @@ export interface ProfileSnippet {
   avatar_url: string | null;
 }
 
+export interface FeedComment {
+  id: string;
+  profile_id: string;
+  content: string;
+  created_at: string;
+  profiles: { id: string; display_name: string; avatar_url: string | null } | null;
+}
+
+export interface FeedReaction {
+  emoji: string;
+  count: number;
+  reactedByMe: boolean;
+}
+
 export interface FeedItem {
   id: string;
   competition_id: string;
@@ -16,6 +30,8 @@ export interface FeedItem {
   created_at: string;
   actor: ProfileSnippet | null;
   subject: ProfileSnippet | null;
+  feed_comments?: FeedComment[];
+  reactions?: FeedReaction[];
 }
 
 export interface ChatMessage {

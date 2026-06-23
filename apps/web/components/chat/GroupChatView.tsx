@@ -27,6 +27,7 @@ export function GroupChatView({ competition }: Props) {
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useGroupChat(competition.id);
   const { mutate: sendMessage, isPending: isSending } = useSendGroupMessage(competition.id);
   const { mutate: deleteMessage } = useDeleteGroupMessage(competition.id);
+  const messages = [...(data?.pages.flatMap((p) => p.data) ?? [])].reverse();
 
   const isHost = user?.id === competition.host_id || user?.id === competition.cohost_id;
 
@@ -41,9 +42,7 @@ export function GroupChatView({ competition }: Props) {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [data?.pages.length]);
-
-  const messages = [...(data?.pages.flatMap((p) => p.data) ?? [])].reverse();
+  }, [messages.length]);
 
   function handleSend(content: string) {
     sendMessage(content, {

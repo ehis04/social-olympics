@@ -1,3 +1,13 @@
+const isDevelopment = process.env.NODE_ENV !== 'production';
+
+const supabaseImageSources = isDevelopment
+  ? "https://*.supabase.co http://127.0.0.1:54321 http://localhost:54321"
+  : 'https://*.supabase.co';
+
+const supabaseConnectSources = isDevelopment
+  ? "https://*.supabase.co wss://*.supabase.co http://127.0.0.1:54321 ws://127.0.0.1:54321 http://localhost:54321 ws://localhost:54321"
+  : 'https://*.supabase.co wss://*.supabase.co';
+
 /** @type {import('next').NextConfig} */
 const config = {
   transpilePackages: [
@@ -9,12 +19,14 @@ const config = {
     '@repo/supabase',
   ],
   images: {
+    dangerouslyAllowLocalIP: isDevelopment,
     remotePatterns: [
       { protocol: 'https', hostname: '*.supabase.co' },
       { protocol: 'http', hostname: 'localhost' },
+      { protocol: 'http', hostname: '127.0.0.1' },
     ],
   },
-  experimental: { typedRoutes: true },
+  typedRoutes: true,
   async headers() {
     return [
       {
@@ -34,9 +46,9 @@ const config = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: https://*.supabase.co",
+              `img-src 'self' data: blob: ${supabaseImageSources}`,
               "font-src 'self'",
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.upstash.io",
+              `connect-src 'self' ${supabaseConnectSources} https://*.upstash.io`,
               "frame-ancestors 'none'",
             ].join('; '),
           },

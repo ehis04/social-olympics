@@ -11,7 +11,7 @@ export async function getProfile(
       .from('profiles')
       .select('*, career_stats(*)')
       .eq('id', profileId)
-      .single();
+      .maybeSingle();
 
     if (error) return { data: null, error: { code: error.code, message: error.message } };
     return { data, error: null };

@@ -1,7 +1,8 @@
 // GET/POST/DELETE /api/messages — DM conversations and sending
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerClient } from '@/lib/supabase/server';
-import { getConversations, getDirectMessages, sendMessage, deleteMessage } from '@repo/supabase';
+import { createAdminClient, getConversations, getDirectMessages, sendMessage, deleteMessage } from '@repo/supabase';
+import { createNotification } from '@/lib/notifications/create-notification';
 
 export async function GET(req: NextRequest) {
   const client = await getServerClient();
@@ -43,6 +44,21 @@ export async function POST(req: NextRequest) {
     content: content.trim(),
   });
   if (error) return NextResponse.json({ error: 'Failed to send message' }, { status: 500 });
+
+  const adminClient = createAdminClient();
+  const { data: sender } = await adminClient
+    .from('profiles')
+    .select('display_name')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  await createNotification(adminClient, {
+    profileId: recipientId,
+    type: 'direct_message',
+    title: `New message from ${sender?.display_name ?? 'a competitor'}`,
+    body: content.trim().slice(0, 160),
+    data: { sender_profile_id: user.id, href: `/messages/${user.id}` },
+  });
 
   return NextResponse.json({ data: { success: true } }, { status: 201 });
 }

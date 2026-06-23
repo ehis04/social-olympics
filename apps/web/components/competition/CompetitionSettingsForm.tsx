@@ -233,7 +233,7 @@ export default function CompetitionSettingsForm({ competition, members, competit
           </div>
           <div>
             <label className="mb-1 block text-sm font-semibold text-grey-700">
-              Suggested contribution per player (£)
+              Suggested contribution per player (€)
             </label>
             <input
               type="number"

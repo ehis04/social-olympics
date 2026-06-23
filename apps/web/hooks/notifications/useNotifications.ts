@@ -17,9 +17,14 @@ export function useNotifications() {
     queryKey: ['notifications'],
     queryFn: fetchNotifications,
     enabled: !!session,
-    staleTime: 30_000,
-    refetchInterval: 60_000,
+    staleTime: 10_000,
+    refetchInterval: 15_000,
   });
+}
+
+export function useUnreadNotificationCount() {
+  const { data = [] } = useNotifications();
+  return data.filter((notification) => !notification.read_at).length;
 }
 
 export function useMarkNotificationsRead() {

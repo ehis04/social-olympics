@@ -4,7 +4,7 @@ import { getServerClient } from '@/lib/supabase/server';
 import { addFeedComment } from '@repo/supabase';
 
 interface Params {
-  params: { feedItemId: string };
+  params: Promise<{ feedItemId: string }>;
 }
 
 interface RequestBody {
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     return NextResponse.json({ data: null, error: { code: 'BAD_REQUEST', message: 'content must be 500 characters or fewer' } }, { status: 400 });
   }
 
-  const { data, error } = await addFeedComment(client, params.feedItemId, content);
+  const { data, error } = await addFeedComment(client, (await params).feedItemId, content, user.id);
 
   if (error) return NextResponse.json({ data: null, error }, { status: 500 });
   return NextResponse.json({ data, error: null }, { status: 201 });

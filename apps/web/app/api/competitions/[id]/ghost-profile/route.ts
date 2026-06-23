@@ -8,7 +8,7 @@ import type { Database } from '@repo/types';
 type CompetitionRow = Database['public']['Tables']['competitions']['Row'];
 
 interface Params {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export async function POST(req: NextRequest, { params }: Params) {
@@ -18,7 +18,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   } = await client.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
 
-  const { data: compData } = await getCompetition(client, params.id);
+  const { data: compData } = await getCompetition(client, (await params).id);
   if (!compData) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   const competition = compData as CompetitionRow;
 
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   const { data, error } = await createGhostProfile(
     adminClient,
     body.display_name.trim(),
-    params.id,
+    (await params).id,
   );
 
   if (error || !data) {

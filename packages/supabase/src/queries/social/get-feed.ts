@@ -12,7 +12,7 @@ export async function getFeed(
 
     let query = client
       .from('activity_feed')
-      .select('*, actor:profiles!activity_feed_actor_profile_id_fkey(id, display_name, avatar_url), subject:profiles!activity_feed_subject_profile_id_fkey(id, display_name, avatar_url)')
+      .select('*, actor:profiles!activity_feed_actor_profile_id_fkey(id, display_name, avatar_url), subject:profiles!activity_feed_subject_profile_id_fkey(id, display_name, avatar_url), feed_comments(id, profile_id, content, created_at, profiles(id, display_name, avatar_url))')
       .eq('competition_id', competitionId)
       .order('created_at', { ascending: false })
       .limit(limit + 1);

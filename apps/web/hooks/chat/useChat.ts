@@ -29,6 +29,7 @@ export function useGroupChat(competitionId: string | undefined) {
     getNextPageParam: (lastPage) => lastPage.hasMore ? lastPage.nextCursor : undefined,
     enabled: !!session && !!competitionId,
     staleTime: 0,
+    refetchInterval: 3_000,
   });
 }
 
@@ -88,6 +89,7 @@ export function useDirectMessages(partnerId: string | undefined) {
     getNextPageParam: (lastPage) => lastPage.hasMore ? lastPage.nextCursor : undefined,
     enabled: !!session && !!partnerId,
     staleTime: 0,
+    refetchInterval: 3_000,
   });
 }
 
@@ -106,6 +108,24 @@ export function useSendDM(partnerId: string) {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['dm', partnerId] });
       void queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    },
+  });
+}
+
+export function useDeleteDM(partnerId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (messageId: string) => {
+      const res = await fetch('/api/messages', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messageId }),
+      });
+      if (!res.ok) throw new Error('Failed to delete message');
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['dm', partnerId] });
     },
   });
 }
@@ -130,6 +150,7 @@ export function useConversations() {
     initialPageParam: undefined as undefined,
     getNextPageParam: () => undefined,
     enabled: !!session,
-    staleTime: 30_000,
+    staleTime: 5_000,
+    refetchInterval: 10_000,
   });
 }

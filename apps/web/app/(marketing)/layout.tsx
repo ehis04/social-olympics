@@ -6,7 +6,13 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
     <div className="flex min-h-screen flex-col">
       <header className="flex h-16 items-center justify-between border-b border-grey-200 bg-white px-8">
         <Link href="/">
-          <Image src="/images/logo.svg" alt="Social Olympics" width={160} height={36} />
+          <Image
+            src="/images/logo.svg"
+            alt="Social Olympics"
+            width={160}
+            height={36}
+            style={{ height: 'auto' }}
+          />
         </Link>
         <div className="flex items-center gap-4">
           <Link href="/login" className="text-sm font-semibold text-grey-600 hover:text-primary">

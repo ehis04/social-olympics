@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerClient } from '@/lib/supabase/server';
 
 interface Params {
-  params: { id: string; eventId: string };
+  params: Promise<{ id: string; eventId: string }>;
 }
 
 interface RequestBody {
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     .from('team_members')
     .select('id, profile_id, teams!inner(competition_event_id)')
     .eq('profile_id', user.id)
-    .eq('teams.competition_event_id', params.eventId)
+    .eq('teams.competition_event_id', (await params).eventId)
     .single();
 
   if (tmError || !teamMemberData) {

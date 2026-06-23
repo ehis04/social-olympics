@@ -52,7 +52,12 @@ export function FeedView({ competition }: Props) {
   return (
     <div className="space-y-3">
       {items.map((item) => (
-        <FeedItemCard key={item.id} item={item} />
+        <FeedItemCard
+          key={item.id}
+          item={item}
+          comments={item.feed_comments ?? []}
+          reactions={item.reactions ?? []}
+        />
       ))}
 
       {hasNextPage && (

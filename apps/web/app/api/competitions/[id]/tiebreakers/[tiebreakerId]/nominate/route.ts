@@ -4,7 +4,7 @@ import { getServerClient } from '@/lib/supabase/server';
 import { submitTiebreakerNomination } from '@repo/supabase';
 
 interface Params {
-  params: { id: string; tiebreakerId: string };
+  params: Promise<{ id: string; tiebreakerId: string }>;
 }
 
 interface RequestBody {
@@ -33,8 +33,8 @@ export async function POST(request: NextRequest, { params }: Params) {
   const { data: tbData, error: tbError } = await client
     .from('tiebreakers')
     .select('id, profile_id_a, profile_id_b, status')
-    .eq('id', params.tiebreakerId)
-    .eq('competition_id', params.id)
+    .eq('id', (await params).tiebreakerId)
+    .eq('competition_id', (await params).id)
     .single();
 
   if (tbError || !tbData) return NextResponse.json({ data: null, error: { code: 'NOT_FOUND', message: 'Tiebreaker not found' } }, { status: 404 });
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest, { params }: Params) {
   }
 
   const { data, error } = await submitTiebreakerNomination(client, {
-    tiebreaker_id: params.tiebreakerId,
+    tiebreaker_id: (await params).tiebreakerId,
     nominating_profile_id: user.id,
     nominated_event_id,
     submitted_at: new Date().toISOString(),

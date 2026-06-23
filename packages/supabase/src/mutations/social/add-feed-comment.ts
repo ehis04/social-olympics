@@ -6,11 +6,12 @@ export async function addFeedComment(
   client: SupabaseClient,
   feedItemId: string,
   content: string,
+  profileId: string,
 ): Promise<ApiResponse<unknown>> {
   try {
     const { data, error } = await client
       .from('feed_comments')
-      .insert({ feed_item_id: feedItemId, content })
+      .insert({ feed_item_id: feedItemId, content, profile_id: profileId })
       .select()
       .single();
 

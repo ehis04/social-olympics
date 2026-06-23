@@ -9,7 +9,7 @@ export async function getCompetitionMembers(
   try {
     const { data, error } = await client
       .from('competition_members')
-      .select('*, profiles(id, display_name, avatar_url, country_code)')
+      .select('*, profile:profiles(id, display_name, avatar_url, country_code, is_ghost)')
       .eq('competition_id', competitionId)
       .order('total_points', { ascending: false })
       .order('gold_count', { ascending: false });
