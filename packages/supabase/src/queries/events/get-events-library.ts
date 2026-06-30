@@ -21,9 +21,10 @@ export async function getEventsLibrary(
         .eq('slug', categorySlug)
         .single();
 
-      if (category) {
-        query = query.eq('category_id', (category as { id: string }).id);
+      if (!category) {
+        return { data: [], error: null };
       }
+      query = query.eq('category_id', (category as { id: string }).id);
     }
 
     const { data, error } = await query;

@@ -1,17 +1,4 @@
 
-> mobile@0.0.1 lint /home/eo4/projects/social_olympics/social-olympics/apps/mobile
+> mobile@1.0.0 lint /home/eo4/projects/social_olympics/social-olympics/apps/mobile
 > eslint . --ext .ts,.tsx --no-error-on-unmatched-pattern
 
-=============
-
-WARNING: You are currently running a version of TypeScript which is not officially supported by @typescript-eslint/typescript-estree.
-
-You may find that it works just fine, or you may not.
-
-SUPPORTED TYPESCRIPT VERSIONS: >=4.7.4 <5.6.0
-
-YOUR TYPESCRIPT VERSION: 5.9.3
-
-Please only submit bug reports when using the officially supported version.
-
-=============

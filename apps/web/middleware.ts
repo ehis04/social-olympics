@@ -34,7 +34,7 @@ function rateLimitResponse(reset: number): NextResponse {
   const retryAfter = Math.max(1, Math.ceil((reset - Date.now()) / 1000));
 
   return NextResponse.json(
-    { data: null, error: { code: 'RATE_LIMITED', message: 'Too many requests — please slow down.' } },
+    { data: null, error: { code: 'RATE_LIMITED', message: 'Too many requests: please slow down.' } },
     {
       status: 429,
       headers: {
@@ -63,6 +63,7 @@ export async function middleware(request: NextRequest) {
   const isPublicRoute =
     pathname.startsWith('/about') ||
     pathname.startsWith('/terms') ||
+    pathname.startsWith('/reset-password') ||
     pathname.startsWith('/api/auth/callback') ||
     pathname === '/';
 

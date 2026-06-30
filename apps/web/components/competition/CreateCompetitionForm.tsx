@@ -70,8 +70,7 @@ export default function CreateCompetitionForm({ events, currentUserId }: Props) 
   const [ghostNameInput, setGhostNameInput] = useState('');
   const [ghostCounter, setGhostCounter] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [following, setFollowing] = useState<FollowProfile[]>([]);
-  const [followsLoading, setFollowsLoading] = useState(false);
+  const [following, setFollowing] = useState<FollowProfile[] | null>(null);
 
   const [form, setForm] = useState<FormState>({
     name: '',
@@ -95,18 +94,25 @@ export default function CreateCompetitionForm({ events, currentUserId }: Props) 
     setErrors((prev) => ({ ...prev, [key]: '' }));
   }
 
+  const followsLoading = step === 4 && following === null;
+
   useEffect(() => {
     if (step !== 4) return;
     const controller = new AbortController();
-    setFollowsLoading(true);
-    fetch(`/api/users/${currentUserId}/follows`, { signal: controller.signal })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((json) => {
-        if (json) setFollowing((json.data?.following ?? []) as FollowProfile[]);
-      })
-      .catch(() => null)
-      .finally(() => setFollowsLoading(false));
-    return () => controller.abort();
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/users/${currentUserId}/follows`, { signal: controller.signal });
+        const json = res.ok ? await res.json() : null;
+        if (!cancelled) setFollowing((json?.data?.following ?? []) as FollowProfile[]);
+      } catch {
+        if (!cancelled) setFollowing([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
   }, [step, currentUserId]);
 
   const eventsByCategory = events.reduce<Record<string, EventWithCategory[]>>((acc, event) => {
@@ -617,13 +623,13 @@ export default function CreateCompetitionForm({ events, currentUserId }: Props) 
               </h3>
               {followsLoading ? (
                 <p className="text-sm text-grey-400">Loading…</p>
-              ) : following.length === 0 ? (
+              ) : (following ?? []).length === 0 ? (
                 <p className="rounded-lg border border-dashed border-grey-200 p-4 text-center text-sm text-grey-400">
                   You&apos;re not following anyone yet.
                 </p>
               ) : (
                 <div className="max-h-48 space-y-1.5 overflow-y-auto rounded-lg border border-grey-200 p-2">
-                  {following.map((profile) => {
+                  {(following ?? []).map((profile) => {
                     const alreadyAdded = addedFollowIds.has(profile.id);
                     return (
                       <div key={profile.id} className="flex items-center gap-2.5 rounded-md px-2 py-1.5">
@@ -691,7 +697,7 @@ export default function CreateCompetitionForm({ events, currentUserId }: Props) 
           <div className="space-y-5">
             {form.members.length === 0 ? (
               <div className="rounded-lg border border-dashed border-grey-200 p-8 text-center">
-                <p className="text-sm text-grey-500">No members added yet — skip this step or go back to add members.</p>
+                <p className="text-sm text-grey-500">No members added yet - skip this step or go back to add members.</p>
               </div>
             ) : (
               <>

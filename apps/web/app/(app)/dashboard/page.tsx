@@ -8,7 +8,7 @@ import EmptyState from '@/components/ui/EmptyState';
 import type { Database } from '@repo/types';
 import { createAdminClient, getUserCompetitions } from '@repo/supabase';
 
-export const metadata = { title: 'Dashboard — Social Olympics' };
+export const metadata = { title: 'Dashboard: Social Olympics' };
 
 type CompetitionSummary = Database['public']['Tables']['competitions']['Row'];
 

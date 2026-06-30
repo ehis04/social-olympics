@@ -24,7 +24,7 @@ export function CompleteCompetitionButton({ competitionId }: Props) {
         toast.error(json.error ?? 'Failed to complete competition');
         return;
       }
-      toast.success('Competition completed — final ranks assigned');
+      toast.success('Competition completed: final ranks assigned');
       router.push(ROUTES.COMPETITION_LEADERBOARD(competitionId));
       router.refresh();
     } catch {

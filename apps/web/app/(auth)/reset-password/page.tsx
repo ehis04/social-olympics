@@ -1,6 +1,6 @@
 import { ResetPasswordForm } from '@/components/auth/ResetPasswordForm';
 
-export const metadata = { title: 'Choose a new password — Social Olympics' };
+export const metadata = { title: 'Choose a new password: Social Olympics' };
 
 export default function ResetPasswordPage() {
   return (

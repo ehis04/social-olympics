@@ -1,0 +1,40 @@
+# V2 IDEAS — Social Olympics
+# Reviewed: Phase 10
+
+## HIGH PRIORITY (strong user demand likely)
+
+- Email invitation flow (currently invite code / link / QR only)
+- Automated voting window close scheduling (currently a manual host action)
+- Automated dispute window expiry handler (currently relies on host awareness of the 24h window)
+- Confetti animation on podium reveal (deferred in Phase 9)
+- Share podium result as image card (OG image generation)
+- Country leaderboard (aggregate points by country_code across competitions)
+
+## MEDIUM PRIORITY (valuable additions)
+
+- Competition templates (reuse an event list and weight configuration across competitions)
+- Real-time typing indicators in group chat
+- Notification badge count in web navbar
+- Public profiles with follow/friend system (follow infrastructure exists; discovery/feed surfacing does not)
+- Mobile Detox E2E test suite (deferred due to build complexity)
+- Android tablet support (app.json supportsTablet: false currently)
+- Deeplink handling from push notification when app is fully closed (cold start)
+
+## LOW PRIORITY (nice to have)
+
+- Feed comment and message reaction analytics
+- Competition brackets and knockout format
+- Live stream integration
+- Recurring competition templates beyond simple "new season" copy
+
+## TECHNICAL DEBT
+
+- Typed @repo/supabase query return types — remove `ApiResponse<unknown>` in favour of properly typed responses
+- Query batching for fewer Supabase round-trips
+- Optimistic realtime updates on the leaderboard (currently waits for the Realtime event)
+- Proper admin role system — replace hardcoded `ADMIN_PROFILE_IDS` env var with Supabase custom claims
+- @repo/ui component stubs — most components still return null; only a handful are fully implemented
+- Ghost profile dual-profile edge case — handle the case where a claimant already has their own account in addition to the ghost profile being claimed
+- Automated E2E on every PR (currently only runs on PRs targeting develop)
+- Performance testing under load
+- App Store / Play Store automated submission via EAS in CI (`eas submit` currently run manually)

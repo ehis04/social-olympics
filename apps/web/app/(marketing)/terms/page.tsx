@@ -1,4 +1,4 @@
-export const metadata = { title: 'Terms & Privacy — Social Olympics' };
+export const metadata = { title: 'Terms & Privacy: Social Olympics' };
 
 export default function TermsPage() {
   return (

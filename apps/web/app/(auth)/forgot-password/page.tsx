@@ -1,6 +1,6 @@
 import ForgotPasswordForm from '@/components/auth/ForgotPasswordForm';
 
-export const metadata = { title: 'Reset password — Social Olympics' };
+export const metadata = { title: 'Reset password: Social Olympics' };
 
 export default function ForgotPasswordPage() {
   return (

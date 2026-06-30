@@ -34,7 +34,7 @@ export function TiebreakerBanner({ tiedEntries, currentUserId, isHost, onInitiat
     <div className="mb-4 flex flex-col gap-2 rounded-lg border border-red-200 bg-red-50 p-4">
       <div className="flex items-start justify-between gap-4">
         <p className="text-sm font-medium text-red-700">
-          🔴 Tie detected — tiebreaker required between {names}
+          Tie detected: tiebreaker required between {names}
         </p>
         <button
           onClick={() => setExpanded((v) => !v)}

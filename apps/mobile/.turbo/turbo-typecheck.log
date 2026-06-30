@@ -1,4 +1,4 @@
 
-> mobile@0.0.1 typecheck /home/eo4/projects/social_olympics/social-olympics/apps/mobile
+> mobile@1.0.0 typecheck /home/eo4/projects/social_olympics/social-olympics/apps/mobile
 > tsc --noEmit
 

@@ -126,7 +126,7 @@ export function TeamAssignmentPanel({
             <div className="flex items-start gap-2 rounded-lg border border-yellow-200 bg-yellow-50 px-3 py-2.5">
               <AlertTriangle size={13} className="mt-0.5 shrink-0 text-yellow-600" />
               <p className="text-xs text-yellow-700">
-                Team strengths could not be perfectly balanced — this was the best possible assignment.
+                Team strengths could not be perfectly balanced: this was the best possible assignment.
               </p>
             </div>
           )}
