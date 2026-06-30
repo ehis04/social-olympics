@@ -64,8 +64,8 @@ export function StrengthVoteWidget({
 
     const outcome = (data as Record<string, unknown> | null)?.outcome as string | undefined;
     if (outcome === 'confirmed') toast.success(`${rating.displayName}'s rating confirmed`);
-    else if (outcome === 'round2_required') toast.info('Rating disputed — round 2 vote required');
-    else if (outcome === 'host_required') toast.info('Rating disputed — host will decide');
+    else if (outcome === 'round2_required') toast.info('Rating disputed: round 2 vote required');
+    else if (outcome === 'host_required') toast.info('Rating disputed: host will decide');
     else toast.success('Vote recorded');
 
     onVoted();

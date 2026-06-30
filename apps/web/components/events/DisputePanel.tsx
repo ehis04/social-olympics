@@ -29,7 +29,7 @@ export function DisputePanel({ resultId, onClose, onSubmitted }: DisputePanelPro
       });
       const json = (await res.json()) as { error?: string };
       if (!res.ok) { toast.error(json.error ?? 'Failed to raise dispute'); return; }
-      toast.success('Dispute raised — host will be notified');
+      toast.success('Dispute raised: host will be notified');
       onSubmitted();
     } catch {
       toast.error('Something went wrong');

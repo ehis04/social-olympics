@@ -117,7 +117,7 @@ function getRankBadgeClass(rank: number | null, isDnf: boolean): string {
 function getRankLabel(rank: number | null, isDnf: boolean): string {
   if (isDnf) return 'DNF';
   if (rank !== null) return String(rank);
-  return '—';
+  return '-';
 }
 
 export function ResultsRecorder({
@@ -319,7 +319,7 @@ export function ResultsRecorder({
 
       {missingCount > 0 && hasAnyValue && (
         <p className="text-sm text-grey-500">
-          {missingCount} participant{missingCount !== 1 ? 's have' : ' has'} no value entered — they will be excluded from results.
+          {missingCount} participant{missingCount !== 1 ? 's have' : ' has'} no value entered: they will be excluded from results.
         </p>
       )}
 
