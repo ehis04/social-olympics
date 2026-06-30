@@ -373,7 +373,7 @@ export default function CreateCompetitionModal() {
                   onChangeText={(v) => update('prize_pot_per_person', v)}
                 />
                 <Text className="text-xs text-neutral-400 mt-1">
-                  Informational only — the platform does not process payments.
+                  Informational only: the platform does not process payments.
                 </Text>
               </View>
             </View>

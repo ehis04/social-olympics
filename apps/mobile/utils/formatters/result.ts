@@ -7,7 +7,7 @@ export function formatResultValue(
   value: number | null | undefined,
   resultType: ResultType
 ): string {
-  if (value === null || value === undefined) return '—';
+  if (value === null || value === undefined) return '-';
 
   switch (resultType) {
     case 'time': {
@@ -37,7 +37,7 @@ export function formatResultValue(
 }
 
 export function formatPlace(place: number | null | undefined): string {
-  if (place === null || place === undefined) return '—';
+  if (place === null || place === undefined) return '-';
   const suffixes: Record<number, string> = { 1: 'st', 2: 'nd', 3: 'rd' };
   const suffix = place <= 3 ? (suffixes[place] ?? 'th') : 'th';
   return `${place}${suffix}`;

@@ -9,8 +9,8 @@
 ## Clone the Repository
 
 ```bash
-git clone https://github.com/your-org/personal-olympics.git
-cd personal-olympics
+git clone https://github.com/your-org/social-olympics.git
+cd social-olympics
 ```
 
 ## Install Dependencies

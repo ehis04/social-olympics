@@ -50,7 +50,7 @@ export function PersonalBestsList({ personalBests }: Props) {
               <tbody className="divide-y divide-grey-100">
                 {bests.map((pb) => (
                   <tr key={pb.id} className="flex items-center justify-between px-4 py-2.5 hover:bg-grey-50">
-                    <td className="font-medium text-grey-900">{pb.events?.name ?? '—'}</td>
+                    <td className="font-medium text-grey-900">{pb.events?.name ?? '-'}</td>
                     <td className="font-mono text-grey-700">
                       {formatValue(pb.value, pb.events?.result_type ?? 'score', pb.unit)}
                     </td>

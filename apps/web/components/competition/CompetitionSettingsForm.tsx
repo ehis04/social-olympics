@@ -244,7 +244,7 @@ export default function CompetitionSettingsForm({ competition, members, competit
               className="w-full rounded-lg border border-grey-200 px-3 py-2 text-sm text-grey-800 focus:border-primary focus:outline-none"
             />
             <p className="mt-1 text-xs text-grey-400">
-              Informational only — the platform does not process payments.
+              Informational only: the platform does not process payments.
             </p>
           </div>
           {canEditCohost && (
@@ -273,7 +273,7 @@ export default function CompetitionSettingsForm({ competition, members, competit
         {votingLocked && (
           <p className="mb-4 flex items-center gap-1.5 text-xs text-amber-600">
             <Lock size={12} />
-            Locked — the first event has started
+            Locked: the first event has started
           </p>
         )}
         <div className="space-y-4">

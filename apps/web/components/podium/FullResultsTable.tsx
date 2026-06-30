@@ -57,7 +57,7 @@ export function FullResultsTable({ finishers, currentUserId }: Props) {
                 ].join(' ')}
               >
                 <td className="px-4 py-3 font-mono font-semibold text-grey-700">
-                  {f.final_rank ?? '—'}
+                  {f.final_rank ?? '-'}
                 </td>
                 <td className="px-4 py-3">
                   <Link href={ROUTES.PROFILE(f.profile_id)} className="flex items-center gap-3 hover:underline">

@@ -110,7 +110,7 @@ export default function PodiumScreen() {
   async function handleShare() {
     const lines = finishers.slice(0, 3).map((f) => {
       const name = f.profiles?.display_name ?? 'Unknown';
-      return `${CROWN[f.final_rank ?? 0] ?? f.final_rank}. ${name} — ${formatPoints(f.total_points ?? 0)}`;
+      return `${CROWN[f.final_rank ?? 0] ?? f.final_rank}. ${name}: ${formatPoints(f.total_points ?? 0)}`;
     });
     await Share.share({
       message: `🏆 ${compData?.name ?? 'Competition'} Results\n\n${lines.join('\n')}`,
@@ -201,7 +201,7 @@ export default function PodiumScreen() {
                 }`}
               >
                 <Text className="w-8 text-sm font-bold text-neutral-700">
-                  {f.final_rank ?? '—'}
+                  {f.final_rank ?? '-'}
                 </Text>
                 <Text className="flex-1 text-sm font-medium text-neutral-800">
                   {f.profiles?.display_name ?? 'Unknown'}

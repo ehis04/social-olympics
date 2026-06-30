@@ -71,7 +71,7 @@ function VoteSection({ title, icon, description, competitors, selectedId, submit
         <View className="flex-row items-center gap-2 rounded-lg bg-green-50 border border-green-200 px-3 py-2">
           <CheckCircle size={14} color="#16A34A" />
           <Text className="text-xs font-medium text-green-800 flex-1">
-            Vote submitted — select another to change
+            Vote submitted: select another to change
           </Text>
         </View>
       ) : null}

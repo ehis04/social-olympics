@@ -219,7 +219,7 @@ export default function MembersScreen() {
           onPress={() => setShowInviteModal(true)}
         >
           <Copy size={14} color="#6B7280" />
-          <Text className="text-sm text-neutral-600 font-mono flex-1">{inviteCode || '—'}</Text>
+          <Text className="text-sm text-neutral-600 font-mono flex-1">{inviteCode || '-'}</Text>
           <Text className="text-xs text-primary font-semibold">Copy</Text>
         </TouchableOpacity>
         {canManage && (
@@ -243,7 +243,7 @@ export default function MembersScreen() {
         ListHeaderComponent={
           <View className="px-4 py-2">
             <Text className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">
-              {members.length} {members.length === 1 ? 'member' : 'members'} — long press to manage
+              {members.length} {members.length === 1 ? 'member' : 'members'} - long press to manage
             </Text>
           </View>
         }

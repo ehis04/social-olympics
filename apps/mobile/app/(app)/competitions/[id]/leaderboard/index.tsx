@@ -34,9 +34,10 @@ interface RankedMember extends LeaderboardMember {
 }
 
 interface TeamRow {
-  id: string;
-  name: string;
-  total_points: number | null;
+  team_id: string;
+  team_name: string;
+  total_points: number;
+  rank: number;
 }
 
 type Tab = 'individual' | 'team';
@@ -187,11 +188,11 @@ export default function LeaderboardScreen() {
     return (
       <View className="flex-row items-center px-4 py-3 border-b border-neutral-100 bg-white">
         <View className="w-10 items-center">
-          <Text className="text-sm font-bold text-neutral-700">{index + 1}</Text>
+          <Text className="text-sm font-bold text-neutral-700">{item.rank || index + 1}</Text>
         </View>
-        <Text className="flex-1 text-sm font-medium text-neutral-800">{item.name}</Text>
+        <Text className="flex-1 text-sm font-medium text-neutral-800">{item.team_name}</Text>
         <Text className="text-sm font-semibold text-neutral-900">
-          {formatPoints(item.total_points ?? 0)}
+          {formatPoints(item.total_points)}
         </Text>
       </View>
     );
@@ -243,7 +244,7 @@ export default function LeaderboardScreen() {
       ) : (
         <FlatList
           data={teamData ?? []}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item.team_id}
           renderItem={renderTeam}
           ListEmptyComponent={
             <View className="items-center py-20">
