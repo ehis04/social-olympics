@@ -21,6 +21,11 @@ test.describe('Competition creation', () => {
     await page.getByRole('button', { name: /^next$/i }).click();
     await expect(page.getByText(/enable mvp voting/i)).toBeVisible();
 
+    // Step 3 → 4 (Members): button may say "Skip" if no follows loaded
+    await page.getByRole('button', { name: /^(next|skip)$/i }).click();
+    // Step 4 → 5 (Assign)
+    await page.getByRole('button', { name: /^(next|skip)$/i }).click();
+    // Step 5 → 6 (Review & Invite)
     await page.getByRole('button', { name: /^next$/i }).click();
     await expect(page.getByText(/invite link/i)).toBeVisible();
 

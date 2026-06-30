@@ -140,7 +140,7 @@ export function TeamAssignmentPanel({
             <View className="flex-row items-start gap-2 rounded-lg border border-yellow-200 bg-yellow-50 px-3 py-2.5">
               <AlertTriangle size={13} color="#CA8A04" style={{ marginTop: 1 }} />
               <Text className="text-xs text-yellow-700 flex-1">
-                Could not perfectly balance — this is the best possible assignment.
+                Could not perfectly balance: this is the best possible assignment.
               </Text>
             </View>
           )}

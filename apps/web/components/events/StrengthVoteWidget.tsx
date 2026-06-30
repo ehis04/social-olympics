@@ -69,9 +69,9 @@ export function StrengthVoteWidget({
       if (outcome === 'confirmed') {
         toast.success(`${rating.displayName}'s rating confirmed by peers`);
       } else if (outcome === 'round2_required') {
-        toast.info(`Rating disputed — round 2 vote required`);
+        toast.info(`Rating disputed: round 2 vote required`);
       } else if (outcome === 'host_required') {
-        toast.info(`Rating disputed — host will decide`);
+        toast.info(`Rating disputed: host will decide`);
       } else {
         toast.success('Vote recorded');
       }

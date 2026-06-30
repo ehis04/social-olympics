@@ -8,7 +8,7 @@ import { getPublicCompetitions, createAdminClient } from '@repo/supabase';
 import type { CompetitionSearchParams } from '@repo/supabase';
 import type { Database } from '@repo/types';
 
-export const metadata = { title: 'Discover — Social Olympics' };
+export const metadata = { title: 'Discover: Social Olympics' };
 
 type CompetitionRow = Database['public']['Tables']['competitions']['Row'];
 

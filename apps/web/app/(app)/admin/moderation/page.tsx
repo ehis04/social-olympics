@@ -6,7 +6,7 @@ import { ModerationQueue } from '@/components/moderation/ModerationQueue';
 import type { Report } from '@/components/moderation/ModerationQueue';
 import type { Route } from 'next';
 
-export const metadata = { title: 'Moderation Queue — Admin' };
+export const metadata = { title: 'Moderation Queue: Admin' };
 
 const ADMIN_PROFILE_IDS = (process.env.ADMIN_PROFILE_IDS ?? '').split(',').filter(Boolean);
 

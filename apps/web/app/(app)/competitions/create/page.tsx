@@ -4,7 +4,7 @@ import CreateCompetitionForm from '@/components/competition/CreateCompetitionFor
 import { getEventsLibrary } from '@repo/supabase';
 import type { Database } from '@repo/types';
 
-export const metadata = { title: 'Create Competition — Social Olympics' };
+export const metadata = { title: 'Create Competition: Social Olympics' };
 
 type EventRow = Database['public']['Tables']['events']['Row'];
 type EventWithCategory = EventRow & {

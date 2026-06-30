@@ -71,21 +71,21 @@ function getStatusBanner(status: string) {
       return (
         <div className="flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm font-medium text-green-800">
           <span className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
-          This event is live — results are being collected
+          This event is live: results are being collected
         </div>
       );
     case 'results_pending':
       return (
         <div className="flex items-center gap-2 rounded-lg bg-yellow-50 border border-yellow-200 px-4 py-3 text-sm font-medium text-yellow-800">
           <AlertTriangle className="h-4 w-4 shrink-0" />
-          Results submitted — awaiting host confirmation
+          Results submitted: awaiting host confirmation
         </div>
       );
     case 'disputed':
       return (
         <div className="flex items-center gap-2 rounded-lg bg-orange-50 border border-orange-200 px-4 py-3 text-sm font-medium text-orange-800">
           <AlertTriangle className="h-4 w-4 shrink-0" />
-          A result is under dispute — host is reviewing
+          A result is under dispute: host is reviewing
         </div>
       );
     case 'confirmed':
@@ -396,7 +396,7 @@ export function EventDetail({
                     {place != null ? (
                       <span className="text-sm font-bold text-grey-700">{getPlaceSuffix(place)}</span>
                     ) : (
-                      <span className="text-xs text-grey-400">—</span>
+                      <span className="text-xs text-grey-400">-</span>
                     )}
                   </div>
                   {avatarUrl ? (

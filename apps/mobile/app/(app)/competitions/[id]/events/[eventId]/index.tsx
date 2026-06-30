@@ -291,7 +291,7 @@ export default function EventDetailScreen() {
           <View className="flex-row items-center gap-2 mx-4 mb-3 rounded-lg border border-green-200 bg-green-50 px-4 py-3">
             <View className="w-2 h-2 rounded-full bg-green-500" />
             <Text className="text-sm font-medium text-green-800">
-              Live — results are being collected
+              Live: results are being collected
             </Text>
           </View>
         )}
@@ -299,7 +299,7 @@ export default function EventDetailScreen() {
           <View className="flex-row items-center gap-2 mx-4 mb-3 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3">
             <AlertTriangle size={14} color="#CA8A04" />
             <Text className="text-sm font-medium text-yellow-800">
-              Results submitted — awaiting host confirmation
+              Results submitted: awaiting host confirmation
             </Text>
           </View>
         )}
@@ -419,7 +419,7 @@ export default function EventDetailScreen() {
                         {getPlaceSuffix(place)}
                       </Text>
                     ) : (
-                      <Text className="text-xs text-neutral-400">—</Text>
+                      <Text className="text-xs text-neutral-400">-</Text>
                     )}
                   </View>
 

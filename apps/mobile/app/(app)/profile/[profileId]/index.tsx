@@ -170,7 +170,7 @@ export default function OtherProfileScreen() {
                     <Text className="text-xs text-neutral-500">{pb.category_name}</Text>
                   </View>
                   <Text className="text-sm font-semibold font-mono text-neutral-700">
-                    {pb.best_value ?? '—'}
+                    {pb.best_value ?? '-'}
                   </Text>
                 </View>
               ))}

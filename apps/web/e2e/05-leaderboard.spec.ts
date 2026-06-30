@@ -33,9 +33,11 @@ test.describe('Leaderboard', () => {
   test('leaderboard shows empty state when no results', async ({ page }) => {
     const competitionId = getCompetitionId();
     await page.goto(`/competitions/${competitionId}/leaderboard`);
-    // Either a table with rows or an empty state message
+    // Wait for the leaderboard section to be visible (heading always renders)
+    await expect(page.getByRole('heading', { name: /leaderboard/i })).toBeVisible();
+    // Either a table (members with 0 points) or empty state message — both are valid
     const hasTable = await page.getByRole('table').isVisible();
-    const hasEmpty = await page.getByText(/no results yet/i).isVisible();
+    const hasEmpty = await page.getByText(/no results yet|check back/i).isVisible();
     expect(hasTable || hasEmpty).toBe(true);
   });
 });

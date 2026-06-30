@@ -1,10 +1,11 @@
-const isDevelopment = process.env.NODE_ENV !== 'production';
+const isLocalSupabase = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? '').includes('127.0.0.1') ||
+  (process.env.NEXT_PUBLIC_SUPABASE_URL ?? '').includes('localhost');
 
-const supabaseImageSources = isDevelopment
+const supabaseImageSources = isLocalSupabase
   ? "https://*.supabase.co http://127.0.0.1:54321 http://localhost:54321"
   : 'https://*.supabase.co';
 
-const supabaseConnectSources = isDevelopment
+const supabaseConnectSources = isLocalSupabase
   ? "https://*.supabase.co wss://*.supabase.co http://127.0.0.1:54321 ws://127.0.0.1:54321 http://localhost:54321 ws://localhost:54321"
   : 'https://*.supabase.co wss://*.supabase.co';
 
@@ -19,7 +20,7 @@ const config = {
     '@repo/supabase',
   ],
   images: {
-    dangerouslyAllowLocalIP: isDevelopment,
+    dangerouslyAllowLocalIP: isLocalSupabase,
     remotePatterns: [
       { protocol: 'https', hostname: '*.supabase.co' },
       { protocol: 'http', hostname: 'localhost' },

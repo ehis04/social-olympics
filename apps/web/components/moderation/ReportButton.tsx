@@ -60,7 +60,7 @@ export function ReportButton({ targetType, targetId, competitionId, label }: Pro
         toast.error(json.error?.message ?? 'Failed to submit report');
         return;
       }
-      toast.success('Report submitted — our team will review it');
+      toast.success('Report submitted: our team will review it');
       handleClose();
     } catch {
       toast.error('Something went wrong');

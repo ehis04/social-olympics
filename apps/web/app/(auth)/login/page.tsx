@@ -3,7 +3,7 @@ import { getServerClient } from '@/lib/supabase/server';
 import LoginForm from '@/components/auth/LoginForm';
 import ROUTES from '@/constants/routes';
 
-export const metadata = { title: 'Sign in — Social Olympics' };
+export const metadata = { title: 'Sign in: Social Olympics' };
 
 export default async function LoginPage() {
   const client = await getServerClient();

@@ -96,7 +96,7 @@ export default function ProfileScreen() {
               </View>
               <View className="flex-1">
                 <Text className="text-xl font-bold text-neutral-900">
-                  {profile?.display_name ?? '—'}
+                  {profile?.display_name ?? '-'}
                   {flag ? ` ${flag}` : ''}
                 </Text>
                 {profile?.city ? (
@@ -152,7 +152,7 @@ export default function ProfileScreen() {
                     <Text className="text-xs text-neutral-500">{pb.category_name}</Text>
                   </View>
                   <Text className="text-sm font-semibold font-mono text-neutral-700">
-                    {pb.best_value ?? '—'}
+                    {pb.best_value ?? '-'}
                   </Text>
                 </View>
               ))}

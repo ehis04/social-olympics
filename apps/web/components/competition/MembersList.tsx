@@ -68,7 +68,7 @@ const ROLE_ICONS: Record<string, React.ReactNode> = {
 };
 
 function placeLabel(place: number | null): string {
-  if (!place) return '—';
+  if (!place) return '-';
   if (place === 1) return '1st';
   if (place === 2) return '2nd';
   if (place === 3) return '3rd';

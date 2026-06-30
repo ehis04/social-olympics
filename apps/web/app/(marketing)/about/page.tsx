@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-export const metadata = { title: 'About — Social Olympics' };
+export const metadata = { title: 'About: Social Olympics' };
 
 export default function AboutPage() {
   return (
@@ -9,7 +9,7 @@ export default function AboutPage() {
       <p className="mb-4 text-sm text-grey-600">
         Social Olympics is a platform that lets any group of people create and compete in their own
         custom Olympic-style competitions. Whether it&apos;s a weekend with friends, a company team
-        day, or an ongoing league — you set the events, we handle the scoring.
+        day, or an ongoing league: you set the events, we handle the scoring.
       </p>
       <p className="mb-4 text-sm text-grey-600">
         Choose from a library of sports including track, swimming, field events, football,

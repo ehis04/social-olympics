@@ -2,11 +2,11 @@
 import { redirect } from 'next/navigation';
 
 interface Props {
-  searchParams: { code?: string };
+  searchParams: Promise<{ code?: string }>;
 }
 
-export default function JoinRedirectPage({ searchParams }: Props) {
-  const code = searchParams.code;
+export default async function JoinRedirectPage({ searchParams }: Props) {
+  const { code } = await searchParams;
   if (code) {
     redirect(`/competitions/join?code=${encodeURIComponent(code)}`);
   }

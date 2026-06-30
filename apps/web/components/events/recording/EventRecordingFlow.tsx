@@ -89,7 +89,7 @@ export function EventRecordingFlow({
         toast.error(json.error ?? 'Failed to stop event');
         return;
       }
-      toast.success('Event stopped — it is now pending again');
+      toast.success('Event stopped: it is now pending again');
       router.push(ROUTES.EVENT_DETAIL(competitionId, eventId));
       router.refresh();
     } catch {

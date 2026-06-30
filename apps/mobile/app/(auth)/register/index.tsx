@@ -106,7 +106,7 @@ export default function RegisterScreen() {
       >
         <View className="mb-10">
           <Text className="text-3xl font-bold text-primary mb-2">Create account</Text>
-          <Text className="text-neutral-500 text-base">Join Social Olympics — must be 16 or older</Text>
+          <Text className="text-neutral-500 text-base">Join Social Olympics: must be 16 or older</Text>
         </View>
 
         <View className="gap-4">

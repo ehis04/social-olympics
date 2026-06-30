@@ -3,7 +3,7 @@ import { getServerClient } from '@/lib/supabase/server';
 import RegisterForm from '@/components/auth/RegisterForm';
 import ROUTES from '@/constants/routes';
 
-export const metadata = { title: 'Create account — Social Olympics' };
+export const metadata = { title: 'Create account: Social Olympics' };
 
 export default async function RegisterPage() {
   const client = await getServerClient();
