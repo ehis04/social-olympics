@@ -1,3 +1,7 @@
+/*
+ * This file defines the result module.
+ */
+
 // Event result types.
 
 import type { ProfileSummary } from '../users/profile';

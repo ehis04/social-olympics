@@ -1,3 +1,7 @@
+/*
+ * This file defines the DiscoverGrid user-interface component.
+ */
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -18,6 +22,7 @@ interface Props {
   initialCity: string;
 }
 
+// Renders the discover grid component.
 export default function DiscoverGrid({
   competitions,
   joinedIds,

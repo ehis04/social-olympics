@@ -1,8 +1,14 @@
+/*
+ * This file defines the HostEventManagementPanel user-interface component.
+ */
+
 'use client';
 
 import { useState } from 'react';
 import { CalendarClock, MapPin, Save, Trophy } from 'lucide-react';
 import { toast } from '@/lib/toast';
+import { getApiErrorMessage, readJson } from '@/lib/api/error-message';
+import { getResultInputConfig, parseResultInput } from '@repo/scoring';
 
 interface MemberOption {
   profileId: string;
@@ -23,21 +29,17 @@ interface Props {
   showResultEntry?: boolean;
 }
 
+// Handles to datetime local.
+// datetime-local inputs work in the viewer's local time, so format without converting to UTC.
 function toDatetimeLocal(value: string | null): string {
   if (!value) return '';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '';
-  return date.toISOString().slice(0, 16);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-function getResultLabel(resultType: string): string {
-  if (resultType === 'time') return 'Time (milliseconds)';
-  if (resultType === 'distance') return 'Distance (centimetres)';
-  if (resultType === 'weight') return 'Weight (kg)';
-  if (resultType === 'inverted_score') return 'Score (lower is better)';
-  return 'Result';
-}
-
+// Renders the host event management panel component.
 export function HostEventManagementPanel({
   competitionId,
   competitionEventId,
@@ -54,7 +56,7 @@ export function HostEventManagementPanel({
   const [scheduledValue, setScheduledValue] = useState(toDatetimeLocal(scheduledAt));
   const [locationValue, setLocationValue] = useState(location ?? '');
   const [detailsValue, setDetailsValue] = useState(details ?? '');
-  const [selectedProfileId, setSelectedProfileId] = useState(members[0]?.profileId ?? '');
+  const [selectedProfileId, setSelectedProfileId] = useState('');
   const [resultValue, setResultValue] = useState('');
   const [resultNotes, setResultNotes] = useState('');
   const [isSavingDetails, setIsSavingDetails] = useState(false);
@@ -62,6 +64,10 @@ export function HostEventManagementPanel({
 
   const canEnterResults = status === 'active' || status === 'results_pending';
   const availableMembers = members.filter((member) => !submittedProfileIds.includes(member.profileId));
+  const effectiveProfileId = availableMembers.some((member) => member.profileId === selectedProfileId)
+    ? selectedProfileId
+    : availableMembers[0]?.profileId ?? '';
+  const resultConfig = getResultInputConfig(resultType);
 
   async function saveDetails() {
     setIsSavingDetails(true);
@@ -75,9 +81,8 @@ export function HostEventManagementPanel({
           details: detailsValue.trim() || null,
         }),
       });
-      const json = (await response.json().catch(() => ({}))) as { error?: string };
       if (!response.ok) {
-        toast.error(json.error ?? 'Failed to update event details');
+        toast.error(getApiErrorMessage(await readJson(response), 'Failed to update event details'));
         return;
       }
       toast.success('Event details updated');
@@ -90,9 +95,9 @@ export function HostEventManagementPanel({
   }
 
   async function saveResult() {
-    const parsed = resultType === 'weight' ? Number.parseFloat(resultValue) : Number.parseInt(resultValue, 10);
-    if (!selectedProfileId || Number.isNaN(parsed) || parsed < 0) {
-      toast.error('Choose a participant and enter a valid result');
+    const parsed = parseResultInput(resultType, resultValue);
+    if (!effectiveProfileId || parsed === null) {
+      toast.error(`Choose a participant and enter a valid ${resultConfig.label.toLowerCase()}`);
       return;
     }
 
@@ -103,14 +108,13 @@ export function HostEventManagementPanel({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           competition_event_id: competitionEventId,
-          profile_id: selectedProfileId,
+          profile_id: effectiveProfileId,
           result_value: parsed,
           ...(resultNotes.trim() ? { notes: resultNotes.trim() } : {}),
         }),
       });
-      const json = (await response.json().catch(() => ({}))) as { error?: string };
       if (!response.ok) {
-        toast.error(json.error ?? 'Failed to save result');
+        toast.error(getApiErrorMessage(await readJson(response), 'Failed to save result'));
         return;
       }
       toast.success('Result saved');
@@ -200,7 +204,8 @@ export function HostEventManagementPanel({
           ) : (
             <div className="grid gap-3 md:grid-cols-[1.2fr_1fr]">
               <select
-                value={selectedProfileId}
+                value={effectiveProfileId}
+                aria-label="Participant"
                 onChange={(event) => setSelectedProfileId(event.target.value)}
                 className="rounded-md border border-grey-200 px-3 py-2 text-sm focus:border-primary focus:outline-none"
               >
@@ -211,12 +216,12 @@ export function HostEventManagementPanel({
                 ))}
               </select>
               <input
-                type="number"
-                min="0"
-                step={resultType === 'weight' ? '0.01' : '1'}
+                type="text"
+                inputMode={resultConfig.inputMode}
+                aria-label={resultConfig.label}
                 value={resultValue}
                 onChange={(event) => setResultValue(event.target.value)}
-                placeholder={getResultLabel(resultType)}
+                placeholder={`${resultConfig.label} (${resultConfig.placeholder})`}
                 className="rounded-md border border-grey-200 px-3 py-2 text-sm focus:border-primary focus:outline-none"
               />
               <input

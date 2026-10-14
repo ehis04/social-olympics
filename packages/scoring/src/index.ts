@@ -1,3 +1,7 @@
+/*
+ * This file defines the index module.
+ */
+
 // Public API for the scoring package.
 export { calculatePoints } from './points/calculate-points';
 export { getParticipationPoints } from './points/participation-points';
@@ -22,7 +26,7 @@ export { calculateTeamStrength } from './team-balance/calculate-team-strength';
 export { checkBalanceTolerance } from './team-balance/check-tolerance';
 export { scaleUnevenTeam } from './team-balance/scale-uneven-team';
 export { getHistoricalRating } from './team-balance/get-historical-rating';
-export { balanceTeams } from './team-balance/balance-teams';
+export { balanceTeams, balanceTeamsByCount } from './team-balance/balance-teams';
 
 export { processBidRound } from './weightlifting/process-bid-round';
 export { assignWeightliftingPlaces } from './weightlifting/assign-places';
@@ -39,3 +43,15 @@ export type { ToleranceResult } from './team-balance/check-tolerance';
 export type { HistoricalResult } from './team-balance/get-historical-rating';
 export type { BidAttempt, BidRoundResult } from './weightlifting/process-bid-round';
 export type { EliminationEvent, WeightliftingPlacement } from './weightlifting/assign-places';
+
+// Result entry conversion (seconds/metres ↔ stored milliseconds/centimetres) and standings ranking
+export {
+  formatResultForInput,
+  formatResultValue,
+  getResultInputConfig,
+  isLowerBetter,
+  parseResultInput,
+} from './results/result-input';
+export type { ResultInputConfig } from './results/result-input';
+export { groupTies, rankStandings } from './leaderboard/standings';
+export type { RankedStanding, StandingInput } from './leaderboard/standings';

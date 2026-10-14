@@ -1,7 +1,12 @@
+/*
+ * This file defines the get weightlifting bids module.
+ */
+
 // Fetches all weightlifting bids for a competition event.
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
 
+// Handles get weightlifting bids.
 export async function getWeightliftingBids(
   client: SupabaseClient,
   competitionEventId: string,

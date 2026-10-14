@@ -1,3 +1,7 @@
+/*
+ * This file defines the weightlifting module.
+ */
+
 // Weightlifting bid format types.
 
 import type { AttemptStatus } from '../database/enums';

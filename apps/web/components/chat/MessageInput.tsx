@@ -1,3 +1,7 @@
+/*
+ * This file defines the MessageInput user-interface component.
+ */
+
 // MessageInput — chat input with Enter-to-send and send button
 'use client';
 
@@ -9,6 +13,7 @@ interface Props {
   placeholder?: string;
 }
 
+// Renders the message input component.
 export function MessageInput({ onSend, isSending, placeholder = 'Send a message…' }: Props) {
   const [value, setValue] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -47,12 +52,12 @@ export function MessageInput({ onSend, isSending, placeholder = 'Send a message�
         onInput={handleInput}
         rows={1}
         placeholder={placeholder}
-        className="flex-1 resize-none rounded-xl border border-grey-200 bg-grey-50 px-3.5 py-2.5 text-sm text-grey-900 placeholder:text-grey-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+        className="flex-1 resize-none rounded-xl border border-grey-200 bg-grey-50 px-3.5 py-2.5 text-sm text-grey-900 placeholder:text-grey-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
       />
       <button
         onClick={handleSend}
         disabled={!value.trim() || isSending}
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-600 text-white transition-colors hover:bg-primary-700 disabled:opacity-40"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-white transition-colors hover:bg-primary-dark disabled:opacity-40"
         title="Send"
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">

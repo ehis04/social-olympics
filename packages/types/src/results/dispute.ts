@@ -1,3 +1,7 @@
+/*
+ * This file defines the dispute module.
+ */
+
 // Result dispute types.
 
 import type { DisputeStatus } from '../database/enums';

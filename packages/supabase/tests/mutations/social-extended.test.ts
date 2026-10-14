@@ -1,3 +1,7 @@
+/*
+ * This file verifies social extended behavior.
+ */
+
 // Integration tests for social mutations: votes, tiebreaker nominations, notifications, feed comments.
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { submitPerformanceVote } from '../../src/mutations/social/submit-performance-vote';

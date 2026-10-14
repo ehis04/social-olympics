@@ -1,7 +1,12 @@
+/*
+ * This file defines the error module.
+ */
+
 'use client';
 
 import { useEffect } from 'react';
 
+// Renders the error component.
 export default function Error({
   error,
   reset,

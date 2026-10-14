@@ -1,7 +1,12 @@
+/*
+ * This file defines the get feed module.
+ */
+
 // Fetches paginated activity feed for a competition.
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { PaginatedResponse, PaginationParams } from '@repo/types';
 
+// Handles get feed.
 export async function getFeed(
   client: SupabaseClient,
   competitionId: string,

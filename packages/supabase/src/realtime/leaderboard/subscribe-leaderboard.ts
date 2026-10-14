@@ -1,6 +1,11 @@
+/*
+ * This file defines the subscribe leaderboard module.
+ */
+
 // Subscribes to competition_members updates for live leaderboard refresh.
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+// Handles subscribe leaderboard.
 export function subscribeLeaderboard(
   client: SupabaseClient,
   competitionId: string,

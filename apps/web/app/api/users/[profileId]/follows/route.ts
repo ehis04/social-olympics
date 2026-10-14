@@ -1,3 +1,7 @@
+/*
+ * This file handles requests for the follows API route.
+ */
+
 // GET /api/users/[profileId]/follows — follower/following lists for a profile
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@repo/supabase';
@@ -19,6 +23,7 @@ interface FollowRelation {
   profile: ProfileSnippet | ProfileSnippet[] | null;
 }
 
+// Handles normalize rows.
 function normalizeRows(rows: FollowRelation[] | null): Array<ProfileSnippet & { followed_at: string }> {
   return (rows ?? []).flatMap((row) => {
     const profile = Array.isArray(row.profile) ? row.profile[0] : row.profile;
@@ -26,10 +31,12 @@ function normalizeRows(rows: FollowRelation[] | null): Array<ProfileSnippet & { 
   });
 }
 
+// Handles untyped.
 function untyped(client: SupabaseClient): SupabaseClient {
   return client;
 }
 
+// Handles get.
 export async function GET(_request: Request, { params }: Params) {
   const client = await getServerClient();
   const {

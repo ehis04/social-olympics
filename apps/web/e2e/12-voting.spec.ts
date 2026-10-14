@@ -1,3 +1,7 @@
+/*
+ * This file verifies 12 voting behavior.
+ */
+
 // Journey 11 — performance voting: MVP and worst performer
 import { test, expect } from '@playwright/test';
 import { AUTH_FILE } from './fixtures/auth-state';

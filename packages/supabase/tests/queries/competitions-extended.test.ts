@@ -1,3 +1,7 @@
+/*
+ * This file verifies competitions extended behavior.
+ */
+
 // Integration tests for extended competition queries against local Supabase.
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { getCompetition } from '../../src/queries/competitions/get-competition';

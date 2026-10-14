@@ -1,3 +1,7 @@
+/*
+ * This file defines the competition module.
+ */
+
 // Competition entity and payload types.
 
 import type { CompetitionStatus } from '../database/enums';

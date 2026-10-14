@@ -1,3 +1,7 @@
+/*
+ * This file renders the events application page.
+ */
+
 // Events tab — fetches competition events and renders the events list.
 import { notFound } from 'next/navigation';
 import { getServerClient } from '@/lib/supabase/server';
@@ -11,6 +15,7 @@ interface EventsPageProps {
   params: Promise<{ id: string }>;
 }
 
+// Renders the events page component.
 export default async function EventsPage({ params }: EventsPageProps) {
   const client = await getServerClient();
   const {

@@ -1,3 +1,7 @@
+/*
+ * This file defines the ClaimProfileButton user-interface component.
+ */
+
 'use client';
 
 // Button that triggers the ghost profile claim API call
@@ -10,6 +14,7 @@ interface Props {
   ghostProfileId: string;
 }
 
+// Renders the claim profile button component.
 export default function ClaimProfileButton({ ghostProfileId }: Props) {
   const router = useRouter();
   const [isClaiming, setIsClaiming] = useState(false);
@@ -24,7 +29,7 @@ export default function ClaimProfileButton({ ghostProfileId }: Props) {
         return;
       }
       toast.success('Profile claimed! Your history has been transferred.');
-      router.replace(ROUTES.COMPETITION_FEED(json.data.competitionId));
+      router.replace(json.data.competitionId ? ROUTES.COMPETITION_FEED(json.data.competitionId) : ROUTES.DASHBOARD);
       router.refresh();
     } catch {
       toast.error('Something went wrong. Please try again.');

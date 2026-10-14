@@ -1,3 +1,7 @@
+/*
+ * This file handles requests for the participants API route.
+ */
+
 import { NextResponse } from 'next/server';
 import { getServerClient } from '@/lib/supabase/server';
 import { createAdminClient, getCompetition } from '@repo/supabase';

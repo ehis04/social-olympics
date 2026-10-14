@@ -1,7 +1,12 @@
+/*
+ * This file defines the mark notifications read module.
+ */
+
 // Marks all or specific notifications as read for a profile.
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
 
+// Handles mark notifications read.
 export async function markNotificationsRead(
   client: SupabaseClient,
   profileId: string,

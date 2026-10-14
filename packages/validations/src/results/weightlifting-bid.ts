@@ -1,3 +1,7 @@
+/*
+ * This file defines the weightlifting bid module.
+ */
+
 // Weightlifting bid schema with kg precision validation.
 
 import { z } from 'zod';

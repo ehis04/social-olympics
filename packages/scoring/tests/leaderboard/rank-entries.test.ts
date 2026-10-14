@@ -1,7 +1,12 @@
+/*
+ * This file verifies rank entries behavior.
+ */
+
 // Unit tests for rankEntries — dense ranking and tie detection.
 import { describe, expect, it } from 'vitest';
 import { rankEntries } from '../../src/leaderboard/rank-entries';
 
+// Handles make entry.
 function makeEntry(profileId: string, totalPoints: number, gold = 0, silver = 0, bronze = 0) {
   return { profileId, totalPoints, gold, silver, bronze };
 }

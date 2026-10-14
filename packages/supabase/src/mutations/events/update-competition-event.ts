@@ -1,7 +1,12 @@
+/*
+ * This file defines the update competition event module.
+ */
+
 // Updates a competition event (weight change triggers score recalculation automatically).
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
 
+// Handles update competition event.
 export async function updateCompetitionEvent(
   client: SupabaseClient,
   id: string,

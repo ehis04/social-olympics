@@ -1,3 +1,7 @@
+/*
+ * This file defines the calculate points module.
+ */
+
 // Calculates weighted points for a given finishing place.
 import {
   CUSTOM_WEIGHT_MAX,
@@ -6,11 +10,13 @@ import {
   POINTS_SCALE,
 } from '@repo/constants';
 
+// Handles get points for place.
 function getPointsForPlace(place: number): number {
   const scaled = POINTS_SCALE[place as keyof typeof POINTS_SCALE];
   return scaled !== undefined ? scaled : PARTICIPATION_POINTS;
 }
 
+// Handles calculate points.
 export function calculatePoints(place: number, weightMultiplier: number): number {
   if (weightMultiplier < CUSTOM_WEIGHT_MIN || weightMultiplier > CUSTOM_WEIGHT_MAX) {
     throw new RangeError(

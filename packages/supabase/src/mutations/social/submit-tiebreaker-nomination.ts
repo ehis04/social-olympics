@@ -1,3 +1,7 @@
+/*
+ * This file defines the submit tiebreaker nomination module.
+ */
+
 // Submits a tiebreaker nomination and reveals both if both players have submitted.
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
@@ -8,6 +12,7 @@ export interface TiebreakerNominationResult {
   nominations?: unknown[];
 }
 
+// Handles submit tiebreaker nomination.
 export async function submitTiebreakerNomination(
   client: SupabaseClient,
   payload: Record<string, unknown>,

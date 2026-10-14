@@ -1,3 +1,7 @@
+/*
+ * This file defines the query client module.
+ */
+
 // TanStack Query singleton — staleTime 30s, retry 1 for mobile network reliability.
 import { QueryClient } from '@tanstack/react-query';
 

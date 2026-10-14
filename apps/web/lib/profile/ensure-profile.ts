@@ -1,6 +1,11 @@
+/*
+ * This file defines the ensure profile module.
+ */
+
 import type { User } from '@supabase/supabase-js';
 import { createAdminClient } from '@repo/supabase';
 
+// Handles ensure profile.
 export async function ensureProfile(user: User) {
   const adminClient = createAdminClient();
   const { data: existing, error: fetchError } = await adminClient

@@ -13,7 +13,10 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.socialolympics.app"
+      "bundleIdentifier": "com.socialolympics.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -22,7 +25,9 @@
       },
       "package": "com.socialolympics.app",
       "permissions": [
-        "android.permission.CAMERA",
+        "android.permission.CAMERA"
+      ],
+      "blockedPermissions": [
         "android.permission.RECORD_AUDIO"
       ]
     },
@@ -42,13 +47,17 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow Social Olympics to use your camera to scan QR codes."
+          "cameraPermission": "Allow Social Olympics to use your camera to scan competition QR codes and take evidence photos.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Social Olympics to access your photos to upload an avatar."
+          "photosPermission": "Allow Social Olympics to access your photos so you can add a profile photo or evidence for a result.",
+          "cameraPermission": "Allow Social Olympics to use your camera to take evidence photos for your results.",
+          "microphonePermission": false
         }
       ],
       "expo-font"

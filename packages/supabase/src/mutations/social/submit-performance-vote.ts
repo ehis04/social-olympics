@@ -1,7 +1,12 @@
+/*
+ * This file defines the submit performance vote module.
+ */
+
 // Submits or updates an MVP/worst-performer vote (upsert allows changing vote).
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
 
+// Handles submit performance vote.
 export async function submitPerformanceVote(
   client: SupabaseClient,
   payload: Record<string, unknown>,

@@ -1,3 +1,7 @@
+/*
+ * This file defines the check tolerance module.
+ */
+
 // Checks whether team strengths are within the allowed balance tolerance.
 import { TEAM_BALANCE_TOLERANCE } from '@repo/constants';
 
@@ -7,6 +11,7 @@ export interface ToleranceResult {
   disclaimer?: string;
 }
 
+// Handles check balance tolerance.
 export function checkBalanceTolerance(teamStrengths: number[]): ToleranceResult {
   if (teamStrengths.length <= 1) {
     return { withinTolerance: true, maxDifferential: 0 };

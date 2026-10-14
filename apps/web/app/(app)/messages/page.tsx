@@ -1,3 +1,7 @@
+/*
+ * This file renders the messages application page.
+ */
+
 // Messages page — DM conversation inbox
 import { redirect } from 'next/navigation';
 import { getServerClient } from '@/lib/supabase/server';
@@ -5,6 +9,7 @@ import { ConversationList } from '@/components/chat/ConversationList';
 import ROUTES from '@/constants/routes';
 import type { Route } from 'next';
 
+// Renders the messages page component.
 export default async function MessagesPage() {
   const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();

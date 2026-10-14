@@ -1,6 +1,11 @@
+/*
+ * This migration updates the database for 00018 functions.
+ */
+
 -- Migration 00018: core database functions
 
 -- Recalculates total_points and medal counts for one member in one competition
+-- Defines the recalculate_member_score database function.
 CREATE OR REPLACE FUNCTION public.recalculate_member_score(
   p_profile_id    uuid,
   p_competition_id uuid
@@ -74,6 +79,7 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Aggregates lifetime stats for a profile from all competitions
+-- Defines the update_career_stats database function.
 CREATE OR REPLACE FUNCTION public.update_career_stats(p_profile_id uuid)
 RETURNS void AS $$
 BEGIN
@@ -124,6 +130,7 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Updates or inserts a personal best if the new result is better
+-- Defines the update_personal_best database function.
 CREATE OR REPLACE FUNCTION public.update_personal_best(
   p_profile_id             uuid,
   p_event_id               uuid,
@@ -172,6 +179,7 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Increments competitions.total_events by 1
+-- Defines the increment_competition_total_events database function.
 CREATE OR REPLACE FUNCTION public.increment_competition_total_events(p_competition_id uuid)
 RETURNS void AS $$
 BEGIN
@@ -182,6 +190,7 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Decrements competitions.total_events by 1, minimum 0
+-- Defines the decrement_competition_total_events database function.
 CREATE OR REPLACE FUNCTION public.decrement_competition_total_events(p_competition_id uuid)
 RETURNS void AS $$
 BEGIN

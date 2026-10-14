@@ -1,7 +1,12 @@
+/*
+ * This file defines the get personal bests module.
+ */
+
 // Fetches all personal bests for a profile with event and category info.
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
 
+// Handles get personal bests.
 export async function getPersonalBests(
   client: SupabaseClient,
   profileId: string,

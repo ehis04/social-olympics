@@ -1,3 +1,7 @@
+/*
+ * This file verifies resolve by margin behavior.
+ */
+
 // Unit tests for resolveByMargin — head-to-head margin comparison.
 import { describe, expect, it } from 'vitest';
 import { resolveByMargin } from '../../src/tiebreakers/resolve-by-margin';
@@ -72,5 +76,17 @@ describe('resolveByMargin', () => {
     const nomA = makeNomination('a', 15, 10, 'score'); // A wins by 5
     const nomB = makeNomination('b', 8, 6, 'score');   // B wins by 2
     expect(resolveByMargin(nomA, nomB)).toBe('a');
+  });
+
+  it('1-1 where each player loses their own nomination: the bigger margin decides', () => {
+    const nomA = makeNomination('a', 4, 10);   // B wins event A by 6
+    const nomB = makeNomination('b', 5, 7);    // A wins event B by 2
+    expect(resolveByMargin(nomA, nomB)).toBe('b');
+  });
+
+  it('drawn events → null (host decides)', () => {
+    const nomA = makeNomination('a', 5, 5);
+    const nomB = makeNomination('b', 7, 7);
+    expect(resolveByMargin(nomA, nomB)).toBeNull();
   });
 });

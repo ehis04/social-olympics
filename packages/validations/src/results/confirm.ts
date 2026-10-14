@@ -1,3 +1,7 @@
+/*
+ * This file defines the confirm module.
+ */
+
 // Result confirmation schema.
 
 import { z } from 'zod';

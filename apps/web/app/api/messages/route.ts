@@ -1,9 +1,15 @@
+/*
+ * This file handles requests for the messages API route.
+ */
+
 // GET/POST/DELETE /api/messages — DM conversations and sending
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerClient } from '@/lib/supabase/server';
 import { createAdminClient, getConversations, getDirectMessages, sendMessage, deleteMessage } from '@repo/supabase';
 import { createNotification } from '@/lib/notifications/create-notification';
+import { getBlockedIds, isBlockedBetween } from '@/lib/social/blocks';
 
+// Handles get.
 export async function GET(req: NextRequest) {
   const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();
@@ -24,17 +30,50 @@ export async function GET(req: NextRequest) {
   const { data, error } = await getConversations(client, user.id);
   if (error) return NextResponse.json({ error: 'Failed to fetch conversations' }, { status: 500 });
 
-  return NextResponse.json({ data });
+  // Conversations with people the caller has blocked are hidden from their inbox.
+  const blocked = await getBlockedIds(client, user.id);
+  const visible = ((data ?? []) as { sender_profile_id: string; recipient_profile_id: string }[]).filter((message) => {
+    const partnerId = message.sender_profile_id === user.id ? message.recipient_profile_id : message.sender_profile_id;
+    return !blocked.has(partnerId);
+  });
+
+  return NextResponse.json({ data: visible });
 }
 
+// Handles post.
 export async function POST(req: NextRequest) {
   const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
 
-  const { recipientId, content } = await req.json() as { recipientId?: string; content?: string };
+  let payload: { recipientId?: string; content?: string };
+  try {
+    payload = await req.json() as { recipientId?: string; content?: string };
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+  }
+  const { recipientId, content } = payload;
   if (!recipientId || !content?.trim()) {
     return NextResponse.json({ error: 'recipientId and content required' }, { status: 400 });
+  }
+  if (recipientId === user.id) {
+    return NextResponse.json({ error: 'You cannot message yourself' }, { status: 400 });
+  }
+  if (content.trim().length > 1000) {
+    return NextResponse.json({ error: 'Messages must be 1000 characters or fewer' }, { status: 400 });
+  }
+  if (await isBlockedBetween(client, user.id, recipientId)) {
+    return NextResponse.json({ error: "You can't message this person." }, { status: 403 });
+  }
+
+  const adminClient = createAdminClient();
+  const { data: recipient } = await adminClient
+    .from('profiles')
+    .select('deleted_at, is_ghost')
+    .eq('id', recipientId)
+    .maybeSingle();
+  if (!recipient || recipient.deleted_at || recipient.is_ghost) {
+    return NextResponse.json({ error: "You can't message this person." }, { status: 403 });
   }
 
   const { error } = await sendMessage(client, {
@@ -45,7 +84,6 @@ export async function POST(req: NextRequest) {
   });
   if (error) return NextResponse.json({ error: 'Failed to send message' }, { status: 500 });
 
-  const adminClient = createAdminClient();
   const { data: sender } = await adminClient
     .from('profiles')
     .select('display_name')
@@ -63,6 +101,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ data: { success: true } }, { status: 201 });
 }
 
+// Handles delete.
 export async function DELETE(req: NextRequest) {
   const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();

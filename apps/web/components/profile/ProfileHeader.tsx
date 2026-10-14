@@ -1,7 +1,13 @@
+/*
+ * This file defines the ProfileHeader user-interface component.
+ */
+
 // ProfileHeader — avatar, name, bio, country, career medal summary
 import Image from 'next/image';
 import Link from 'next/link';
 import ROUTES from '@/constants/routes';
+import { ReportButton } from '@/components/moderation/ReportButton';
+import { formatPoints } from '@/utils/formatters/points';
 import type { ProfileWithStats } from '@/types/profile';
 
 interface Props {
@@ -9,6 +15,7 @@ interface Props {
   isOwnProfile: boolean;
 }
 
+// Handles get flag emoji.
 function getFlagEmoji(code: string | null): string {
   if (!code || code.length !== 2) return '';
   const codePoints = code
@@ -18,6 +25,7 @@ function getFlagEmoji(code: string | null): string {
   return String.fromCodePoint(...codePoints);
 }
 
+// Renders the stat pill component.
 function StatPill({ label, value }: { label: string; value: number | string }) {
   return (
     <div className="flex flex-col items-center rounded-lg bg-grey-50 px-4 py-3 text-center">
@@ -27,6 +35,7 @@ function StatPill({ label, value }: { label: string; value: number | string }) {
   );
 }
 
+// Renders the profile header component.
 export function ProfileHeader({ profile, isOwnProfile }: Props) {
   const stats = profile.career_stats;
   const flag = getFlagEmoji(profile.country_code ?? null);
@@ -54,7 +63,20 @@ export function ProfileHeader({ profile, isOwnProfile }: Props) {
           <div className="flex items-center gap-2">
             <h1 className="truncate text-2xl font-bold text-grey-900">{profile.display_name}</h1>
             {flag && <span className="text-2xl">{flag}</span>}
+            {!isOwnProfile && !profile.deleted_at && (
+              <span className="ml-auto">
+                <ReportButton targetType="profile" targetId={profile.id} label="Report" />
+              </span>
+            )}
           </div>
+
+          {(profile.city || profile.favourite_sport) && (
+            <p className="mt-0.5 text-xs text-grey-500">
+              {[profile.city, profile.favourite_sport ? `Favourite sport: ${profile.favourite_sport}` : null]
+                .filter(Boolean)
+                .join(' · ')}
+            </p>
+          )}
 
           {profile.bio && (
             <p className="mt-1 text-sm text-grey-600 line-clamp-3">{profile.bio}</p>
@@ -73,12 +95,12 @@ export function ProfileHeader({ profile, isOwnProfile }: Props) {
 
       {stats && (
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-          <StatPill label="Competitions" value={stats.competitions_entered} />
-          <StatPill label="Wins" value={stats.competitions_won} />
-          <StatPill label="🥇 Gold" value={stats.gold_medals} />
-          <StatPill label="🥈 Silver" value={stats.silver_medals} />
-          <StatPill label="🥉 Bronze" value={stats.bronze_medals} />
-          <StatPill label="Events" value={stats.events_competed} />
+          <StatPill label="Competitions" value={stats.total_competitions} />
+          <StatPill label="Points" value={formatPoints(Number(stats.total_points ?? 0))} />
+          <StatPill label="🥇 Gold" value={stats.gold_count} />
+          <StatPill label="🥈 Silver" value={stats.silver_count} />
+          <StatPill label="🥉 Bronze" value={stats.bronze_count} />
+          <StatPill label="Events" value={stats.total_events} />
         </div>
       )}
     </div>

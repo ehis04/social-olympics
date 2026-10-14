@@ -1,3 +1,7 @@
+/*
+ * This file defines the index module.
+ */
+
 // Discover — public competitions with debounced search and country filter.
 import { useState } from 'react';
 import {
@@ -10,14 +14,13 @@ import {
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { Search } from 'lucide-react-native';
 import { CompetitionCard } from '@/components/competition/CompetitionCard';
 import { MOBILE_ROUTES } from '@/constants/routes';
 import { apiCall } from '@/lib/api/client';
 import { toast } from '@/lib/toast';
-import { useAuthStore } from '@/stores/auth';
 import type { Database } from '@repo/types';
 
 type CompetitionRow = Database['public']['Tables']['competitions']['Row'];
@@ -32,9 +35,10 @@ const COUNTRY_FILTERS = [
   { label: '🇦🇺 Australia', value: 'AU' },
 ];
 
+// Renders the discover screen component.
 export default function DiscoverScreen() {
   const router = useRouter();
-  const { profile } = useAuthStore();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [country, setCountry] = useState('');
 
@@ -57,15 +61,18 @@ export default function DiscoverScreen() {
   const competitions = data ?? [];
 
   async function handleJoin(competitionId: string) {
-    const { error } = await apiCall(`/api/competitions/${competitionId}/join`, {
-      method: 'POST',
-      body: JSON.stringify({ profile_id: profile?.id }),
-    });
+    const { data: joined, error } = await apiCall<{ alreadyMember?: boolean; role?: string }>(
+      `/api/competitions/${competitionId}/members`,
+      { method: 'POST', body: JSON.stringify({}) },
+    );
     if (error) {
       toast.error(error.message);
       return;
     }
-    toast.success('Joined competition!');
+    if (joined?.alreadyMember) toast.success("You're already in this competition");
+    else if (joined?.role === 'spectator') toast.success('Joined as a spectator: the competition has already started');
+    else toast.success('Joined competition!');
+    void queryClient.invalidateQueries({ queryKey: ['competitions', 'user'] });
     router.push(MOBILE_ROUTES.COMPETITION_FEED(competitionId));
   }
 

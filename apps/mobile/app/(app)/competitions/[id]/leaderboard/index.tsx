@@ -1,3 +1,7 @@
+/*
+ * This file defines the index module.
+ */
+
 // Leaderboard screen — realtime ranked entries with individual/team toggle.
 import { useEffect, useState } from 'react';
 import { View, Text, FlatList, RefreshControl, TouchableOpacity } from 'react-native';
@@ -7,13 +11,16 @@ import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { supabase } from '@/lib/supabase/client';
 import { getLeaderboard, getTeamLeaderboard, subscribeLeaderboard } from '@repo/supabase';
-import { rankEntries } from '@repo/scoring';
+import { rankStandings } from '@repo/scoring';
 import { useAuthStore } from '@/stores/auth';
 import { MOBILE_ROUTES } from '@/constants/routes';
 import { formatPoints } from '@/utils/formatters/points';
+import { apiCall } from '@/lib/api/client';
 
 interface LeaderboardMember {
   profile_id: string;
+  role?: string | null;
+  status?: string | null;
   total_points: number | null;
   gold_count: number | null;
   silver_count: number | null;
@@ -42,12 +49,27 @@ interface TeamRow {
 
 type Tab = 'individual' | 'team';
 
+// Handles get flag emoji.
 function getFlagEmoji(code: string | null): string {
   if (!code || code.length !== 2) return '';
   const pts = code.toUpperCase().split('').map((c) => 127397 + c.charCodeAt(0));
   return String.fromCodePoint(...pts);
 }
 
+// Ranks members the same way as the web leaderboard and final places: points, then medals.
+function rankMembers(members: LeaderboardMember[]): RankedMember[] {
+  return rankStandings(
+    members.map((member) => ({
+      ...member,
+      total_points: Number(member.total_points ?? 0),
+      gold_count: member.gold_count ?? 0,
+      silver_count: member.silver_count ?? 0,
+      bronze_count: member.bronze_count ?? 0,
+    })),
+  );
+}
+
+// Renders the medal tally component.
 function MedalTally({ gold, silver, bronze }: { gold: number; silver: number; bronze: number }) {
   if (gold === 0 && silver === 0 && bronze === 0) return null;
   return (
@@ -59,6 +81,7 @@ function MedalTally({ gold, silver, bronze }: { gold: number; silver: number; br
   );
 }
 
+// Renders the leaderboard screen component.
 export default function LeaderboardScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -70,7 +93,11 @@ export default function LeaderboardScreen() {
     queryKey: ['competition', id, 'leaderboard'],
     queryFn: async () => {
       const { data } = await getLeaderboard(supabase, id);
-      return (data ?? []) as LeaderboardMember[];
+      // Competitors appear on the board; people who left keep their place if they already scored.
+      return ((data ?? []) as LeaderboardMember[]).filter((member) =>
+        member.role === 'competitor' &&
+        (member.status === 'active' || (member.status === 'withdrawn' && (member.events_completed ?? 0) > 0)),
+      );
     },
     enabled: !!id,
   });
@@ -84,23 +111,26 @@ export default function LeaderboardScreen() {
     enabled: !!id && tab === 'team',
   });
 
+  // Tied competitors are prompted to make their sealed tiebreaker nomination.
+  const { data: tiebreakers } = useQuery({
+    queryKey: ['competition', id, 'tiebreakers'],
+    queryFn: async () => {
+      const { data } = await apiCall<{ id: string; profileIdA: string; profileIdB: string; status: string; viewerNominated: boolean }[]>(
+        `/api/competitions/${id}/tiebreakers`,
+      );
+      return data ?? [];
+    },
+    enabled: !!id,
+  });
+  const awaitingNomination = (tiebreakers ?? []).find((tb) =>
+    [tb.profileIdA, tb.profileIdB].includes(profile?.id ?? '') &&
+    (tb.status === 'pending_nomination' || tb.status === 'nominated') &&
+    !tb.viewerNominated,
+  );
+
   useEffect(() => {
     if (!leaderboardData) return;
-    const ranked = rankEntries(
-      leaderboardData.map((m) => ({
-        profileId: m.profile_id,
-        totalPoints: m.total_points ?? 0,
-        gold: m.gold_count ?? 0,
-        silver: m.silver_count ?? 0,
-        bronze: m.bronze_count ?? 0,
-      }))
-    );
-    setEntries(
-      ranked.map((r) => {
-        const member = leaderboardData.find((m) => m.profile_id === r.profileId)!;
-        return { ...member, rank: r.rank, isTied: r.isTied };
-      })
-    );
+    setEntries(rankMembers(leaderboardData));
   }, [leaderboardData]);
 
   useEffect(() => {
@@ -110,19 +140,7 @@ export default function LeaderboardScreen() {
         const merged = prev.map((m) =>
           m.profile_id === u.profile_id ? { ...m, ...u } : m
         );
-        const ranked = rankEntries(
-          merged.map((m) => ({
-            profileId: m.profile_id,
-            totalPoints: m.total_points ?? 0,
-            gold: m.gold_count ?? 0,
-            silver: m.silver_count ?? 0,
-            bronze: m.bronze_count ?? 0,
-          }))
-        );
-        return ranked.map((r) => {
-          const member = merged.find((m) => m.profile_id === r.profileId)!;
-          return { ...member, rank: r.rank, isTied: r.isTied };
-        });
+        return rankMembers(merged);
       });
     });
     return () => unsubscribe();
@@ -217,6 +235,19 @@ export default function LeaderboardScreen() {
           ))}
         </View>
       </View>
+
+      {awaitingNomination && (
+        <TouchableOpacity
+          className="mx-4 mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3"
+          onPress={() => router.push({
+            pathname: MOBILE_ROUTES.MODAL_TIEBREAKER,
+            params: { competitionId: id, tiebreakerId: awaitingNomination.id },
+          })}
+        >
+          <Text className="text-sm font-semibold text-amber-900">You are in a tiebreaker</Text>
+          <Text className="text-xs text-amber-800">Tap to nominate an event you both competed in.</Text>
+        </TouchableOpacity>
+      )}
 
       {tab === 'individual' ? (
         <FlatList

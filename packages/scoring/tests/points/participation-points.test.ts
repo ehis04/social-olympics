@@ -1,3 +1,7 @@
+/*
+ * This file verifies participation points behavior.
+ */
+
 // Unit tests for getParticipationPoints.
 import { describe, expect, it } from 'vitest';
 import { getParticipationPoints } from '../../src/points/participation-points';

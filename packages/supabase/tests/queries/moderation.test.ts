@@ -1,3 +1,7 @@
+/*
+ * This file verifies moderation behavior.
+ */
+
 // Integration tests for moderation queries against local Supabase.
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { getReports } from '../../src/queries/moderation/get-reports';
@@ -81,7 +85,8 @@ describe('getReports', () => {
   });
 
   it('embeds reporter profile info', async () => {
-    const result = await getReports(admin, 'pending');
+    const result = await getReports(admin, 'pending', { limit: 1000 });
+    expect(result.error).toBeNull();
     const reports = (result.data ?? []) as { reporter: { id: string } | null }[];
     const testReport = reports.find((r) => r.reporter?.id === reporterId);
     expect(testReport).toBeDefined();

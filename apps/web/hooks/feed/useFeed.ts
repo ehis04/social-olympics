@@ -1,3 +1,7 @@
+/*
+ * This file provides the useFeed React hook.
+ */
+
 // TanStack Query hooks for competition activity feed
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/auth/useAuth';
@@ -9,6 +13,7 @@ interface FeedPage {
   nextCursor?: string;
 }
 
+// Handles fetch feed page.
 async function fetchFeedPage(competitionId: string, cursor?: string): Promise<FeedPage> {
   const params = new URLSearchParams({ limit: '20' });
   if (cursor) params.set('cursor', cursor);
@@ -17,6 +22,7 @@ async function fetchFeedPage(competitionId: string, cursor?: string): Promise<Fe
   return res.json() as Promise<FeedPage>;
 }
 
+// Provides the use feed hook.
 export function useFeed(competitionId: string | undefined) {
   const { session } = useAuth();
 

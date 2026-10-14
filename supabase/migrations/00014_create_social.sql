@@ -1,3 +1,7 @@
+/*
+ * This migration updates the database for 00014 create social.
+ */
+
 -- Migration 00014: messages, activity_feed, reactions, and feed_comments tables
 
 CREATE TABLE public.messages (

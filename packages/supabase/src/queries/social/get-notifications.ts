@@ -1,7 +1,12 @@
+/*
+ * This file defines the get notifications module.
+ */
+
 // Fetches paginated notifications for a profile, optionally unread only.
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { PaginatedResponse, PaginationParams } from '@repo/types';
 
+// Handles get notifications.
 export async function getNotifications(
   client: SupabaseClient,
   profileId: string,

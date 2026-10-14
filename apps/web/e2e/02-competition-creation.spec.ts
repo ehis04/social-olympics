@@ -1,3 +1,7 @@
+/*
+ * This file verifies 02 competition creation behavior.
+ */
+
 // Journey 2 — host creates a competition
 import { test, expect } from '@playwright/test';
 import { AUTH_FILE } from './fixtures/auth-state';
@@ -6,7 +10,7 @@ import { waitForToast } from './helpers';
 test.describe('Competition creation', () => {
   test.use({ storageState: AUTH_FILE });
 
-  test('creates a competition and lands on feed', async ({ page }) => {
+  test('creates a competition and lands on the members page with its invite link', async ({ page }) => {
     await page.goto('/competitions/create');
     await expect(page.getByRole('heading', { name: /create/i })).toBeVisible();
 
@@ -27,12 +31,13 @@ test.describe('Competition creation', () => {
     await page.getByRole('button', { name: /^(next|skip)$/i }).click();
     // Step 5 → 6 (Review & Invite)
     await page.getByRole('button', { name: /^next$/i }).click();
-    await expect(page.getByText(/invite link/i)).toBeVisible();
+    await expect(page.getByText(/invite link/i).first()).toBeVisible();
 
     await page.getByRole('button', { name: /^create competition$/i }).click();
 
-    // Should land on the feed or dashboard with the new competition
-    await expect(page).toHaveURL(/\/competitions\/[a-z0-9-]+\/feed|\/dashboard/);
+    // The host lands on Members, where the real invite link and code are ready to share
+    await expect(page).toHaveURL(/\/competitions\/[a-z0-9-]+\/members/);
+    await expect(page.getByText(/invite/i).first()).toBeVisible();
   });
 
   test('shows validation error for missing name', async ({ page }) => {

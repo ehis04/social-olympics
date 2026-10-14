@@ -1,6 +1,11 @@
+/*
+ * This file defines the loading module.
+ */
+
 // Competition podium loading skeleton
 import { SkeletonAvatar, SkeletonLine } from '@/components/ui/Skeletons';
 
+// Renders the podium card skeleton component.
 function PodiumCardSkeleton({ height }: { height: string }) {
   return (
     <div className={`flex flex-col items-center justify-end gap-2 rounded-t-lg bg-grey-100 px-6 pb-4 pt-6 ${height}`}>
@@ -11,6 +16,7 @@ function PodiumCardSkeleton({ height }: { height: string }) {
   );
 }
 
+// Renders the podium loading component.
 export default function PodiumLoading() {
   return (
     <div className="space-y-10">

@@ -37,3 +37,10 @@ jobs:
 
       - name: Test
         run: pnpm turbo run test
+
+      # Catches anything that would stop the web app deploying to Cloudflare Workers.
+      - name: Build web app for Cloudflare Workers
+        run: pnpm --filter=./apps/web exec opennextjs-cloudflare build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key

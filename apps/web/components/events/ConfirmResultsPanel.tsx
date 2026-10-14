@@ -1,11 +1,16 @@
+/*
+ * This file defines the ConfirmResultsPanel user-interface component.
+ */
+
 'use client';
 
 // ConfirmResultsPanel — host reviews submitted results, assigns places, and confirms.
 import { useState } from 'react';
 import Image from 'next/image';
-import { X, GripVertical } from 'lucide-react';
+import { X } from 'lucide-react';
 import { toast } from '@/lib/toast';
-import { formatResultValue } from '@/utils/formatters/result';
+import { getApiErrorMessage, readJson } from '@/lib/api/error-message';
+import { formatResultValue } from '@repo/scoring';
 import { getPlaceSuffix } from '@/utils/helpers/results';
 
 interface ConfirmResultsPanelProps {
@@ -22,14 +27,22 @@ interface RankedResult {
   displayName: string;
   avatarUrl: string | null;
   rawValue: number | null;
+  isDnf: boolean;
+  notes: string | null;
+  evidenceUrl: string | null;
   place: number;
 }
 
+// Handles auto rank.
 function autoRank(results: Record<string, unknown>[], resultType: string): RankedResult[] {
   const lowerIsBetter = resultType === 'time' || resultType === 'inverted_score';
   const pending = results.filter((r) => !r.confirmed_at);
 
+  // DNF and missing values always rank last, whatever the result type.
   const sorted = [...pending].sort((a, b) => {
+    const aMissing = !!a.is_dnf || a.result_value_primary == null;
+    const bMissing = !!b.is_dnf || b.result_value_primary == null;
+    if (aMissing !== bMissing) return aMissing ? 1 : -1;
     const av = (a.result_value_primary as number | null) ?? 0;
     const bv = (b.result_value_primary as number | null) ?? 0;
     return lowerIsBetter ? av - bv : bv - av;
@@ -42,11 +55,15 @@ function autoRank(results: Record<string, unknown>[], resultType: string): Ranke
       displayName: (profile?.display_name as string) ?? 'Unknown',
       avatarUrl: (profile?.avatar_url as string | null) ?? null,
       rawValue: (r.result_value_primary as number | null) ?? null,
+      isDnf: !!r.is_dnf,
+      notes: (r.notes as string | null) ?? null,
+      evidenceUrl: (r.evidence_url as string | null) ?? null,
       place: idx + 1,
     };
   });
 }
 
+// Renders the confirm results panel component.
 export function ConfirmResultsPanel({
   competitionEventId,
   competitionId,
@@ -59,7 +76,6 @@ export function ConfirmResultsPanel({
     autoRank(results, resultType),
   );
   const [isConfirming, setIsConfirming] = useState(false);
-  const [dragIdx, setDragIdx] = useState<number | null>(null);
 
   function moveUp(idx: number) {
     if (idx === 0) return;
@@ -86,8 +102,7 @@ export function ConfirmResultsPanel({
           body: JSON.stringify({ rankings: ranked.map((r) => ({ resultId: r.id, place: r.place })) }),
         },
       );
-      const json = (await res.json()) as { error?: string };
-      if (!res.ok) { toast.error(json.error ?? 'Failed to confirm results'); return; }
+      if (!res.ok) { toast.error(getApiErrorMessage(await readJson(res), 'Failed to confirm results')); return; }
       toast.success('Results confirmed');
       onConfirmed();
     } catch {
@@ -108,7 +123,7 @@ export function ConfirmResultsPanel({
 
       <div className="px-5 py-3">
         <p className="text-xs text-grey-500 mb-3">
-          Results are auto-ranked by value. Drag or use arrows to adjust order before confirming.
+          Results are ranked by value. Use the arrows to adjust the order before confirming.
         </p>
 
         <ul className="space-y-2">
@@ -117,7 +132,6 @@ export function ConfirmResultsPanel({
               key={result.id}
               className="flex items-center gap-3 rounded-md border border-grey-100 bg-grey-50 px-3 py-2"
             >
-              <GripVertical className="h-4 w-4 text-grey-300 shrink-0" />
               <span className="w-8 text-xs font-bold text-grey-600">{getPlaceSuffix(result.place)}</span>
               {result.avatarUrl ? (
                 <Image
@@ -132,10 +146,31 @@ export function ConfirmResultsPanel({
                   {result.displayName[0]?.toUpperCase()}
                 </div>
               )}
-              <span className="flex-1 truncate text-sm font-medium text-grey-900">{result.displayName}</span>
-              {result.rawValue != null && (
-                <span className="text-xs text-grey-500">{formatResultValue(result.rawValue, resultType)}</span>
-              )}
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-medium text-grey-900">{result.displayName}</span>
+                {result.notes && (
+                  <span className="block truncate text-xs text-grey-500" title={result.notes}>
+                    “{result.notes}”
+                  </span>
+                )}
+              </span>
+              <span className="flex flex-col items-end text-xs text-grey-500">
+                {result.isDnf ? (
+                  <span className="font-semibold text-red-600">DNF</span>
+                ) : (
+                  result.rawValue != null && formatResultValue(result.rawValue, resultType)
+                )}
+                {result.evidenceUrl && (
+                  <a
+                    href={result.evidenceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    Evidence
+                  </a>
+                )}
+              </span>
               <div className="flex flex-col gap-0.5">
                 <button
                   onClick={() => moveUp(idx)}

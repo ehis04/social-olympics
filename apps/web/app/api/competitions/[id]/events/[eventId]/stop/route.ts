@@ -1,3 +1,7 @@
+/*
+ * This file handles requests for the stop API route.
+ */
+
 import { NextResponse } from 'next/server';
 import { getServerClient } from '@/lib/supabase/server';
 import { createAdminClient, getCompetition } from '@repo/supabase';
@@ -9,6 +13,7 @@ interface RouteParams {
   params: Promise<{ id: string; eventId: string }>;
 }
 
+// Handles post.
 export async function POST(_request: Request, { params }: RouteParams) {
   const { id, eventId } = await params;
   const client = await getServerClient();
@@ -31,8 +36,11 @@ export async function POST(_request: Request, { params }: RouteParams) {
     .single();
 
   if (!eventData) return NextResponse.json({ error: 'Event not found' }, { status: 404 });
-  if (eventData.status !== 'active') {
-    return NextResponse.json({ error: 'Only active events can be stopped' }, { status: 409 });
+  if (!['active', 'results_pending'].includes(eventData.status)) {
+    return NextResponse.json({ error: 'Only live events can be reset' }, { status: 409 });
+  }
+  if (['complete', 'archived'].includes(competition.status)) {
+    return NextResponse.json({ error: 'This competition is finished. Results and events are locked.' }, { status: 409 });
   }
 
   // Delete any unconfirmed results so the event is clean when restarted
@@ -41,6 +49,9 @@ export async function POST(_request: Request, { params }: RouteParams) {
     .delete()
     .eq('competition_event_id', eventId)
     .is('confirmed_at', null);
+
+  // Team splits are rebuilt from a fresh player pool when the event is started again.
+  await adminClient.from('teams').delete().eq('competition_event_id', eventId);
 
   const { error } = await adminClient
     .from('competition_events')

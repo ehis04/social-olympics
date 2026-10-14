@@ -1,3 +1,7 @@
+/*
+ * This migration updates the database for 00004 create event library.
+ */
+
 -- Migration 00004: event_categories and events tables
 
 CREATE TABLE public.event_categories (

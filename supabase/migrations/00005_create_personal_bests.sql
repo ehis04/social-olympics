@@ -1,3 +1,7 @@
+/*
+ * This migration updates the database for 00005 create personal bests.
+ */
+
 -- Migration 00005: personal_bests table (FK to competition_events added in 00008)
 
 CREATE TABLE public.personal_bests (

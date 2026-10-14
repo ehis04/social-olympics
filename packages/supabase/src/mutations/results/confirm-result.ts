@@ -1,3 +1,7 @@
+/*
+ * This file defines the confirm result module.
+ */
+
 // Confirms a result (triggers score recalculation, personal best update, feed insert).
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
@@ -7,8 +11,10 @@ export interface ConfirmResultPayload {
   finishing_place: number | null;
   points_awarded: number;
   participation_points: number;
+  confirmed_by?: string;
 }
 
+// Handles confirm result.
 export async function confirmResult(
   client: SupabaseClient,
   payload: ConfirmResultPayload,
@@ -21,6 +27,7 @@ export async function confirmResult(
         finishing_place: payload.finishing_place,
         points_awarded: payload.points_awarded,
         participation_points: payload.participation_points,
+        ...(payload.confirmed_by ? { confirmed_by: payload.confirmed_by } : {}),
       })
       .eq('id', payload.result_id)
       .select()

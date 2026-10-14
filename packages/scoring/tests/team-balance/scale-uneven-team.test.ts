@@ -1,3 +1,7 @@
+/*
+ * This file verifies scale uneven team behavior.
+ */
+
 // Unit tests for scaleUnevenTeam.
 import { describe, expect, it } from 'vitest';
 import { scaleUnevenTeam } from '../../src/team-balance/scale-uneven-team';

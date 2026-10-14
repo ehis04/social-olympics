@@ -1,3 +1,7 @@
+/*
+ * This file defines the resolve by medals module.
+ */
+
 // Resolves a tiebreaker by comparing medal counts in gold → silver → bronze order.
 export interface TiebreakerCandidate {
   profileId: string;
@@ -6,6 +10,7 @@ export interface TiebreakerCandidate {
   bronze: number;
 }
 
+// Handles resolve by medals.
 export function resolveByMedals(
   a: TiebreakerCandidate,
   b: TiebreakerCandidate,

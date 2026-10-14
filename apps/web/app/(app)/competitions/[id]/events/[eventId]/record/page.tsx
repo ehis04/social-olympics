@@ -1,8 +1,13 @@
+/*
+ * This file renders the record application page.
+ */
+
 import { redirect } from 'next/navigation';
 import { getServerClient } from '@/lib/supabase/server';
 import { getCompetitionEvent, getCompetition, getCompetitionMembers, createAdminClient } from '@repo/supabase';
 import ROUTES from '@/constants/routes';
 import { EventRecordingFlow } from '@/components/events/recording/EventRecordingFlow';
+import { formatResultForInput } from '@repo/scoring';
 import type { Database } from '@repo/types';
 
 type CompetitionRow = Database['public']['Tables']['competitions']['Row'];
@@ -11,6 +16,7 @@ interface EventRecordPageProps {
   params: Promise<{ id: string; eventId: string }>;
 }
 
+// Renders the event record page component.
 export default async function EventRecordPage({ params }: EventRecordPageProps) {
   const { id, eventId } = await params;
   const client = await getServerClient();
@@ -45,13 +51,13 @@ export default async function EventRecordPage({ params }: EventRecordPageProps) 
   }
 
   const event = eventData as Record<string, unknown>;
-  if ((event.status as string) !== 'active') {
+  if (!['active', 'results_pending'].includes(event.status as string)) {
     redirect(ROUTES.EVENT_DETAIL(id, eventId));
   }
 
   const rawMembers = (membersData ?? []) as Record<string, unknown>[];
   const members = rawMembers
-    .filter((m) => m.status === 'active')
+    .filter((m) => m.status === 'active' && m.role !== 'spectator')
     .map((m) => {
       const profile = (m.profile ?? m.profiles) as Record<string, unknown> | null;
       return {
@@ -77,9 +83,30 @@ export default async function EventRecordPage({ params }: EventRecordPageProps) 
     }
   }
 
-  // Pre-select assigned participants; fall back to all members if none assigned
-  const assignedProfileIds = (assignedData ?? []).map((r) => (r as { profile_id: string }).profile_id);
-  const defaultSelected = assignedProfileIds.length > 0 ? assignedProfileIds : members.map((m) => m.profileId);
+  // Results competitors have already submitted are pre-filled so the host can check them.
+  const resultType = ((event.events as Record<string, unknown> | null)?.result_type as string) ?? 'score';
+  const { data: submittedData } = await adminClient
+    .from('results')
+    .select('profile_id, result_value_primary, is_dnf, notes')
+    .eq('competition_event_id', eventId);
+  const initialEntries: Record<string, { value: string; notes: string; isDnf: boolean }> = {};
+  for (const row of submittedData ?? []) {
+    initialEntries[row.profile_id] = {
+      value: row.is_dnf ? '' : formatResultForInput(resultType, row.result_value_primary as number | null),
+      notes: row.notes ?? '',
+      isDnf: row.is_dnf,
+    };
+  }
+
+  // Pre-select assigned participants plus anyone who already submitted; with no assignments, everyone.
+  const memberIds = new Set(members.map((m) => m.profileId));
+  const assignedProfileIds = (assignedData ?? [])
+    .map((r) => (r as { profile_id: string }).profile_id)
+    .filter((profileId) => memberIds.has(profileId));
+  const submittedProfileIds = Object.keys(initialEntries).filter((profileId) => memberIds.has(profileId));
+  const defaultSelected = assignedProfileIds.length > 0
+    ? [...new Set([...assignedProfileIds, ...submittedProfileIds])]
+    : members.map((m) => m.profileId);
 
   return (
     <EventRecordingFlow
@@ -87,6 +114,7 @@ export default async function EventRecordPage({ params }: EventRecordPageProps) 
       competition={competition}
       members={members}
       defaultSelectedProfileIds={defaultSelected}
+      initialEntries={initialEntries}
       competitionId={id}
       eventId={eventId}
     />

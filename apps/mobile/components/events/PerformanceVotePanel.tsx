@@ -1,3 +1,7 @@
+/*
+ * This file defines the PerformanceVotePanel user-interface component.
+ */
+
 // PerformanceVotePanel — MVP and worst-performer voting for confirmed events.
 import { useState } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
@@ -32,6 +36,7 @@ interface VoteState {
   worst: string | null;
 }
 
+// Renders the avatar circle component.
 function AvatarCircle({ displayName, avatarUrl }: { displayName: string; avatarUrl: string | null }) {
   return (
     <View className="w-8 h-8 rounded-full bg-neutral-200 overflow-hidden">
@@ -58,6 +63,7 @@ interface VoteSectionProps {
   onVote: (profileId: string) => void;
 }
 
+// Renders the vote section component.
 function VoteSection({ title, icon, description, competitors, selectedId, submitting, onVote }: VoteSectionProps) {
   return (
     <View className="gap-2">
@@ -108,6 +114,7 @@ function VoteSection({ title, icon, description, competitors, selectedId, submit
   );
 }
 
+// Renders the performance vote panel component.
 export function PerformanceVotePanel({
   competitionId,
   competitionEventId,

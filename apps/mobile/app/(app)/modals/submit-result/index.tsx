@@ -1,3 +1,7 @@
+/*
+ * This file defines the index module.
+ */
+
 // Submit result modal — standalone entry point for push notification deep-links.
 import { View, Text, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,6 +21,7 @@ interface CompetitionEvent {
   events: { result_type: ResultType | null } | null;
 }
 
+// Renders the submit result modal component.
 export default function SubmitResultModal() {
   const { competitionEventId, competitionId } = useLocalSearchParams<{
     competitionEventId: string;

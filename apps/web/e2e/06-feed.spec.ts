@@ -1,3 +1,7 @@
+/*
+ * This file verifies 06 feed behavior.
+ */
+
 // Journey 6 — competition feed: load, react, comment
 import { test, expect } from '@playwright/test';
 import { AUTH_FILE } from './fixtures/auth-state';

@@ -1,7 +1,12 @@
+/*
+ * This file defines the get competition module.
+ */
+
 // Fetches a competition with host and cohost profile summaries.
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
 
+// Handles get competition.
 export async function getCompetition(
   client: SupabaseClient,
   id: string,

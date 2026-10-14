@@ -1,3 +1,7 @@
+/*
+ * This file defines the index module.
+ */
+
 import { create } from 'zustand';
 import type { Session, User } from '@supabase/supabase-js';
 import type { Database } from '@repo/types';

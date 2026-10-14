@@ -1,8 +1,13 @@
+/*
+ * This file verifies build leaderboard behavior.
+ */
+
 // Integration test for buildLeaderboard — 5 members with varied results.
 import { describe, expect, it } from 'vitest';
 import { buildLeaderboard } from '../../src/leaderboard/build-leaderboard';
 import type { CompetitionMemberInput } from '../../src/leaderboard/build-leaderboard';
 
+// Handles make result.
 function makeResult(id: string, points: number, isDnf = false) {
   return {
     competitionEventId: id,

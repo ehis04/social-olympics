@@ -1,3 +1,7 @@
+/*
+ * This file renders the feed application page.
+ */
+
 // Competition feed page — activity feed for a competition
 import { redirect } from 'next/navigation';
 import { getServerClient } from '@/lib/supabase/server';
@@ -13,6 +17,7 @@ interface Props {
   params: Promise<{ id: string }>;
 }
 
+// Renders the feed page component.
 export default async function FeedPage({ params }: Props) {
   const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();

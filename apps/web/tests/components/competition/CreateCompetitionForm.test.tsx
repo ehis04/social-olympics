@@ -1,7 +1,18 @@
+/*
+ * This file verifies CreateCompetitionForm behavior.
+ */
+
 // Smoke tests for CreateCompetitionForm — step 1 rendering and validation
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render as baseRender, screen, fireEvent } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ReactElement } from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import CreateCompetitionForm from '@/components/competition/CreateCompetitionForm';
+
+// The form refreshes the sidebar's competition list after creating, so it needs a query client.
+function render(ui: ReactElement) {
+  return baseRender(<QueryClientProvider client={new QueryClient()}>{ui}</QueryClientProvider>);
+}
 
 // next/navigation mock
 vi.mock('next/navigation', () => ({

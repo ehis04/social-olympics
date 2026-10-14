@@ -1,3 +1,7 @@
+/*
+ * This file renders the moderation application page.
+ */
+
 // Admin moderation queue — lists pending reports with resolve actions
 import { redirect } from 'next/navigation';
 import { getServerClient } from '@/lib/supabase/server';
@@ -10,6 +14,7 @@ export const metadata = { title: 'Moderation Queue: Admin' };
 
 const ADMIN_PROFILE_IDS = (process.env.ADMIN_PROFILE_IDS ?? '').split(',').filter(Boolean);
 
+// Renders the moderation page component.
 export default async function ModerationPage() {
   const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();

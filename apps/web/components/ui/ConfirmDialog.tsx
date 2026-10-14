@@ -1,3 +1,7 @@
+/*
+ * This file defines the ConfirmDialog user-interface component.
+ */
+
 'use client';
 
 // Modal confirmation dialog for destructive actions
@@ -11,6 +15,7 @@ interface Props {
   onCancel: () => void;
 }
 
+// Renders the confirm dialog component.
 export default function ConfirmDialog({
   isOpen,
   title,

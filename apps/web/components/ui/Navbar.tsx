@@ -1,3 +1,7 @@
+/*
+ * This file defines the Navbar user-interface component.
+ */
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -9,6 +13,7 @@ import { useUiStore } from '@/stores/ui';
 import { useSignOut } from '@/hooks/auth/useSignOut';
 import { useUnreadNotificationCount } from '@/hooks/notifications/useNotifications';
 
+// Renders the navbar component.
 export default function Navbar({ className }: { className?: string }) {
   const { profile } = useAuthStore();
   const { toggleSidebar } = useUiStore();
@@ -98,6 +103,15 @@ export default function Navbar({ className }: { className?: string }) {
             >
               My Profile
             </Link>
+            {(profile as { is_admin?: boolean } | null)?.is_admin && (
+              <Link
+                href="/admin/moderation"
+                onClick={() => setDropdownOpen(false)}
+                className="block px-4 py-2 text-sm text-grey-700 hover:bg-grey-50"
+              >
+                Moderation queue
+              </Link>
+            )}
             <Link
               href="/profile/settings"
               onClick={() => setDropdownOpen(false)}

@@ -1,7 +1,12 @@
+/*
+ * This file defines the get conversations module.
+ */
+
 // Fetches DM conversation list with latest message and unread count per partner.
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
 
+// Handles get conversations.
 export async function getConversations(
   client: SupabaseClient,
   profileId: string,

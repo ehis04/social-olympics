@@ -1,3 +1,7 @@
+/*
+ * This file defines the ConversationList user-interface component.
+ */
+
 // ConversationList — DM inbox with latest message per partner
 'use client';
 
@@ -8,6 +12,7 @@ import { useConversations } from '@/hooks/chat/useChat';
 import { useAuth } from '@/hooks/auth/useAuth';
 import type { Conversation } from '@/types/social';
 
+// Handles time ago.
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60_000);
@@ -18,6 +23,7 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(hrs / 24)}d`;
 }
 
+// Renders the conversation list component.
 export function ConversationList() {
   const { user } = useAuth();
   const { data, isLoading } = useConversations();

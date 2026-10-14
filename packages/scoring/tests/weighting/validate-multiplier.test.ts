@@ -1,3 +1,7 @@
+/*
+ * This file verifies validate multiplier behavior.
+ */
+
 // Unit tests for validateCustomMultiplier.
 import { describe, expect, it } from 'vitest';
 import { validateCustomMultiplier } from '../../src/weighting/validate-multiplier';

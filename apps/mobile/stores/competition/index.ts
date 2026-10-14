@@ -1,3 +1,7 @@
+/*
+ * This file defines the index module.
+ */
+
 // Active competition store — tracks the currently viewed competition.
 import { create } from 'zustand';
 import type { Database } from '@repo/types';

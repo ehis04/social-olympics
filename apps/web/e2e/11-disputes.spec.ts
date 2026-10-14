@@ -1,3 +1,7 @@
+/*
+ * This file verifies 11 disputes behavior.
+ */
+
 // Journey 9 — result disputes: raise, view, resolve
 import { test, expect } from '@playwright/test';
 import { AUTH_FILE, HOST_AUTH_FILE } from './fixtures/auth-state';

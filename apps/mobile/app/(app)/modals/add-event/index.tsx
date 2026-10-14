@@ -1,3 +1,7 @@
+/*
+ * This file defines the index module.
+ */
+
 // Add event modal — searchable library grouped by category, with weight tag picker.
 import { useState } from 'react';
 import {
@@ -28,6 +32,7 @@ const WEIGHT_OPTIONS: { label: string; tag: WeightTag; multiplier: number }[] = 
   { label: 'Very Important (2×)', tag: 'very_important', multiplier: 2.0 },
 ];
 
+// Renders the add event modal component.
 export default function AddEventModal() {
   const { id: competitionId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -42,7 +47,8 @@ export default function AddEventModal() {
   const { data: eventsData, isLoading } = useQuery({
     queryKey: ['events-library'],
     queryFn: async () => {
-      const { data } = await getEventsLibrary(supabase);
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data } = await getEventsLibrary(supabase, undefined, user?.id);
       return (data ?? []) as (EventRow & {
         event_categories?: { name: string; slug: string } | null;
       })[];

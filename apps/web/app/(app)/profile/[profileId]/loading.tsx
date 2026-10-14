@@ -1,6 +1,11 @@
+/*
+ * This file defines the loading module.
+ */
+
 // Profile page loading skeleton
 import { SkeletonAvatar, SkeletonLine, SkeletonCard } from '@/components/ui/Skeletons';
 
+// Renders the profile loading component.
 export default function ProfileLoading() {
   return (
     <div className="mx-auto max-w-2xl space-y-8">

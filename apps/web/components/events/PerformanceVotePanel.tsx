@@ -1,3 +1,7 @@
+/*
+ * This file defines the PerformanceVotePanel user-interface component.
+ */
+
 'use client';
 
 // PerformanceVotePanel — MVP and worst-performer voting widget for confirmed events
@@ -6,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Trophy, ThumbsDown, CheckCircle } from 'lucide-react';
 import { toast } from '@/lib/toast';
+import { getApiErrorMessage, readJson } from '@/lib/api/error-message';
 
 interface Competitor {
   profileId: string;
@@ -31,6 +36,7 @@ interface VoteState {
   worst: string | null;
 }
 
+// Renders the avatar circle component.
 function AvatarCircle({ displayName, avatarUrl, size = 8 }: { displayName: string; avatarUrl: string | null; size?: number }) {
   const cls = `h-${size} w-${size}`;
   return (
@@ -46,6 +52,7 @@ function AvatarCircle({ displayName, avatarUrl, size = 8 }: { displayName: strin
   );
 }
 
+// Renders the performance vote panel component.
 export function PerformanceVotePanel({
   competitionId,
   competitionEventId,
@@ -74,9 +81,8 @@ export function PerformanceVotePanel({
           body: JSON.stringify({ voted_for_profile_id: profileId, vote_type: voteType }),
         },
       );
-      const json = await res.json();
       if (!res.ok) {
-        toast.error(json.error?.message ?? 'Failed to submit vote');
+        toast.error(getApiErrorMessage(await readJson(res), 'Failed to submit vote'));
         return;
       }
       setVotes((prev) => ({
@@ -96,10 +102,14 @@ export function PerformanceVotePanel({
   const eligibleForWorst = competitors.filter((c) => c.profileId !== currentUserId);
 
   if (!mvpEnabled && !worstPerformerEnabled) return null;
+  if (eligibleForMvp.length === 0) return null;
 
   return (
-    <div className="space-y-4 rounded-lg border border-grey-200 bg-white p-5">
-      <h3 className="text-sm font-semibold text-grey-700">Event Voting</h3>
+    <div className="space-y-4 rounded-lg border border-grey-200 bg-white p-5" data-testid="mvp-vote-panel" aria-label="MVP voting">
+      <div>
+        <h3 className="text-sm font-semibold text-grey-700">Event voting</h3>
+        <p className="mt-0.5 text-xs text-grey-500">Votes are anonymous. You can change your vote until the host finalises the awards.</p>
+      </div>
 
       {mvpEnabled && (
         <VoteSection
@@ -141,6 +151,7 @@ interface VoteSectionProps {
   onVote: (profileId: string) => void;
 }
 
+// Renders the vote section component.
 function VoteSection({ title, icon, description, competitors, selectedId, voteType, submitting, onVote }: VoteSectionProps) {
   return (
     <div>
@@ -153,7 +164,7 @@ function VoteSection({ title, icon, description, competitors, selectedId, voteTy
         <div className="flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 px-3 py-2">
           <CheckCircle size={14} className="text-green-600 shrink-0" />
           <span className="text-xs font-medium text-green-800">
-            Vote submitted: you can change it by selecting another competitor
+            Vote submitted: select another competitor to change it
           </span>
         </div>
       ) : null}

@@ -1,3 +1,7 @@
+/*
+ * This file handles requests for the ghost profile API route.
+ */
+
 // POST /api/competitions/[id]/ghost-profile — host creates a ghost profile for a non-registered user
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerClient } from '@/lib/supabase/server';
@@ -11,6 +15,7 @@ interface Params {
   params: Promise<{ id: string }>;
 }
 
+// Handles post.
 export async function POST(req: NextRequest, { params }: Params) {
   const client = await getServerClient();
   const {

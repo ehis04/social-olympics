@@ -1,3 +1,7 @@
+/*
+ * This migration updates the database for 00003 create career stats.
+ */
+
 -- Migration 00003: career_stats table and auto-create trigger
 
 CREATE TABLE public.career_stats (
@@ -13,6 +17,7 @@ CREATE TABLE public.career_stats (
 );
 
 -- Auto-creates a career_stats row when a new profile is inserted
+-- Defines the handle_new_profile database function.
 CREATE OR REPLACE FUNCTION public.handle_new_profile()
 RETURNS trigger AS $$
 BEGIN

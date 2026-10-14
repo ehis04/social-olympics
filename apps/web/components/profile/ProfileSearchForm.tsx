@@ -1,3 +1,7 @@
+/*
+ * This file defines the ProfileSearchForm user-interface component.
+ */
+
 // ProfileSearchForm — updates the profile search query
 'use client';
 
@@ -9,6 +13,7 @@ interface Props {
   initialQuery: string;
 }
 
+// Renders the profile search form component.
 export function ProfileSearchForm({ initialQuery }: Props) {
   const router = useRouter();
   const [query, setQuery] = useState(initialQuery);

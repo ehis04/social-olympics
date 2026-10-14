@@ -1,7 +1,12 @@
+/*
+ * This file defines the get profile by display name module.
+ */
+
 // Fetches a profile by display name (case-insensitive).
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
 
+// Handles get profile by display name.
 export async function getProfileByDisplayName(
   client: SupabaseClient,
   displayName: string,

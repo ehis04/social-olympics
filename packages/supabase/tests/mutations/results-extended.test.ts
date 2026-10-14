@@ -1,3 +1,7 @@
+/*
+ * This file verifies results extended behavior.
+ */
+
 // Integration tests for extended result mutations: resolveDispute, submitWeightliftingBid.
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { submitResult } from '../../src/mutations/results/submit-result';

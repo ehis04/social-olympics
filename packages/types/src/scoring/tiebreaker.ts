@@ -1,3 +1,7 @@
+/*
+ * This file defines the tiebreaker module.
+ */
+
 // Tiebreaker and nomination types.
 
 import type { TiebreakerResolvedBy, TiebreakerStatus } from '../database/enums';

@@ -1,3 +1,7 @@
+/*
+ * This file verifies 05 leaderboard behavior.
+ */
+
 // Journey 5 — leaderboard individual and team views
 import { test, expect } from '@playwright/test';
 import { AUTH_FILE } from './fixtures/auth-state';

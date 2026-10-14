@@ -1,7 +1,12 @@
+/*
+ * This file defines the update member role module.
+ */
+
 // Updates a competition member's role.
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
 
+// Handles update member role.
 export async function updateMemberRole(
   client: SupabaseClient,
   memberId: string,

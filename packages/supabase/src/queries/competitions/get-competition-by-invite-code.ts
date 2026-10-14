@@ -1,7 +1,12 @@
+/*
+ * This file defines the get competition by invite code module.
+ */
+
 // Fetches a competition by its invite code (case-insensitive).
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
 
+// Handles get competition by invite code.
 export async function getCompetitionByInviteCode(
   client: SupabaseClient,
   code: string,

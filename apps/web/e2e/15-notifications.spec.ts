@@ -1,3 +1,7 @@
+/*
+ * This file verifies 15 notifications behavior.
+ */
+
 // Journey 15 — notifications: render, mark read
 import { test, expect } from '@playwright/test';
 import { AUTH_FILE } from './fixtures/auth-state';

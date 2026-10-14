@@ -1,3 +1,7 @@
+/*
+ * This file renders the ghostProfileId application page.
+ */
+
 // Claim page — lets a real user claim a ghost profile and inherit its history
 import { redirect, notFound } from 'next/navigation';
 import { getServerClient } from '@/lib/supabase/server';
@@ -10,6 +14,7 @@ interface Props {
   params: Promise<{ ghostProfileId: string }>;
 }
 
+// Renders the claim page component.
 export default async function ClaimPage({ params }: Props) {
   const client = await getServerClient();
   const {

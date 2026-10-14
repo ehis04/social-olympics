@@ -1,10 +1,17 @@
+/*
+ * This file defines the get events library module.
+ */
+
 // Fetches active events from the library, optionally filtered by category.
+// Custom events are only listed for the person who created them.
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
 
+// Handles get events library.
 export async function getEventsLibrary(
   client: SupabaseClient,
   categorySlug?: string,
+  viewerId?: string,
 ): Promise<ApiResponse<unknown[]>> {
   try {
     let query = client
@@ -13,6 +20,10 @@ export async function getEventsLibrary(
       .eq('is_active', true)
       .order('event_categories(name)', { ascending: true })
       .order('name', { ascending: true });
+
+    query = viewerId && /^[0-9a-f-]{36}$/i.test(viewerId)
+      ? query.or(`is_custom.eq.false,created_by.eq.${viewerId}`)
+      : query.eq('is_custom', false);
 
     if (categorySlug) {
       const { data: category } = await client

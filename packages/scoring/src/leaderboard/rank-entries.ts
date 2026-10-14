@@ -1,3 +1,7 @@
+/*
+ * This file defines the rank entries module.
+ */
+
 // Assigns dense ranks to leaderboard entries, marking ties.
 export interface LeaderboardInput {
   profileId: string;
@@ -12,6 +16,7 @@ export interface RankedEntry extends LeaderboardInput {
   isTied: boolean;
 }
 
+// Handles rank entries.
 export function rankEntries(entries: LeaderboardInput[]): RankedEntry[] {
   if (entries.length === 0) return [];
 

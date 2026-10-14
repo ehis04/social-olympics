@@ -1,3 +1,7 @@
+/*
+ * This file defines the PodiumStand user-interface component.
+ */
+
 // PodiumStand — animated podium block with place number and height variation
 'use client';
 
@@ -38,6 +42,7 @@ const DELAYS: Record<1 | 2 | 3, string> = {
   3: 'delay-500',
 };
 
+// Renders the podium stand component.
 export function PodiumStand({ place, children }: Props) {
   const [visible, setVisible] = useState(false);
 

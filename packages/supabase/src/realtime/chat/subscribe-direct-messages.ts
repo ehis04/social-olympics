@@ -1,6 +1,11 @@
+/*
+ * This file defines the subscribe direct messages module.
+ */
+
 // Subscribes to new direct messages between two profiles (client-side pair filtering).
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+// Handles subscribe direct messages.
 export function subscribeDirectMessages(
   client: SupabaseClient,
   profileIdA: string,

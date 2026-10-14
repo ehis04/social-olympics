@@ -1,7 +1,12 @@
+/*
+ * This file defines the claim ghost profile module.
+ */
+
 // Claims a ghost profile for an authenticated user (admin client bypasses RLS).
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
 
+// Handles claim ghost profile.
 export async function claimGhostProfile(
   adminClient: SupabaseClient,
   ghostProfileId: string,
@@ -23,11 +28,7 @@ export async function claimGhostProfile(
     }
 
     const { data, error } = await adminClient
-      .from('profiles')
-      .update({ claimed_by: claimingUserId, claimed_at: new Date().toISOString(), is_ghost: false })
-      .eq('id', ghostProfileId)
-      .select()
-      .single();
+      .rpc('claim_guest_history', { guest_id: ghostProfileId, claimant_id: claimingUserId });
 
     if (error) return { data: null, error: { code: error.code, message: error.message } };
     return { data, error: null };

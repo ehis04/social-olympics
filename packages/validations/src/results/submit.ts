@@ -1,3 +1,7 @@
+/*
+ * This file defines the submit module.
+ */
+
 // Result submission schema with DNF cross-field validation.
 
 import { z } from 'zod';

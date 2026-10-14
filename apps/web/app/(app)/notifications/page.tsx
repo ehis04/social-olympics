@@ -1,3 +1,7 @@
+/*
+ * This file renders the notifications application page.
+ */
+
 // Notifications page — full notification list with mark-read
 'use client';
 
@@ -5,6 +9,7 @@ import { useEffect } from 'react';
 import { useNotifications, useMarkNotificationsRead } from '@/hooks/notifications/useNotifications';
 import { NotificationItem } from '@/components/notifications/NotificationItem';
 
+// Renders the notifications page component.
 export default function NotificationsPage() {
   const { data: notifications = [], isLoading } = useNotifications();
   const { mutate: markRead } = useMarkNotificationsRead();
@@ -45,7 +50,7 @@ export default function NotificationsPage() {
         {unreadIds.length > 0 && (
           <button
             onClick={handleMarkAll}
-            className="text-sm font-medium text-primary-600 hover:text-primary-700"
+            className="text-sm font-medium text-primary hover:text-primary-dark"
           >
             Mark all read
           </button>

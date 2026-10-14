@@ -1,3 +1,7 @@
+/*
+ * This migration updates the database for 00027 enable social realtime.
+ */
+
 -- Migration 00027: publish social tables for Supabase Realtime
 
 DO $$

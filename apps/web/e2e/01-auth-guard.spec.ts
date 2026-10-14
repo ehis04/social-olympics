@@ -1,3 +1,7 @@
+/*
+ * This file verifies 01 auth guard behavior.
+ */
+
 // Journey 1 — unauthenticated users are redirected to login
 import { test, expect } from '@playwright/test';
 

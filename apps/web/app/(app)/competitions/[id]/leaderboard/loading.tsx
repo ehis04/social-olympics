@@ -1,6 +1,11 @@
+/*
+ * This file defines the loading module.
+ */
+
 // Competition leaderboard loading skeleton
 import { SkeletonTableRow, SkeletonLine } from '@/components/ui/Skeletons';
 
+// Renders the leaderboard loading component.
 export default function LeaderboardLoading() {
   return (
     <div className="space-y-4">

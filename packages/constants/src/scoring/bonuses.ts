@@ -1,3 +1,7 @@
+/*
+ * This file defines the bonuses module.
+ */
+
 // MVP and worst performer bonus point values.
 
 export const MVP_BONUS_POINTS = 1.0;

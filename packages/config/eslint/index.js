@@ -1,3 +1,7 @@
+/*
+ * This file defines the index module.
+ */
+
 module.exports = {
   parser: '@typescript-eslint/parser',
   plugins: ['@typescript-eslint', 'import'],

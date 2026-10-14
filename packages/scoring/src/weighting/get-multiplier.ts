@@ -1,7 +1,12 @@
+/*
+ * This file defines the get multiplier module.
+ */
+
 // Returns the numeric weight multiplier for a given weight tag.
 import { CUSTOM_WEIGHT_MAX, CUSTOM_WEIGHT_MIN, WEIGHT_TAG_MULTIPLIERS } from '@repo/constants';
 import type { WeightTag } from '@repo/types';
 
+// Handles get weight multiplier.
 export function getWeightMultiplier(weightTag: WeightTag, customMultiplier?: number): number {
   if (weightTag === 'custom') {
     if (customMultiplier === undefined) {

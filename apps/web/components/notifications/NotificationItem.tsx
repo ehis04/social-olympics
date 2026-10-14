@@ -1,24 +1,25 @@
+/*
+ * This file defines the NotificationItem user-interface component.
+ */
+
 // NotificationItem — single notification row with read state
 import Link from 'next/link';
 import type { Route } from 'next';
 import type { Notification } from '@/types/social';
+import { formatRelativeTime } from '@/utils/formatters/date';
 
 interface Props {
   notification: Notification;
   onMarkRead: (id: string) => void;
 }
 
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60_000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
-}
-
+// Handles type icon.
 function typeIcon(type: string): string {
+  if (type === 'competition_completed') return '🏆';
+  if (type.includes('cancel')) return '🚫';
+  if (type.includes('moderation')) return '🛡️';
+  if (type.includes('started')) return '🏁';
+  if (type.includes('follower')) return '👤';
   if (type.includes('medal') || type.includes('gold') || type.includes('silver') || type.includes('bronze')) return '🏅';
   if (type.includes('result')) return '✅';
   if (type.includes('dispute')) return '⚠️';
@@ -29,11 +30,13 @@ function typeIcon(type: string): string {
   return '🔔';
 }
 
+// Handles get string value.
 function getStringValue(data: Record<string, unknown> | null, key: string): string | null {
   const value = data?.[key];
   return typeof value === 'string' && value.length > 0 ? value : null;
 }
 
+// Handles get notification href.
 function getNotificationHref(notification: Notification): string | null {
   const directHref = getStringValue(notification.data, 'href');
   if (directHref?.startsWith('/')) return directHref;
@@ -54,6 +57,7 @@ function getNotificationHref(notification: Notification): string | null {
   return null;
 }
 
+// Renders the notification item component.
 export function NotificationItem({ notification, onMarkRead }: Props) {
   const isUnread = !notification.read_at;
   const href = getNotificationHref(notification);
@@ -73,7 +77,7 @@ export function NotificationItem({ notification, onMarkRead }: Props) {
         {notification.body && (
           <p className="mt-0.5 text-sm text-grey-500">{notification.body}</p>
         )}
-        <p className="mt-1 text-xs text-grey-400">{timeAgo(notification.created_at)}</p>
+        <p className="mt-1 text-xs text-grey-400">{formatRelativeTime(notification.created_at)}</p>
       </div>
 
       {isUnread && (

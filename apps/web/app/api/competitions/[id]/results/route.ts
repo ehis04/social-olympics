@@ -1,6 +1,11 @@
+/*
+ * This file handles requests for the results API route.
+ */
+
 // POST /api/competitions/[id]/results — competitor submits a result for an active event.
 import { NextResponse } from 'next/server';
 import { getServerClient } from '@/lib/supabase/server';
+import { ResultSubmissionSchema } from '@/lib/results/submit-schema';
 import { createAdminClient, getCompetition, submitResult } from '@repo/supabase';
 import { canSubmitResult } from '@/utils/helpers/results';
 import type { Database } from '@repo/types';
@@ -12,6 +17,7 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
+// Handles post.
 export async function POST(request: Request, { params }: RouteParams) {
   const { id } = await params;
   const client = await getServerClient();
@@ -23,6 +29,9 @@ export async function POST(request: Request, { params }: RouteParams) {
   if (compError || !compData) return NextResponse.json({ error: 'Competition not found' }, { status: 404 });
 
   const competition = compData as CompetitionRow;
+  if (['complete', 'archived'].includes(competition.status)) {
+    return NextResponse.json({ error: 'This competition is finished. Results and events are locked.' }, { status: 409 });
+  }
 
   // Fetch caller's membership and role
   const { data: memberData } = await adminClient
@@ -30,24 +39,22 @@ export async function POST(request: Request, { params }: RouteParams) {
     .select('role')
     .eq('competition_id', id)
     .eq('profile_id', user.id)
+    .eq('status', 'active')
     .single();
 
   if (!memberData) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   const memberRole = (memberData as { role: MemberRole }).role;
 
-  let body: { competition_event_id?: string; profile_id?: string; result_value?: number; notes?: string };
+  let input: unknown;
   try {
-    body = (await request.json()) as typeof body;
+    input = await request.json();
   } catch {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
 
-  if (!body.competition_event_id) {
-    return NextResponse.json({ error: 'competition_event_id is required' }, { status: 400 });
-  }
-  if (body.result_value == null) {
-    return NextResponse.json({ error: 'result_value is required' }, { status: 400 });
-  }
+  const parsed = ResultSubmissionSchema.safeParse(input);
+  if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Invalid result' }, { status: 400 });
+  const body = parsed.data;
 
   // Verify the event belongs to this competition and is active
   const { data: eventData } = await adminClient
@@ -105,6 +112,8 @@ export async function POST(request: Request, { params }: RouteParams) {
     profile_id: resultProfileId,
     submitted_by: user.id,
     result_value_primary: body.result_value,
+    is_dnf: body.is_dnf,
+    ...(body.evidence_url && { evidence_url: body.evidence_url }),
     ...(body.notes && { notes: body.notes }),
   };
 

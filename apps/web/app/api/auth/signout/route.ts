@@ -1,7 +1,12 @@
+/*
+ * This file handles requests for the signout API route.
+ */
+
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getServerClient } from '@/lib/supabase/server';
 
+// Handles post.
 export async function POST(request: NextRequest) {
   const supabase = await getServerClient();
   await supabase.auth.signOut();
