@@ -35,7 +35,8 @@ Thumbs.db
 # Turbo
 .turbo/
 
-/docs
+# Local-only notes (personal emails, demo credentials)
+/docs/local/
 
 *.tsbuildinfo
 .eslintcache
@@ -43,3 +44,18 @@ Thumbs.db
 *:Zone.Identifier
 .venv/
 supabase/snippets/
+
+# Local demo account IDs and credentials
+/LOCAL_DEMO_DATA.json
+
+# Store credentials used by eas submit (never commit)
+apps/mobile/google-play-service-account.json
+apps/mobile/*.p8
+apps/mobile/*.p12
+
+# Cloudflare build output
+.open-next/
+.wrangler/
+
+# Local demo-data tooling (contains personal account details; see docs/local/LOCAL_DEMO_GUIDE.md)
+/scripts/

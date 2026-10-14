@@ -1,3 +1,7 @@
+/*
+ * This file verifies 16 settings behavior.
+ */
+
 // Journey 16 — settings and host controls
 import { test, expect } from '@playwright/test';
 import { AUTH_FILE, HOST_AUTH_FILE } from './fixtures/auth-state';

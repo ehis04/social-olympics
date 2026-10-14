@@ -1,3 +1,7 @@
+/*
+ * This file defines the get public competitions module.
+ */
+
 // Fetches paginated public competitions with optional filtering.
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { PaginatedResponse } from '@repo/types';
@@ -10,6 +14,7 @@ export interface CompetitionSearchParams {
   cursor?: string;
 }
 
+// Handles get public competitions.
 export async function getPublicCompetitions(
   client: SupabaseClient,
   params: CompetitionSearchParams = {},

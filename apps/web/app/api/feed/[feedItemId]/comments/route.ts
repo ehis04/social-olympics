@@ -1,7 +1,12 @@
+/*
+ * This file handles requests for the comments API route.
+ */
+
 // POST /api/feed/[feedItemId]/comments — add a comment to a feed item
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerClient } from '@/lib/supabase/server';
 import { addFeedComment } from '@repo/supabase';
+import { BLOCKED_CONTENT_MESSAGE, containsBlockedKeyword } from '@/lib/moderation/blocked-content';
 
 interface Params {
   params: Promise<{ feedItemId: string }>;
@@ -11,6 +16,7 @@ interface RequestBody {
   content: string;
 }
 
+// Handles post.
 export async function POST(request: NextRequest, { params }: Params) {
   const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();
@@ -29,6 +35,13 @@ export async function POST(request: NextRequest, { params }: Params) {
   }
   if (content.length > 500) {
     return NextResponse.json({ data: null, error: { code: 'BAD_REQUEST', message: 'content must be 500 characters or fewer' } }, { status: 400 });
+  }
+
+  if (containsBlockedKeyword(content)) {
+    return NextResponse.json(
+      { data: null, error: { code: 'CONTENT_BLOCKED', message: BLOCKED_CONTENT_MESSAGE } },
+      { status: 422 },
+    );
   }
 
   const { data, error } = await addFeedComment(client, (await params).feedItemId, content, user.id);

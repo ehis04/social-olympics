@@ -1,3 +1,7 @@
+/*
+ * This file defines the similarity groups module.
+ */
+
 // Event similarity groups used for cross-informing historical strength ratings.
 
 export const SIMILARITY_GROUPS: Record<string, string[]> = {
@@ -28,6 +32,7 @@ export const SIMILARITY_GROUPS: Record<string, string[]> = {
   ],
 };
 
+// Handles get event similarity group.
 export function getEventSimilarityGroup(eventSlug: string): string | null {
   for (const [group, slugs] of Object.entries(SIMILARITY_GROUPS)) {
     if (slugs.includes(eventSlug)) {
@@ -37,6 +42,7 @@ export function getEventSimilarityGroup(eventSlug: string): string | null {
   return null;
 }
 
+// Handles get related event slugs.
 export function getRelatedEventSlugs(eventSlug: string): string[] {
   for (const [group, slugs] of Object.entries(SIMILARITY_GROUPS)) {
     if (slugs.includes(eventSlug) && group !== 'standalone') {

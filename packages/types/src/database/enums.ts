@@ -1,3 +1,7 @@
+/*
+ * This file defines the enums module.
+ */
+
 // TypeScript union types mirroring all PostgreSQL enums — must stay in sync.
 
 export type ResultType =

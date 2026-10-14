@@ -1,3 +1,7 @@
+/*
+ * This file defines the profile module.
+ */
+
 // User profile and career statistics types.
 
 export interface Profile {

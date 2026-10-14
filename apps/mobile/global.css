@@ -1,3 +1,7 @@
+/*
+ * This stylesheet defines the global presentation rules.
+ */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

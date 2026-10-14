@@ -1,9 +1,14 @@
+/*
+ * This file defines the register module.
+ */
+
 // Registration schema with 16+ age gate enforcement.
 
 import { z } from 'zod';
 
 import { MIN_AGE_YEARS } from '@repo/constants';
 
+// Handles parse date of birth.
 function parseDateOfBirth(value: string): Date | null {
   const isoMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
   const displayMatch = /^(\d{2})-(\d{2})-(\d{4})$/.exec(value);
@@ -33,6 +38,7 @@ function parseDateOfBirth(value: string): Date | null {
   return date;
 }
 
+// Handles is at least minimum age.
 function isAtLeastMinimumAge(dob: string): boolean {
   const today = new Date();
   const birth = parseDateOfBirth(dob);
@@ -63,7 +69,11 @@ export const RegisterSchema = z.object({
     .string()
     .refine((dob) => parseDateOfBirth(dob) !== null, 'Enter a valid date of birth')
     .refine(isAtLeastMinimumAge, 'You must be at least 16 years old to register'),
-  country_code: z.string().length(2).optional(),
+  // The country picker submits an empty string when no country is chosen.
+  country_code: z.preprocess(
+    (value) => (value === '' || value === null ? undefined : value),
+    z.string().length(2).optional(),
+  ),
   city: z.string().max(100).optional(),
   bio: z.string().max(500).optional(),
 });

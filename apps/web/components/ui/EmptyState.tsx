@@ -1,3 +1,7 @@
+/*
+ * This file defines the EmptyState user-interface component.
+ */
+
 // Reusable empty state with optional CTA; used throughout the app for empty lists
 import Link from 'next/link';
 import type { Route } from 'next';
@@ -13,6 +17,7 @@ interface Props {
   onCtaClick?: () => void;
 }
 
+// Renders the empty state component.
 export default function EmptyState({ icon: Icon = Inbox, heading, description, ctaLabel, ctaHref, onCtaClick }: Props) {
   return (
     <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-grey-200 bg-grey-50 px-8 py-16 text-center">

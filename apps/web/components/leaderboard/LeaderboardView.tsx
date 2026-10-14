@@ -1,30 +1,39 @@
-// LeaderboardView — live leaderboard with realtime updates and team toggle
+/*
+ * This file defines the LeaderboardView user-interface component.
+ */
+
+// LeaderboardView — live leaderboard with realtime updates, tiebreakers and team toggle
 'use client';
 
 import { useEffect, useState } from 'react';
 import { createBrowserClient } from '@repo/supabase';
 import { subscribeLeaderboard } from '@repo/supabase';
-import { rankEntries } from '@repo/scoring';
 import { LeaderboardTable } from './LeaderboardTable';
 import { TeamLeaderboard } from './TeamLeaderboard';
 import { TiebreakerBanner } from './TiebreakerBanner';
 import { useTeamLeaderboard } from '@/hooks/leaderboard/useLeaderboard';
 import { useAuth } from '@/hooks/auth/useAuth';
-import { toast } from '@/lib/toast';
+import { groupTies, rankStandings } from '@repo/scoring';
 import type { RankedMember } from '@/hooks/leaderboard/useLeaderboard';
+import type { TiebreakerInfo } from '@/lib/tiebreakers/state';
 import type { Database } from '@repo/types';
 
 type CompetitionRow = Database['public']['Tables']['competitions']['Row'];
 type LeaderboardUpdate = Partial<RankedMember> & Pick<RankedMember, 'profile_id'>;
 
+export type { TiebreakerInfo } from '@/lib/tiebreakers/state';
+
 interface Props {
   competition: CompetitionRow;
   initialEntries: RankedMember[];
+  tiebreakers?: TiebreakerInfo[];
+  eventsRemaining?: number;
 }
 
 type Tab = 'individual' | 'team';
 
-export function LeaderboardView({ competition, initialEntries }: Props) {
+// Renders the leaderboard view component.
+export function LeaderboardView({ competition, initialEntries, tiebreakers = [], eventsRemaining = 0 }: Props) {
   const { user } = useAuth();
   const [tab, setTab] = useState<Tab>('individual');
   const [entries, setEntries] = useState<RankedMember[]>(initialEntries);
@@ -36,46 +45,25 @@ export function LeaderboardView({ competition, initialEntries }: Props) {
     const unsubscribe = subscribeLeaderboard(client, competition.id, (updatedMember) => {
       setEntries((prev) => {
         if (!isLeaderboardUpdate(updatedMember)) return prev;
-
         const merged = prev.map((m) =>
           m.profile_id === updatedMember.profile_id
-            ? { ...m, ...updatedMember }
+            ? {
+              ...m,
+              ...updatedMember,
+              total_points: Number(updatedMember.total_points ?? m.total_points),
+            }
             : m,
         );
-        const ranked = rankEntries(
-          merged.map((m) => ({
-            profileId: m.profile_id,
-            totalPoints: m.total_points ?? 0,
-            gold: m.gold_count ?? 0,
-            silver: m.silver_count ?? 0,
-            bronze: m.bronze_count ?? 0,
-          })),
-        );
-        return ranked.map((r) => {
-          const member = merged.find((m) => m.profile_id === r.profileId);
-          return { ...member!, rank: r.rank, isTied: r.isTied };
-        });
+        return rankStandings(merged);
       });
     });
     return () => unsubscribe();
   }, [competition.id]);
 
-  const tiedGroups = groupTied(entries);
-  const isHost = user?.id === competition.host_id;
-
-  async function handleInitiateTiebreaker(profileIdA: string, profileIdB: string) {
-    try {
-      const res = await fetch(`/api/competitions/${competition.id}/tiebreakers`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profile_id_a: profileIdA, profile_id_b: profileIdB }),
-      });
-      if (!res.ok) throw new Error('Failed to initiate tiebreaker');
-      toast.success('Tiebreaker initiated');
-    } catch {
-      toast.error('Failed to initiate tiebreaker');
-    }
-  }
+  const isHost = user?.id === competition.host_id || user?.id === competition.cohost_id;
+  const isFinished = competition.status === 'complete' || competition.status === 'archived';
+  // Ties only matter for the podium places.
+  const podiumTies = groupTies(entries).filter((group) => (group[0]?.rank ?? 99) <= 3);
 
   return (
     <div className="space-y-4">
@@ -87,7 +75,7 @@ export function LeaderboardView({ competition, initialEntries }: Props) {
             className={[
               'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
               tab === 'individual'
-                ? 'bg-primary-600 text-white'
+                ? 'bg-primary text-white'
                 : 'text-grey-600 hover:text-grey-900',
             ].join(' ')}
           >
@@ -98,7 +86,7 @@ export function LeaderboardView({ competition, initialEntries }: Props) {
             className={[
               'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
               tab === 'team'
-                ? 'bg-primary-600 text-white'
+                ? 'bg-primary text-white'
                 : 'text-grey-600 hover:text-grey-900',
             ].join(' ')}
           >
@@ -109,16 +97,24 @@ export function LeaderboardView({ competition, initialEntries }: Props) {
 
       {tab === 'individual' && (
         <>
-          {tiedGroups.map((group, i) => (
+          {!isFinished && podiumTies.map((group) => (
             <TiebreakerBanner
-              key={i}
+              key={group.map((entry) => entry.profile_id).join('-')}
               tiedEntries={group}
               currentUserId={user?.id ?? ''}
               isHost={isHost}
               competitionId={competition.id}
-              onInitiate={handleInitiateTiebreaker}
+              tiebreaker={tiebreakers.find((tb) => {
+                const pair = [tb.profileIdA, tb.profileIdB];
+                return group.length === 2 && group.every((entry) => pair.includes(entry.profile_id));
+              }) ?? null}
+              eventsRemaining={eventsRemaining}
             />
           ))}
+          <p className="text-xs text-grey-500">
+            Ranked by points, then gold, silver and bronze medals.
+            {competition.min_events_required ? ` Each total counts the best ${competition.min_events_required} results.` : ''}
+          </p>
           <LeaderboardTable entries={entries} currentUserId={user?.id ?? ''} />
         </>
       )}
@@ -130,17 +126,7 @@ export function LeaderboardView({ competition, initialEntries }: Props) {
   );
 }
 
-function groupTied(entries: RankedMember[]): RankedMember[][] {
-  const rankMap = new Map<number, RankedMember[]>();
-  for (const entry of entries) {
-    if (!entry.isTied) continue;
-    const existing = rankMap.get(entry.rank) ?? [];
-    existing.push(entry);
-    rankMap.set(entry.rank, existing);
-  }
-  return Array.from(rankMap.values()).filter((g) => g.length >= 2);
-}
-
+// Handles is leaderboard update.
 function isLeaderboardUpdate(member: unknown): member is LeaderboardUpdate {
   return (
     typeof member === 'object' &&

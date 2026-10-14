@@ -1,41 +1,31 @@
-// Other user's profile — avatar, stats, personal bests, Message button.
+/*
+ * This file defines the index module.
+ */
+
+// Other user's profile — avatar, stats, personal bests, and follow, message, block and report actions.
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
-import { MessageCircle } from 'lucide-react-native';
+import { ChevronLeft } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase/client';
+import { CompetitionHistory } from '@/components/profile/CompetitionHistory';
 import { getProfile, getPersonalBests } from '@repo/supabase';
 import { useAuthStore } from '@/stores/auth';
-import { MOBILE_ROUTES } from '@/constants/routes';
-import type { Database } from '@repo/types';
+import { ProfileActions } from '@/components/profile/ProfileActions';
+import { formatPointsValue } from '@/utils/formatters/points';
+import type { ProfileWithStats as ProfileRow, PersonalBest } from '@/types/profile';
+import { formatResultValue } from '@/utils/formatters/result';
 
-type ProfileRow = Database['public']['Tables']['profiles']['Row'] & {
-  career_stats?: {
-    competitions_entered: number;
-    competitions_won: number;
-    gold_medals: number;
-    silver_medals: number;
-    bronze_medals: number;
-    events_competed: number;
-  } | null;
-};
-
-interface PersonalBest {
-  id: string;
-  event_name: string | null;
-  category_name: string | null;
-  best_value: number | null;
-  result_type: string | null;
-}
-
+// Handles get flag emoji.
 function getFlagEmoji(code: string | null): string {
   if (!code || code.length !== 2) return '';
   const pts = code.toUpperCase().split('').map((c) => 127397 + c.charCodeAt(0));
   return String.fromCodePoint(...pts);
 }
 
+// Renders the stat pill component.
 function StatPill({ label, value }: { label: string; value: number | string }) {
   return (
     <View className="flex-1 items-center rounded-lg bg-neutral-50 px-2 py-3">
@@ -45,6 +35,7 @@ function StatPill({ label, value }: { label: string; value: number | string }) {
   );
 }
 
+// Renders the other profile screen component.
 export default function OtherProfileScreen() {
   const { profileId } = useLocalSearchParams<{ profileId: string }>();
   const router = useRouter();
@@ -89,12 +80,20 @@ export default function OtherProfileScreen() {
   const stats = profile.career_stats;
   const flag = getFlagEmoji(profile.country_code ?? null);
   const isOwnProfile = profile.id === myProfile?.id;
-
-  // Build conversation ID as sorted pair
-  const conversationId = [myProfile?.id ?? '', profileId].sort().join('_');
+  const isDeleted = !!profile.deleted_at;
+  // Guest profiles and deleted accounts have nobody behind them to follow or message.
+  const canInteract = !isOwnProfile && !isDeleted && !profile.is_ghost;
 
   return (
     <SafeAreaView className="flex-1 bg-neutral-50">
+      <View className="flex-row items-center px-4 py-3 bg-white border-b border-neutral-200">
+        <TouchableOpacity onPress={() => router.back()} className="mr-3" accessibilityLabel="Back">
+          <ChevronLeft size={22} color="#6B7280" />
+        </TouchableOpacity>
+        <Text className="text-base font-bold text-neutral-800 flex-1" numberOfLines={1}>
+          {profile.display_name}
+        </Text>
+      </View>
       <ScrollView>
         <View className="bg-white px-4 pt-6 pb-5 border-b border-neutral-200">
           <View className="flex-row items-start justify-between mb-4">
@@ -125,25 +124,23 @@ export default function OtherProfileScreen() {
                 ) : null}
               </View>
             </View>
-            {!isOwnProfile && (
-              <TouchableOpacity
-                className="flex-row items-center gap-1.5 border border-neutral-200 rounded-lg px-3 py-2 ml-2"
-                onPress={() => router.push(MOBILE_ROUTES.MESSAGE_THREAD(conversationId))}
-              >
-                <MessageCircle size={16} color="#2D6A4F" />
-                <Text className="text-sm font-medium text-neutral-700">Message</Text>
-              </TouchableOpacity>
-            )}
           </View>
+
+          {canInteract && <ProfileActions profileId={profileId} displayName={profile.display_name} />}
+          {isDeleted && (
+            <Text className="text-sm text-neutral-500 mb-4">
+              This account has been deleted. Their past results stay in the competitions they took part in.
+            </Text>
+          )}
 
           {stats && (
             <View className="flex-row gap-2">
-              <StatPill label="Competed" value={stats.competitions_entered} />
-              <StatPill label="Wins" value={stats.competitions_won} />
-              <StatPill label="🥇" value={stats.gold_medals} />
-              <StatPill label="🥈" value={stats.silver_medals} />
-              <StatPill label="🥉" value={stats.bronze_medals} />
-              <StatPill label="Events" value={stats.events_competed} />
+              <StatPill label="Competed" value={stats.total_competitions} />
+              <StatPill label="Points" value={formatPointsValue(stats.total_points)} />
+              <StatPill label="🥇" value={stats.gold_count} />
+              <StatPill label="🥈" value={stats.silver_count} />
+              <StatPill label="🥉" value={stats.bronze_count} />
+              <StatPill label="Events" value={stats.total_events} />
             </View>
           )}
         </View>
@@ -165,18 +162,19 @@ export default function OtherProfileScreen() {
                 >
                   <View className="flex-1">
                     <Text className="text-sm font-medium text-neutral-800">
-                      {pb.event_name ?? 'Unknown event'}
+                      {pb.events?.name ?? 'Unknown event'}
                     </Text>
-                    <Text className="text-xs text-neutral-500">{pb.category_name}</Text>
+                    <Text className="text-xs text-neutral-500">{pb.events?.event_categories?.name}</Text>
                   </View>
                   <Text className="text-sm font-semibold font-mono text-neutral-700">
-                    {pb.best_value ?? '-'}
+                    {formatResultValue(pb.result_value_primary, pb.events?.result_type ?? 'score')}
                   </Text>
                 </View>
               ))}
             </View>
           )}
         </View>
+        <CompetitionHistory profileId={profileId} />
       </ScrollView>
     </SafeAreaView>
   );

@@ -1,9 +1,14 @@
+/*
+ * This file renders the partnerId application page.
+ */
+
 // DM thread page — direct message conversation with a specific partner
 import { redirect, notFound } from 'next/navigation';
 import { getServerClient } from '@/lib/supabase/server';
 import { createAdminClient, getProfile } from '@repo/supabase';
 import { DMThread } from '@/components/chat/DMThread';
 import ROUTES from '@/constants/routes';
+import { isBlockedBetween } from '@/lib/social/blocks';
 import type { Database } from '@repo/types';
 import type { Route } from 'next';
 import type { ProfileSnippet } from '@/types/social';
@@ -14,6 +19,7 @@ interface Props {
   params: Promise<{ partnerId: string }>;
 }
 
+// Renders the dmthread page component.
 export default async function DMThreadPage({ params }: Props) {
   const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();
@@ -23,7 +29,10 @@ export default async function DMThreadPage({ params }: Props) {
   if (partnerId === user.id) redirect(ROUTES.MESSAGES as Route);
 
   const adminClient = createAdminClient();
-  const { data: partnerData } = await getProfile(adminClient, partnerId);
+  const [{ data: partnerData }, isBlocked] = await Promise.all([
+    getProfile(adminClient, partnerId),
+    isBlockedBetween(client, user.id, partnerId),
+  ]);
   if (!partnerData) notFound();
 
   const profile = partnerData as ProfileRow;
@@ -35,7 +44,19 @@ export default async function DMThreadPage({ params }: Props) {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <DMThread partnerId={partnerId} partner={partner} />
+      <DMThread
+        partnerId={partnerId}
+        partner={partner}
+        unavailableReason={
+          profile.deleted_at
+            ? 'This account has been deleted.'
+            : profile.is_ghost
+              ? 'Guest profiles cannot receive messages.'
+              : isBlocked
+                ? "You can't message this person."
+                : null
+        }
+      />
     </div>
   );
 }

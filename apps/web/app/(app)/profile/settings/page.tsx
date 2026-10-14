@@ -1,13 +1,21 @@
+/*
+ * This file renders the settings application page.
+ */
+
 // Profile settings page — edit own profile details and avatar
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getServerClient } from '@/lib/supabase/server';
 import { ensureProfile } from '@/lib/profile/ensure-profile';
 import { AvatarUpload } from '@/components/profile/AvatarUpload';
 import { ProfileSettingsForm } from '@/components/profile/ProfileSettingsForm';
+import { BlockedPeopleList } from '@/components/profile/BlockedPeopleList';
+import { DeleteAccountSection } from '@/components/profile/DeleteAccountSection';
 import ROUTES from '@/constants/routes';
 import type { ProfileRow } from '@/types/profile';
 import type { Route } from 'next';
 
+// Renders the profile settings page component.
 export default async function ProfileSettingsPage() {
   const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();
@@ -34,6 +42,16 @@ export default async function ProfileSettingsPage() {
         <h2 className="mb-5 text-base font-semibold text-grey-900">Public profile</h2>
         <ProfileSettingsForm profile={profile} />
       </section>
+
+      <BlockedPeopleList />
+
+      <DeleteAccountSection />
+
+      <p className="text-center text-xs text-grey-400">
+        <Link href={ROUTES.TERMS as Route} className="hover:text-primary">Terms of Use</Link>
+        {' · '}
+        <Link href={ROUTES.PRIVACY as Route} className="hover:text-primary">Privacy Policy</Link>
+      </p>
     </div>
   );
 }

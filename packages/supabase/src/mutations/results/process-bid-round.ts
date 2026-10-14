@@ -1,3 +1,7 @@
+/*
+ * This file defines the process bid round module.
+ */
+
 // Processes a completed weightlifting bid round — updates statuses and assigns places.
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
@@ -8,6 +12,7 @@ interface BidResult {
   attemptStatus: 'success' | 'fail' | 'pending' | 'withdrawn';
 }
 
+// Handles process bid round.
 export async function processBidRound(
   adminClient: SupabaseClient,
   competitionEventId: string,

@@ -1,3 +1,7 @@
+/*
+ * This file defines the results module.
+ */
+
 export function getPlaceSuffix(place: number): string {
   const mod100 = place % 100;
   const mod10 = place % 10;
@@ -8,7 +12,8 @@ export function getPlaceSuffix(place: number): string {
   return `${place}th`;
 }
 
+// Handles can submit result.
 export function canSubmitResult(memberRole: string, eventStatus: string): boolean {
   const eligibleRoles = ['competitor', 'cohost', 'host'];
-  return eligibleRoles.includes(memberRole) && eventStatus === 'active';
+  return eligibleRoles.includes(memberRole) && ['active', 'results_pending'].includes(eventStatus);
 }

@@ -1,8 +1,13 @@
+/*
+ * This file defines the date module.
+ */
+
 export function formatDate(date: string | Date): string {
   const d = typeof date === 'string' ? new Date(date) : date;
   return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
+// Handles format relative time.
 export function formatRelativeTime(date: string | Date): string {
   const d = typeof date === 'string' ? new Date(date) : date;
   const now = Date.now();
@@ -22,6 +27,7 @@ export function formatRelativeTime(date: string | Date): string {
   return formatDate(d);
 }
 
+// Handles format event date.
 export function formatEventDate(date: string | Date): string {
   const d = typeof date === 'string' ? new Date(date) : date;
   return d.toLocaleDateString('en-GB', {

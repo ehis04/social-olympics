@@ -1,9 +1,13 @@
-// Auth store — persists session and profile to SecureStore across restarts.
+/*
+ * This file defines the index module.
+ */
+
+// Auth store — current session and profile; the profile is cached in secure storage across restarts.
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import * as SecureStore from 'expo-secure-store';
 import type { Session } from '@supabase/supabase-js';
 import type { Database } from '@repo/types';
+import { secureStorage } from '@/lib/supabase/secure-storage';
 
 type ProfileRow = Database['public']['Tables']['profiles']['Row'];
 
@@ -16,19 +20,6 @@ interface AuthState {
   setLoading: (loading: boolean) => void;
   clearAuth: () => void;
 }
-
-const secureStorage = {
-  getItem: async (key: string) => {
-    const value = await SecureStore.getItemAsync(key);
-    return value ?? null;
-  },
-  setItem: async (key: string, value: string) => {
-    await SecureStore.setItemAsync(key, value);
-  },
-  removeItem: async (key: string) => {
-    await SecureStore.deleteItemAsync(key);
-  },
-};
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -44,7 +35,8 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'auth-storage',
       storage: createJSONStorage(() => secureStorage),
-      partialize: (state) => ({ session: state.session, profile: state.profile }),
+      // The session itself is restored by the Supabase client; only the profile is cached here.
+      partialize: (state) => ({ profile: state.profile }),
     }
   )
 );

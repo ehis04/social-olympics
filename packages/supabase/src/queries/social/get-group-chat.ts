@@ -1,7 +1,12 @@
+/*
+ * This file defines the get group chat module.
+ */
+
 // Fetches paginated group chat messages for a competition.
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { PaginatedResponse, PaginationParams } from '@repo/types';
 
+// Handles get group chat.
 export async function getGroupChat(
   client: SupabaseClient,
   competitionId: string,

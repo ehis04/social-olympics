@@ -1,3 +1,7 @@
+/*
+ * This file defines the categories module.
+ */
+
 // All 16 event category slugs and their display names.
 
 export const EVENT_CATEGORY_SLUGS = [

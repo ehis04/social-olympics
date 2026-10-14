@@ -1,3 +1,7 @@
+/*
+ * This migration updates the database for 00013 create voting.
+ */
+
 -- Migration 00013: performance_votes and performance_vote_results tables
 
 CREATE TABLE public.performance_votes (

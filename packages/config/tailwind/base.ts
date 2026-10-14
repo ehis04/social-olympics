@@ -1,3 +1,7 @@
+/*
+ * This file defines the base module.
+ */
+
 import type { Config } from 'tailwindcss';
 
 export const baseConfig: Partial<Config> = {

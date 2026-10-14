@@ -1,3 +1,7 @@
+/*
+ * This file defines the notification module.
+ */
+
 // Notification and push token types.
 
 import type { Platform } from '../database/enums';

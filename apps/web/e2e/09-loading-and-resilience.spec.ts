@@ -1,3 +1,7 @@
+/*
+ * This file verifies 09 loading and resilience behavior.
+ */
+
 // Journey 9 — loading states and navigation resilience
 import { test, expect } from '@playwright/test';
 import { AUTH_FILE } from './fixtures/auth-state';

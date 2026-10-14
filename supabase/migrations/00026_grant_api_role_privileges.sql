@@ -1,3 +1,7 @@
+/*
+ * This migration updates the database for 00026 grant api role privileges.
+ */
+
 -- Migration 00026: grant PostgREST API roles table privileges
 --
 -- RLS policies decide which rows each authenticated user can access, but

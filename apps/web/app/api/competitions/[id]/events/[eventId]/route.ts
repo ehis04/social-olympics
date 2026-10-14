@@ -1,3 +1,7 @@
+/*
+ * This file handles requests for the eventId API route.
+ */
+
 // PATCH /api/competitions/[id]/events/[eventId] — update. DELETE — remove.
 import { NextResponse } from 'next/server';
 import { getServerClient } from '@/lib/supabase/server';
@@ -11,6 +15,7 @@ interface RouteParams {
   params: Promise<{ id: string; eventId: string }>;
 }
 
+// Handles patch.
 export async function PATCH(request: Request, { params }: RouteParams) {
   const { id, eventId } = await params;
   const client = await getServerClient();
@@ -22,6 +27,9 @@ export async function PATCH(request: Request, { params }: RouteParams) {
   if (compError || !compData) return NextResponse.json({ error: 'Competition not found' }, { status: 404 });
 
   const competition = compData as CompetitionRow;
+  if (['complete', 'archived'].includes(competition.status)) {
+    return NextResponse.json({ error: 'This competition is finished. Results and events are locked.' }, { status: 409 });
+  }
   const isHostOrCohost = competition.host_id === user.id || competition.cohost_id === user.id;
   if (!isHostOrCohost) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
@@ -56,6 +64,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
   return NextResponse.json({ data });
 }
 
+// Handles delete.
 export async function DELETE(_request: Request, { params }: RouteParams) {
   const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();
@@ -65,6 +74,9 @@ export async function DELETE(_request: Request, { params }: RouteParams) {
   if (compError || !compData) return NextResponse.json({ error: 'Competition not found' }, { status: 404 });
 
   const competition = compData as CompetitionRow;
+  if (['complete', 'archived'].includes(competition.status)) {
+    return NextResponse.json({ error: 'This competition is finished. Results and events are locked.' }, { status: 409 });
+  }
   if (competition.host_id !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const { data: eventData } = await client
@@ -99,6 +111,7 @@ export async function DELETE(_request: Request, { params }: RouteParams) {
   return NextResponse.json({ data: null }, { status: 200 });
 }
 
+// Handles weight tag to multiplier.
 function weightTagToMultiplier(tag: string): number {
   const map: Record<string, number> = {
     not_important: 0.5,

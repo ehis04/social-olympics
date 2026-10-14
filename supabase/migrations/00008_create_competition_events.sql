@@ -1,3 +1,7 @@
+/*
+ * This migration updates the database for 00008 create competition events.
+ */
+
 -- Migration 00008: competition_events table and deferred FK to personal_bests
 
 CREATE TABLE public.competition_events (

@@ -1,0 +1,26 @@
+name: Supabase Keep-Alive
+
+# Free Supabase projects are paused after about a week without database activity.
+# This makes one small read from the production database every day so the app stays online
+# even when nobody is using it. It fails (and GitHub emails you) if the project is paused
+# or the URL/key secrets are wrong.
+on:
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    name: Query the production database
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Read one row through the Supabase API
+        run: |
+          curl --fail-with-body --silent --show-error --retry 3 --retry-delay 20 \
+            "${SUPABASE_URL}/rest/v1/events?select=id&limit=1" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}"
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}

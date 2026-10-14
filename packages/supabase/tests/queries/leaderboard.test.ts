@@ -1,3 +1,7 @@
+/*
+ * This file verifies leaderboard behavior.
+ */
+
 // Integration tests for leaderboard queries against local Supabase.
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { getLeaderboard } from '../../src/queries/leaderboard/get-leaderboard';

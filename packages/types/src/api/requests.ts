@@ -1,3 +1,7 @@
+/*
+ * This file defines the requests module.
+ */
+
 // Common API request parameter types.
 
 export interface PaginationParams {

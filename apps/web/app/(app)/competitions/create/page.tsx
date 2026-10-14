@@ -1,3 +1,7 @@
+/*
+ * This file renders the create application page.
+ */
+
 // Create competition page — fetches event library and renders the multi-step form
 import { getServerClient } from '@/lib/supabase/server';
 import CreateCompetitionForm from '@/components/competition/CreateCompetitionForm';
@@ -11,10 +15,11 @@ type EventWithCategory = EventRow & {
   event_categories?: { name: string; slug: string } | null;
 };
 
+// Renders the create competition page component.
 export default async function CreateCompetitionPage() {
   const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();
-  const { data } = await getEventsLibrary(client);
+  const { data } = await getEventsLibrary(client, undefined, user?.id);
   const events = (data ?? []) as EventWithCategory[];
 
   return (

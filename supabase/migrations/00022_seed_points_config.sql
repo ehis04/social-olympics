@@ -1,3 +1,7 @@
+/*
+ * This migration updates the database for 00022 seed points config.
+ */
+
 -- Migration 00022: seed global default points scale (permanent data migration)
 -- competition_id = NULL means this is the global default, applied to all competitions
 -- that do not define a custom points config.

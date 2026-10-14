@@ -1,3 +1,7 @@
+/*
+ * This file defines the status module.
+ */
+
 // Competition and event status constants, labels, colours, and valid transitions.
 
 export const COMPETITION_STATUSES = ['setup', 'open', 'active', 'complete', 'archived'] as const;

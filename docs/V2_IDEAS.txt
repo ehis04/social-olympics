@@ -1,5 +1,5 @@
 # V2 IDEAS — Social Olympics
-# Reviewed: Phase 10
+# Reviewed: Phase 10, updated October 2026
 
 ## HIGH PRIORITY (strong user demand likely)
 
@@ -15,7 +15,7 @@
 - Competition templates (reuse an event list and weight configuration across competitions)
 - Real-time typing indicators in group chat
 - Notification badge count in web navbar
-- Public profiles with follow/friend system (follow infrastructure exists; discovery/feed surfacing does not)
+- Activity feed of the people you follow (following, profile search and follower lists exist today)
 - Mobile Detox E2E test suite (deferred due to build complexity)
 - Android tablet support (app.json supportsTablet: false currently)
 - Deeplink handling from push notification when app is fully closed (cold start)
@@ -26,6 +26,10 @@
 - Competition brackets and knockout format
 - Live stream integration
 - Recurring competition templates beyond simple "new season" copy
+- Weightlifting bid format: opening weight, rising bids and per-round elimination with shared places.
+  The scoring logic is already in packages/scoring (processBidRound, assignWeightliftingPlaces) and
+  unit tested; it needs attempt-recording screens and an attempts table. Today lifts are recorded as
+  each lifter's best weight.
 
 ## TECHNICAL DEBT
 
@@ -33,7 +37,6 @@
 - Query batching for fewer Supabase round-trips
 - Optimistic realtime updates on the leaderboard (currently waits for the Realtime event)
 - Proper admin role system — replace hardcoded `ADMIN_PROFILE_IDS` env var with Supabase custom claims
-- @repo/ui component stubs — most components still return null; only a handful are fully implemented
 - Ghost profile dual-profile edge case — handle the case where a claimant already has their own account in addition to the ghost profile being claimed
 - Automated E2E on every PR (currently only runs on PRs targeting develop)
 - Performance testing under load

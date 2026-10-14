@@ -1,3 +1,7 @@
+/*
+ * This file defines the index module.
+ */
+
 export * from './src/client/admin';
 export * from './src/client/browser';
 export * from './src/client/middleware';
@@ -8,6 +12,7 @@ export * from './src/queries/competitions/get-competition-by-invite-code';
 export * from './src/queries/competitions/get-competition-members';
 export * from './src/queries/competitions/get-public-competitions';
 export * from './src/queries/competitions/get-user-competitions';
+export * from './src/queries/competitions/get-competition-history';
 export * from './src/queries/events/get-competition-event';
 export * from './src/queries/events/get-competition-events';
 export * from './src/queries/events/get-events-library';

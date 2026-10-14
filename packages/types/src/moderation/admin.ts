@@ -1,3 +1,7 @@
+/*
+ * This file defines the admin module.
+ */
+
 // Platform admin action types.
 
 export type AdminAction = 'suspend_host' | 'warn_user' | 'remove_competition' | 'dismiss';

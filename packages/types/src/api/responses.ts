@@ -1,3 +1,7 @@
+/*
+ * This file defines the responses module.
+ */
+
 // Standardised API response envelope types.
 
 export interface ApiError {

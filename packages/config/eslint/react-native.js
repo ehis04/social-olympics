@@ -1,3 +1,7 @@
+/*
+ * This file defines the react native module.
+ */
+
 module.exports = {
   extends: [require.resolve('./index.js')],
   plugins: ['react-native'],

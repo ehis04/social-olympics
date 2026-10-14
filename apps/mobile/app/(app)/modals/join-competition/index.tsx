@@ -1,3 +1,7 @@
+/*
+ * This file defines the index module.
+ */
+
 // Join competition modal — invite code input + live QR scanner via expo-camera.
 import { useState } from 'react';
 import {
@@ -19,6 +23,7 @@ import { toast } from '@/lib/toast';
 import { MOBILE_ROUTES } from '@/constants/routes';
 import { triggerSuccess, triggerError } from '@/utils/helpers/haptics';
 
+// Renders the join competition modal component.
 export default function JoinCompetitionModal() {
   const router = useRouter();
   const [code, setCode] = useState('');
@@ -37,7 +42,11 @@ export default function JoinCompetitionModal() {
     setError(null);
     setLoading(true);
 
-    const { data, error: apiError } = await apiCall<{ id: string }>('/api/competitions/join', {
+    const { data, error: apiError } = await apiCall<{
+      competitionId: string;
+      alreadyMember?: boolean;
+      role?: string;
+    }>('/api/competitions/join', {
       method: 'POST',
       body: JSON.stringify({ invite_code: trimmed }),
     });
@@ -51,9 +60,11 @@ export default function JoinCompetitionModal() {
     }
 
     triggerSuccess();
-    toast.success('Joined competition!');
+    if (data.alreadyMember) toast.success("You're already in this competition");
+    else if (data.role === 'spectator') toast.success('Joined as a spectator: the competition has already started');
+    else toast.success('Joined competition!');
     router.dismiss();
-    router.push(MOBILE_ROUTES.COMPETITION_FEED(data.id));
+    router.push(MOBILE_ROUTES.COMPETITION_FEED(data.competitionId));
   }
 
   function handleBarCodeScanned({ data: barcodeData }: { data: string }) {

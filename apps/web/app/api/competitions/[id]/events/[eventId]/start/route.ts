@@ -1,8 +1,13 @@
+/*
+ * This file handles requests for the start API route.
+ */
+
 // POST /api/competitions/[id]/events/[eventId]/start — starts a pending event.
 import { NextResponse } from 'next/server';
 import { getServerClient } from '@/lib/supabase/server';
 import { createAdminClient, getCompetition, startEvent } from '@repo/supabase';
 import { createNotifications } from '@/lib/notifications/create-notification';
+import { ensurePlayerPool } from '@/lib/teams/team-event';
 import type { Database } from '@repo/types';
 
 type CompetitionRow = Database['public']['Tables']['competitions']['Row'];
@@ -12,6 +17,7 @@ interface RouteParams {
   params: Promise<{ id: string; eventId: string }>;
 }
 
+// Handles post.
 export async function POST(_request: Request, { params }: RouteParams) {
   const { id, eventId } = await params;
   const client = await getServerClient();
@@ -50,13 +56,13 @@ export async function POST(_request: Request, { params }: RouteParams) {
 
   const { data: eventData } = await client
     .from('competition_events')
-    .select('status, events(name)')
+    .select('status, events(name, is_team_event)')
     .eq('id', eventId)
     .eq('competition_id', id)
     .single();
 
   const ev = eventData as (Pick<CompEventRow, 'status'> & {
-    events: { name: string } | null;
+    events: { name: string; is_team_event: boolean } | null;
   }) | null;
   if (!ev) return NextResponse.json({ error: 'Event not found' }, { status: 404 });
   if (ev.status !== 'pending') {
@@ -67,6 +73,13 @@ export async function POST(_request: Request, { params }: RouteParams) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   const adminClient = createAdminClient();
+
+  // Team events start by gathering players into a pool for strength ratings and team balancing.
+  if (ev.events?.is_team_event) {
+    const { error: poolError } = await ensurePlayerPool(adminClient, id, eventId);
+    if (poolError) return NextResponse.json({ error: poolError }, { status: 500 });
+  }
+
   const { count: existingFeedCount } = await adminClient
     .from('activity_feed')
     .select('id', { count: 'exact', head: true })

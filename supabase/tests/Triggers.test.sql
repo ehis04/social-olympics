@@ -1,3 +1,7 @@
+/*
+ * This file verifies Triggers behavior.
+ */
+
 -- supabase/tests/triggers.test.sql
 -- pgTAP tests for database triggers
 

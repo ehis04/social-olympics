@@ -1,3 +1,7 @@
+/*
+ * This file defines the create module.
+ */
+
 // Competition creation schema.
 
 import { z } from 'zod';

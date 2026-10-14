@@ -1,7 +1,12 @@
+/*
+ * This file defines the create profile module.
+ */
+
 // Creates a ghost profile using the admin client (bypasses RLS).
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
 
+// Handles create profile.
 export async function createProfile(
   adminClient: SupabaseClient,
   payload: Record<string, unknown>,

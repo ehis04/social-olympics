@@ -1,3 +1,7 @@
+/*
+ * This file defines the tailwind.config module.
+ */
+
 module.exports = {
   content: ['./app/**/*.{ts,tsx}', './components/**/*.{ts,tsx}'],
   presets: [require('nativewind/preset')],
@@ -20,12 +24,6 @@ module.exports = {
         warning: '#F59E0B',
         info: '#3B82F6',
         success: '#10B981',
-      },
-      fontFamily: {
-        sans: ['Inter_400Regular'],
-        medium: ['Inter_500Medium'],
-        semibold: ['Inter_600SemiBold'],
-        bold: ['Inter_700Bold'],
       },
       borderRadius: {
         DEFAULT: '8px',

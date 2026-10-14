@@ -1,3 +1,7 @@
+/*
+ * This file defines the server module.
+ */
+
 // Server Supabase client for Next.js Server Components and Route Handlers.
 import { createServerClient as createSSRServerClient, type CookieOptions } from '@supabase/ssr';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -9,6 +13,7 @@ export interface CookieStore {
   delete(name: string): void;
 }
 
+// Handles create server client.
 export function createServerClient(cookieStore: CookieStore): SupabaseClient<Database> {
   const url = process.env['NEXT_PUBLIC_SUPABASE_URL'];
   const key = process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'];

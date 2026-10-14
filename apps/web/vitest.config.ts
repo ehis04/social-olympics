@@ -1,3 +1,7 @@
+/*
+ * This file defines the vitest.config module.
+ */
+
 import { configDefaults, defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import path from 'path';

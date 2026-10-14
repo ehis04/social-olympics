@@ -1,3 +1,7 @@
+/*
+ * This file verifies events behavior.
+ */
+
 // Integration tests for competition event mutations against local Supabase.
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { addCompetitionEvent } from '../../src/mutations/events/add-competition-event';

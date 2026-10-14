@@ -1,11 +1,17 @@
+/*
+ * This file defines the CreateCompetitionForm user-interface component.
+ */
+
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { ChevronRight, ChevronLeft, Check, Copy, Trophy, UserPlus, Ghost, X } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Check, Trophy, UserPlus, Ghost, X } from 'lucide-react';
 import Image from 'next/image';
 import ROUTES from '@/constants/routes';
 import { toast } from '@/lib/toast';
+import { getApiErrorMessage, readJson } from '@/lib/api/error-message';
 import type { Database } from '@repo/types';
 
 type EventRow = Database['public']['Tables']['events']['Row'];
@@ -41,7 +47,6 @@ interface FormState {
   eventWeights: Record<string, { weight_tag: WeightTag; weight_multiplier: number }>;
   mvp_voting_enabled: boolean;
   worst_performer_enabled: boolean;
-  inviteEmails: string[];
   members: MemberEntry[];
   eventAssignments: Record<string, string[]>; // eventLibraryId -> tempId[]
 }
@@ -62,11 +67,18 @@ interface Props {
   currentUserId: string;
 }
 
-export default function CreateCompetitionForm({ events, currentUserId }: Props) {
+// Renders the create competition form component.
+export default function CreateCompetitionForm({ events: initialEvents, currentUserId }: Props) {
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const [events, setEvents] = useState<EventWithCategory[]>(initialEvents);
+  const [showCustomEvent, setShowCustomEvent] = useState(false);
+  const [customEventName, setCustomEventName] = useState('');
+  const [customEventResultType, setCustomEventResultType] = useState('score');
+  const [customEventIsTeam, setCustomEventIsTeam] = useState(false);
+  const [isCreatingEvent, setIsCreatingEvent] = useState(false);
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [emailInput, setEmailInput] = useState('');
   const [ghostNameInput, setGhostNameInput] = useState('');
   const [ghostCounter, setGhostCounter] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -84,7 +96,6 @@ export default function CreateCompetitionForm({ events, currentUserId }: Props) 
     eventWeights: {},
     mvp_voting_enabled: true,
     worst_performer_enabled: true,
-    inviteEmails: [],
     members: [],
     eventAssignments: {},
   });
@@ -195,6 +206,42 @@ export default function CreateCompetitionForm({ events, currentUserId }: Props) 
     update('eventAssignments', { ...form.eventAssignments, [eventLibraryId]: [] });
   }
 
+  async function createCustomEvent() {
+    const name = customEventName.trim();
+    if (name.length < 2) {
+      toast.error('Give the custom event a name');
+      return;
+    }
+    setIsCreatingEvent(true);
+    try {
+      const res = await fetch('/api/events/custom', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          category_slug: 'other',
+          result_type: customEventResultType,
+          is_team_event: customEventIsTeam,
+        }),
+      });
+      const json = await readJson(res);
+      if (!res.ok) {
+        toast.error(getApiErrorMessage(json, 'Failed to create custom event'));
+        return;
+      }
+      const created = (json as { data: EventWithCategory }).data;
+      setEvents((current) => [...current, { ...created, event_categories: { name: 'Custom', slug: 'other' } }]);
+      toggleEvent(created.id);
+      setCustomEventName('');
+      setShowCustomEvent(false);
+      toast.success(`${created.name} created and selected`);
+    } catch {
+      toast.error('Something went wrong');
+    } finally {
+      setIsCreatingEvent(false);
+    }
+  }
+
   function validateStep1(): boolean {
     const errs: Record<string, string> = {};
     if (!form.name.trim() || form.name.trim().length < 3) errs.name = 'Name must be at least 3 characters';
@@ -216,18 +263,6 @@ export default function CreateCompetitionForm({ events, currentUserId }: Props) 
     if (step === 1 && !validateStep1()) return;
     if (step === 2 && !validateStep2()) return;
     setStep((s) => s + 1);
-  }
-
-  function addEmail() {
-    const email = emailInput.trim().toLowerCase();
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email || !emailRegex.test(email) || form.inviteEmails.includes(email)) return;
-    update('inviteEmails', [...form.inviteEmails, email]);
-    setEmailInput('');
-  }
-
-  function removeEmail(email: string) {
-    update('inviteEmails', form.inviteEmails.filter((e) => e !== email));
   }
 
   async function handleSubmit() {
@@ -253,7 +288,6 @@ export default function CreateCompetitionForm({ events, currentUserId }: Props) 
         worst_performer_enabled: form.worst_performer_enabled,
         selectedEventIds: form.selectedEventIds,
         eventWeights: form.eventWeights,
-        inviteEmails: form.inviteEmails,
         followProfileIds,
         ghostMembers,
         eventAssignments: form.eventAssignments,
@@ -265,14 +299,15 @@ export default function CreateCompetitionForm({ events, currentUserId }: Props) 
         body: JSON.stringify(payload),
       });
 
-      const json = await res.json();
+      const json = await readJson(res);
       if (!res.ok) {
-        toast.error(json.error ?? 'Failed to create competition');
+        toast.error(getApiErrorMessage(json, 'Failed to create competition'));
         return;
       }
 
-      toast.success('Competition created!');
-      router.replace(ROUTES.COMPETITION_FEED(json.data.id));
+      toast.success('Competition created! Share the invite link to bring people in.');
+      void queryClient.invalidateQueries({ queryKey: ['competitions', 'user'] });
+      router.replace(ROUTES.COMPETITION_MEMBERS((json as { data: { id: string } }).data.id));
       router.refresh();
     } catch {
       toast.error('Something went wrong. Please try again.');
@@ -281,8 +316,6 @@ export default function CreateCompetitionForm({ events, currentUserId }: Props) 
     }
   }
 
-  const previewInviteCode = 'XXXXXXXX';
-  const previewInviteLink = `${typeof window !== 'undefined' ? window.location.origin : ''}/join?code=${previewInviteCode}`;
 
   const addedFollowIds = new Set(
     form.members.filter((m) => m.type === 'follow').map((m) => m.profileId),
@@ -470,14 +503,73 @@ export default function CreateCompetitionForm({ events, currentUserId }: Props) 
                 </div>
               ))}
             </div>
+            <div className="mb-5 rounded-lg border border-dashed border-grey-300 p-4">
+              <button
+                type="button"
+                onClick={() => setShowCustomEvent((value) => !value)}
+                className="text-sm font-semibold text-primary hover:underline"
+              >
+                {showCustomEvent ? 'Hide custom event' : "Can't find your event? Create a custom event"}
+              </button>
+              {showCustomEvent && (
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <label className="text-sm font-medium text-grey-700 sm:col-span-2">
+                    Event name
+                    <input
+                      type="text"
+                      value={customEventName}
+                      onChange={(e) => setCustomEventName(e.target.value)}
+                      maxLength={60}
+                      placeholder="e.g. Egg and spoon race"
+                      className="mt-1 w-full rounded-lg border border-grey-200 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
+                  </label>
+                  <label className="text-sm font-medium text-grey-700">
+                    How is it won?
+                    <select
+                      value={customEventResultType}
+                      onChange={(e) => setCustomEventResultType(e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-grey-200 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+                    >
+                      <option value="time">Time (lowest wins)</option>
+                      <option value="distance">Distance (furthest wins)</option>
+                      <option value="score">Score (highest wins)</option>
+                      <option value="inverted_score">Score (lowest wins)</option>
+                      <option value="weight">Weight lifted</option>
+                      <option value="compound">Reps</option>
+                    </select>
+                  </label>
+                  <label className="flex items-center gap-2 self-end pb-2 text-sm font-medium text-grey-700">
+                    <input
+                      type="checkbox"
+                      checked={customEventIsTeam}
+                      onChange={(e) => setCustomEventIsTeam(e.target.checked)}
+                      className="accent-primary"
+                    />
+                    Team event
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => void createCustomEvent()}
+                    disabled={isCreatingEvent}
+                    className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60 sm:col-span-2"
+                  >
+                    {isCreatingEvent ? 'Creating…' : 'Create and select'}
+                  </button>
+                </div>
+              )}
+            </div>
             {form.selectedEventIds.length > 0 && (
               <div className="rounded-lg border border-grey-200 bg-grey-50 p-4">
                 <p className="mb-3 text-sm font-semibold text-grey-700">
                   {form.selectedEventIds.length} event{form.selectedEventIds.length !== 1 ? 's' : ''} selected
                 </p>
                 <label className="mb-1 block text-sm font-semibold text-grey-700">
-                  Minimum events each competitor must complete
+                  Best results that count towards each total
                 </label>
+                <p className="mb-2 text-xs text-grey-500">
+                  Each competitor&apos;s score adds up their best results, up to this number of events.
+                </p>
                 <input
                   type="number"
                   min={1}
@@ -801,55 +893,13 @@ export default function CreateCompetitionForm({ events, currentUserId }: Props) 
               </div>
             </div>
 
-            {/* Invite link preview */}
+            {/* Invite link */}
             <div className="rounded-lg border border-grey-200 bg-grey-50 p-4">
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-grey-400">Invite link (available after creation)</p>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 truncate rounded border border-grey-200 bg-white px-3 py-2 text-xs text-grey-600">
-                  {previewInviteLink}
-                </code>
-                <button
-                  type="button"
-                  onClick={() => toast.error('Link will be available after the competition is created')}
-                  className="rounded border border-grey-200 bg-white p-2 text-grey-500 hover:text-grey-700"
-                >
-                  <Copy size={14} />
-                </button>
-              </div>
-            </div>
-
-            {/* Email invites */}
-            <div>
-              <label className="mb-1 block text-sm font-semibold text-grey-700">
-                Invite more by email <span className="text-grey-400 font-normal">(optional)</span>
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="email"
-                  value={emailInput}
-                  onChange={(e) => setEmailInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addEmail(); } }}
-                  placeholder="teammate@example.com"
-                  className="flex-1 rounded-lg border border-grey-200 px-3 py-2.5 text-sm text-grey-800 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                />
-                <button
-                  type="button"
-                  onClick={addEmail}
-                  className="rounded-lg bg-grey-100 px-4 py-2.5 text-sm font-semibold text-grey-700 hover:bg-grey-200"
-                >
-                  Add
-                </button>
-              </div>
-              {form.inviteEmails.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {form.inviteEmails.map((email) => (
-                    <span key={email} className="flex items-center gap-1.5 rounded-full bg-primary-muted px-3 py-1 text-xs font-semibold text-primary">
-                      {email}
-                      <button type="button" onClick={() => removeEmail(email)} className="text-primary hover:text-primary-dark">×</button>
-                    </span>
-                  ))}
-                </div>
-              )}
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-grey-400">Invite link</p>
+              <p className="text-sm text-grey-600">
+                Your invite link and 8-character code are created with the competition. You will be taken
+                to the Members page, where you can copy them and add guest profiles.
+              </p>
             </div>
           </div>
         )}

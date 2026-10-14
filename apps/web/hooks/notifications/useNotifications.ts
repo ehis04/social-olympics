@@ -1,8 +1,13 @@
+/*
+ * This file provides the useNotifications React hook.
+ */
+
 // TanStack Query hooks for notifications
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/auth/useAuth';
 import type { Notification } from '@/types/social';
 
+// Handles fetch notifications.
 async function fetchNotifications(): Promise<Notification[]> {
   const res = await fetch('/api/notifications');
   if (!res.ok) throw new Error('Failed to fetch notifications');
@@ -10,6 +15,7 @@ async function fetchNotifications(): Promise<Notification[]> {
   return json.data;
 }
 
+// Provides the use notifications hook.
 export function useNotifications() {
   const { session } = useAuth();
 
@@ -22,11 +28,13 @@ export function useNotifications() {
   });
 }
 
+// Provides the use unread notification count hook.
 export function useUnreadNotificationCount() {
   const { data = [] } = useNotifications();
   return data.filter((notification) => !notification.read_at).length;
 }
 
+// Provides the use mark notifications read hook.
 export function useMarkNotificationsRead() {
   const queryClient = useQueryClient();
 

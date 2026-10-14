@@ -1,3 +1,7 @@
+/*
+ * This file handles requests for the reports API route.
+ */
+
 // GET /api/moderation/reports — admin only: fetch paginated moderation reports
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerClient } from '@/lib/supabase/server';
@@ -5,6 +9,7 @@ import { createAdminClient, getReports } from '@repo/supabase';
 
 const ADMIN_PROFILE_IDS = (process.env.ADMIN_PROFILE_IDS ?? '').split(',').filter(Boolean);
 
+// Handles get.
 export async function GET(request: NextRequest) {
   const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();

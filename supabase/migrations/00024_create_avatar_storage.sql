@@ -1,3 +1,7 @@
+/*
+ * This migration updates the database for 00024 create avatar storage.
+ */
+
 -- Migration 00024: avatar storage bucket and policies
 
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)

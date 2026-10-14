@@ -1,3 +1,7 @@
+/*
+ * This file defines the LoginForm user-interface component.
+ */
+
 'use client';
 
 import { useState } from 'react';
@@ -8,9 +12,12 @@ import Link from 'next/link';
 import { Eye, EyeOff } from 'lucide-react';
 import { createBrowserClient } from '@repo/supabase';
 import { LoginSchema, type LoginInput } from '@repo/validations';
+import type { Route } from 'next';
 import { toast } from '@/lib/toast';
+import { getSafeNextPath, withNext } from '@/lib/auth/safe-next';
 
-export default function LoginForm() {
+// Renders the login form component.
+export default function LoginForm({ next = null }: { next?: string | null }) {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
 
@@ -40,12 +47,12 @@ export default function LoginForm() {
       return;
     }
 
-    router.replace('/dashboard');
+    router.replace(getSafeNextPath(next) as Route);
     router.refresh();
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
+    <form method="post" onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
       <div className="flex flex-col gap-1">
         <label htmlFor="email" className="text-xs font-semibold text-grey-800">
           Email
@@ -110,7 +117,7 @@ export default function LoginForm() {
 
       <p className="text-center text-xs text-grey-600">
         Don&apos;t have an account?{' '}
-        <Link href="/register" className="font-semibold text-primary hover:underline">
+        <Link href={withNext('/register', next) as Route} className="font-semibold text-primary hover:underline">
           Register
         </Link>
       </p>

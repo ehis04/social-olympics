@@ -1,6 +1,11 @@
+/*
+ * This file defines the create ghost profile module.
+ */
+
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
 
+// Handles create ghost profile.
 export async function createGhostProfile(
   adminClient: SupabaseClient,
   displayName: string,

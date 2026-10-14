@@ -1,7 +1,12 @@
+/*
+ * This file defines the submit result module.
+ */
+
 // Submits a result (pending confirmation by host).
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
 
+// Handles submit result.
 export async function submitResult(
   client: SupabaseClient,
   payload: Record<string, unknown>,

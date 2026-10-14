@@ -1,13 +1,45 @@
 name: Deploy
 
+# Production deploys run on every push to main: database migrations first, then the web app,
+# so the new code never runs against an older schema.
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
 
 jobs:
+  migrate:
+    name: Push migrations to production
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link Supabase production project
+        run: supabase link --project-ref ${{ secrets.PROD_SUPABASE_PROJECT_REF }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.PROD_SUPABASE_DB_PASSWORD }}
+
+      - name: Push migrations
+        run: supabase db push
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.PROD_SUPABASE_DB_PASSWORD }}
+
   deploy:
     name: Build & Deploy to Cloudflare Workers
+    needs: migrate
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -24,7 +56,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '26'
           cache: 'pnpm'
 
       - name: Install dependencies
@@ -33,16 +65,15 @@ jobs:
       - name: Build packages
         run: pnpm turbo run build --filter=!./apps/web
 
+      # NEXT_PUBLIC_* values are compiled into the browser bundle at build time.
       - name: Build for Cloudflare
         run: pnpm --filter=./apps/web exec opennextjs-cloudflare build
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
-          UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
-          ADMIN_PROFILE_IDS: ${{ secrets.ADMIN_PROFILE_IDS }}
+          NEXT_PUBLIC_CONTACT_EMAIL: ${{ secrets.NEXT_PUBLIC_CONTACT_EMAIL }}
 
+      # Server-only values are read at runtime, so they are stored as Worker secrets.
       - name: Push runtime secrets to Worker
         working-directory: apps/web
         run: |
@@ -50,7 +81,8 @@ jobs:
             "SUPABASE_SERVICE_ROLE_KEY": "${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}",
             "UPSTASH_REDIS_REST_URL": "${{ secrets.UPSTASH_REDIS_REST_URL }}",
             "UPSTASH_REDIS_REST_TOKEN": "${{ secrets.UPSTASH_REDIS_REST_TOKEN }}",
-            "ADMIN_PROFILE_IDS": "${{ secrets.ADMIN_PROFILE_IDS }}"
+            "ADMIN_PROFILE_IDS": "${{ secrets.ADMIN_PROFILE_IDS }}",
+            "EXPO_ACCESS_TOKEN": "${{ secrets.EXPO_ACCESS_TOKEN }}"
           }' | pnpm exec wrangler secret bulk --env=""
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

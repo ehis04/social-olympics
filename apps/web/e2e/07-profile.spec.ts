@@ -1,6 +1,10 @@
+/*
+ * This file verifies 07 profile behavior.
+ */
+
 // Journey 7 — user profile page
 import { test, expect } from '@playwright/test';
-import { AUTH_FILE } from './fixtures/auth-state';
+import { AUTH_FILE, HOST_AUTH_FILE, getUserIdFromAuthState } from './fixtures/auth-state';
 
 test.describe('Profile page', () => {
   test.use({ storageState: AUTH_FILE });
@@ -31,7 +35,7 @@ test.describe('Profile page', () => {
   });
 
   test('message button is visible on another user profile', async ({ page }) => {
-    const profileId = process.env.E2E_OTHER_PROFILE_ID;
+    const profileId = getUserIdFromAuthState(HOST_AUTH_FILE);
     if (!profileId) {
       test.skip();
       return;

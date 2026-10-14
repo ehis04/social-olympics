@@ -1,3 +1,7 @@
+/*
+ * This file defines the assign places module.
+ */
+
 // Assigns finishing places to weightlifting competitors using elimination order (dense ranking).
 export interface EliminationEvent {
   round: number;
@@ -9,6 +13,7 @@ export interface WeightliftingPlacement {
   place: number;
 }
 
+// Handles assign weightlifting places.
 export function assignWeightliftingPlaces(
   eliminations: EliminationEvent[],
   finalSurvivors: string[],

@@ -1,3 +1,7 @@
+/*
+ * This file defines the InviteQRCode user-interface component.
+ */
+
 // InviteQRCode — renders competition invite URL as a scannable QR code.
 import { View, Text, TouchableOpacity, Share } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
@@ -10,6 +14,7 @@ interface Props {
   baseUrl?: string;
 }
 
+// Renders the invite qrcode component.
 export function InviteQRCode({ inviteCode, baseUrl }: Props) {
   const url = `${baseUrl ?? process.env.EXPO_PUBLIC_API_BASE_URL}/join?code=${inviteCode}`;
 

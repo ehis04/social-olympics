@@ -1,4 +1,8 @@
-// Competition settings screen — host-only; form fields, QR invite code, and completion danger zone.
+/*
+ * This file defines the index module.
+ */
+
+// Competition settings screen — host and co-host; details, QR invite, finalising, archiving and new seasons.
 import { useState, useEffect } from 'react';
 import {
   View,
@@ -21,10 +25,12 @@ import { useAuthStore } from '@/stores/auth';
 import { MOBILE_ROUTES } from '@/constants/routes';
 import { triggerSuccess, triggerError } from '@/utils/helpers/haptics';
 import { InviteQRCode } from '@/components/competition/InviteQRCode';
+import { FinishedCompetitionActions } from '@/components/competition/FinishedCompetitionActions';
 import type { Database } from '@repo/types';
 
 type CompetitionRow = Database['public']['Tables']['competitions']['Row'];
 
+// Renders the settings screen component.
 export default function SettingsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -57,16 +63,9 @@ export default function SettingsScreen() {
   }, [compData]);
 
   const isHost = compData?.host_id === profile?.id;
-  const canComplete =
-    compData?.status !== 'complete' && compData?.status !== 'archived';
-
-  if (!isHost) {
-    return (
-      <View className="flex-1 items-center justify-center bg-neutral-50">
-        <Text className="text-neutral-500 text-sm">Only the host can access settings</Text>
-      </View>
-    );
-  }
+  const isCohost = compData?.cohost_id === profile?.id;
+  const isFinished = compData?.status === 'complete' || compData?.status === 'archived';
+  const canComplete = isHost && !isFinished;
 
   async function handleSave() {
     setSaving(true);
@@ -113,6 +112,36 @@ export default function SettingsScreen() {
       <View className="flex-1 items-center justify-center bg-neutral-50">
         <ActivityIndicator color="#2D6A4F" />
       </View>
+    );
+  }
+
+  if (!isHost && !isCohost) {
+    return (
+      <View className="flex-1 items-center justify-center bg-neutral-50">
+        <Text className="text-neutral-500 text-sm">Only the host and co-host can access settings</Text>
+      </View>
+    );
+  }
+
+  if (isFinished && compData) {
+    return (
+      <SafeAreaView className="flex-1 bg-neutral-50" edges={['bottom']}>
+        <ScrollView contentContainerClassName="p-4 gap-5">
+          <View className="rounded-lg border border-neutral-200 bg-white p-4">
+            <Text className="text-sm text-neutral-600">This competition has finished, so its settings are locked.</Text>
+          </View>
+          {isHost && (
+            <View className="rounded-lg border border-neutral-200 bg-white p-4 gap-3">
+              <Text className="text-sm font-bold text-neutral-800">What next?</Text>
+              <Text className="text-sm text-neutral-600">
+                Archive moves this competition to your past competitions. A new season copies the events, points and
+                members so everyone can go again, starting on zero.
+              </Text>
+              <FinishedCompetitionActions competitionId={id} status={compData.status} />
+            </View>
+          )}
+        </ScrollView>
+      </SafeAreaView>
     );
   }
 

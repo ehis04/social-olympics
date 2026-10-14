@@ -1,3 +1,7 @@
+/*
+ * This file defines the calculate member score module.
+ */
+
 // Calculates a competition member's total score using best-of-N selection.
 import { calculateBestOf } from '../best-of/calculate-best-of';
 
@@ -10,6 +14,7 @@ export interface MemberEventResult {
   isDnf: boolean;
 }
 
+// Handles calculate member score.
 export function calculateMemberScore(results: MemberEventResult[], n: number): number {
   const withTotals = results.map((r) => ({
     eventId: r.competitionEventId,

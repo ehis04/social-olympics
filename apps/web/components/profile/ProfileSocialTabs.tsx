@@ -1,3 +1,7 @@
+/*
+ * This file defines the ProfileSocialTabs user-interface component.
+ */
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -23,6 +27,7 @@ interface Props {
   profileId: string;
 }
 
+// Renders the profile row component.
 function ProfileRow({ profile }: { profile: SocialProfile }) {
   return (
     <Link
@@ -46,6 +51,7 @@ function ProfileRow({ profile }: { profile: SocialProfile }) {
   );
 }
 
+// Renders the profile social tabs component.
 export function ProfileSocialTabs({ profileId }: Props) {
   const [activeTab, setActiveTab] = useState<'followers' | 'following'>('followers');
   const [lists, setLists] = useState<FollowLists>({ followers: [], following: [] });

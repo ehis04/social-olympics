@@ -1,3 +1,7 @@
+/*
+ * This file verifies competitions behavior.
+ */
+
 // Integration tests for competition mutations against local Supabase.
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createCompetition } from '../../src/mutations/competitions/create-competition';
@@ -114,7 +118,7 @@ describe('completeCompetition', () => {
     // Give members different point totals
     await admin
       .from('competition_members')
-      .update({ total_points: 100, gold_count: 2 })
+      .update({ role: 'competitor', status: 'active', total_points: 100, gold_count: 2 })
       .eq('id', memberRowId);
 
     // Add host as member (may already exist — ignore conflict)

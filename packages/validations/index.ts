@@ -1,3 +1,7 @@
+/*
+ * This file defines the index module.
+ */
+
 // Barrel export — all Zod validation schemas and inferred types.
 
 export * from './src/users/register';

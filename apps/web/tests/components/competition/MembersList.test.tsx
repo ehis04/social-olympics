@@ -1,3 +1,7 @@
+/*
+ * This file verifies MembersList behavior.
+ */
+
 // Tests for MembersList component
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
@@ -12,6 +16,7 @@ type MemberWithProfile = Database['public']['Tables']['competition_members']['Ro
   profile: Database['public']['Tables']['profiles']['Row'] | null;
 };
 
+// Handles make member.
 function makeMember(overrides: Partial<MemberWithProfile> = {}): MemberWithProfile {
   return {
     id: 'member-1',

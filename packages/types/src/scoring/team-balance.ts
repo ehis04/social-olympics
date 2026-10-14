@@ -1,3 +1,7 @@
+/*
+ * This file defines the team balance module.
+ */
+
 // Team, team membership, and strength rating types.
 
 import type { RatingSource } from '../database/enums';

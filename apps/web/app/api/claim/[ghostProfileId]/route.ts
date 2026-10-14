@@ -1,3 +1,7 @@
+/*
+ * This file handles requests for the ghostProfileId API route.
+ */
+
 // POST /api/claim/[ghostProfileId] — authenticated user claims a ghost profile
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerClient } from '@/lib/supabase/server';
@@ -7,6 +11,7 @@ interface Params {
   params: Promise<{ ghostProfileId: string }>;
 }
 
+// Handles post.
 export async function POST(req: NextRequest, { params }: Params) {
   const client = await getServerClient();
   const {
@@ -46,18 +51,13 @@ export async function POST(req: NextRequest, { params }: Params) {
   }
 
   const adminClient = createAdminClient();
+  const { data: memberRow } = await adminClient
+    .from('competition_members').select('competition_id')
+    .eq('profile_id', (await params).ghostProfileId).limit(1).maybeSingle();
   const { error: claimError } = await claimGhostProfile(adminClient, (await params).ghostProfileId, user.id);
   if (claimError) {
-    return NextResponse.json({ error: 'Failed to claim profile' }, { status: 500 });
+    return NextResponse.json({ error: claimError.message }, { status: claimError.code === 'P0001' ? 409 : 500 });
   }
-
-  // Find the competition the ghost was a member of
-  const { data: memberRow } = await client
-    .from('competition_members')
-    .select('competition_id')
-    .eq('profile_id', (await params).ghostProfileId)
-    .limit(1)
-    .single();
 
   const competitionId = memberRow?.competition_id ?? null;
 

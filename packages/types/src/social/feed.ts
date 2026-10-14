@@ -1,3 +1,7 @@
+/*
+ * This file defines the feed module.
+ */
+
 // Activity feed and reaction types.
 
 import type { ReactionTargetType } from '../database/enums';

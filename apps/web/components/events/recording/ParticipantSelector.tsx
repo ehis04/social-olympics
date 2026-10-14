@@ -1,3 +1,7 @@
+/*
+ * This file defines the ParticipantSelector user-interface component.
+ */
+
 'use client';
 
 import Image from 'next/image';
@@ -15,6 +19,7 @@ interface ParticipantSelectorProps {
   onContinue: () => void;
 }
 
+// Renders the participant selector component.
 export function ParticipantSelector({
   members,
   selected,

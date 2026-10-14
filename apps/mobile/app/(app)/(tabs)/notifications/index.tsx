@@ -1,3 +1,7 @@
+/*
+ * This file defines the index module.
+ */
+
 // Notifications screen — list with type icons, unread highlight, mark-all-read.
 import { View, Text, FlatList, RefreshControl, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -7,6 +11,7 @@ import { getNotifications, markNotificationsRead } from '@repo/supabase';
 import { useAuthStore } from '@/stores/auth';
 import { formatRelativeTime } from '@/utils/formatters/date';
 import { useRouter } from 'expo-router';
+import { getNotificationRoute } from '@/lib/navigation/notification-route';
 
 interface NotificationRow {
   id: string;
@@ -18,6 +23,7 @@ interface NotificationRow {
   data: Record<string, unknown> | null;
 }
 
+// Handles type icon.
 function typeIcon(type: string): string {
   if (type.includes('medal') || type.includes('gold') || type.includes('silver') || type.includes('bronze')) return '🏅';
   if (type.includes('result')) return '✅';
@@ -25,10 +31,12 @@ function typeIcon(type: string): string {
   if (type.includes('tiebreaker')) return '🔴';
   if (type.includes('mvp')) return '🏆';
   if (type.includes('message') || type.includes('dm')) return '💬';
-  if (type.includes('joined')) return '👋';
+  if (type.includes('joined') || type.includes('follower')) return '👋';
+  if (type.includes('season') || type.includes('host')) return '🏟️';
   return '🔔';
 }
 
+// Renders the notifications screen component.
 export default function NotificationsScreen() {
   const { profile } = useAuthStore();
   const queryClient = useQueryClient();
@@ -62,8 +70,8 @@ export default function NotificationsScreen() {
 
   function handleTap(notification: NotificationRow) {
     if (!notification.read_at) handleMarkRead(notification.id);
-    const screen = notification.data?.screen as string | undefined;
-    if (screen) router.push(screen as never);
+    const route = getNotificationRoute(notification.data);
+    if (route) router.push(route as never);
   }
 
   function renderItem({ item }: { item: NotificationRow }) {

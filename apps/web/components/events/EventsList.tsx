@@ -1,3 +1,7 @@
+/*
+ * This file defines the EventsList user-interface component.
+ */
+
 'use client';
 
 import { useState } from 'react';
@@ -6,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { Play } from 'lucide-react';
 import ROUTES from '@/constants/routes';
 import { toast } from '@/lib/toast';
+import { getApiErrorMessage, readJson } from '@/lib/api/error-message';
 
 interface EventLibraryItem {
   name?: string | null;
@@ -14,10 +19,27 @@ interface EventLibraryItem {
   event_categories?: { name?: string | null } | null;
 }
 
+const STATUS_LABELS: Record<string, string> = {
+  pending: 'Upcoming',
+  active: 'Live',
+  results_pending: 'Awaiting confirmation',
+  disputed: 'Disputed',
+  confirmed: 'Confirmed',
+  cancelled: 'Cancelled',
+};
+
+const STATUS_STYLES: Record<string, string> = {
+  active: 'bg-green-100 text-green-700',
+  results_pending: 'bg-yellow-100 text-yellow-800',
+  disputed: 'bg-orange-100 text-orange-700',
+  confirmed: 'bg-primary/10 text-primary',
+};
+
 interface CompetitionEvent {
   id?: string;
   sequence_order?: number | null;
   status?: string | null;
+  cancelled_reason?: string | null;
   weight_tag?: string | null;
   weight_multiplier?: number | null;
   events?: EventLibraryItem | null;
@@ -31,6 +53,7 @@ interface EventsListProps {
   votingLocked: boolean | null;
 }
 
+// Renders the events list component.
 export function EventsList({
   events,
   isHost,
@@ -50,10 +73,8 @@ export function EventsList({
       const response = await fetch(`/api/competitions/${competitionId}/events/${eventId}/start`, {
         method: 'POST',
       });
-      const json = await response.json();
-
       if (!response.ok) {
-        toast.error(json.error ?? 'Failed to start event');
+        toast.error(getApiErrorMessage(await readJson(response), 'Failed to start event'));
         return;
       }
 
@@ -75,6 +96,14 @@ export function EventsList({
     return (
       <div className="rounded-lg border border-dashed border-grey-200 bg-grey-50 p-10 text-center">
         <p className="text-sm font-semibold text-grey-500">No events have been added yet.</p>
+        {isHost && (
+          <Link
+            href={ROUTES.COMPETITION_SETTINGS(competitionId)}
+            className="mt-3 inline-block text-sm font-semibold text-primary hover:underline"
+          >
+            Add events in Settings
+          </Link>
+        )}
       </div>
     );
   }
@@ -88,11 +117,21 @@ export function EventsList({
             {typedEvents.length} event{typedEvents.length !== 1 ? 's' : ''} in this competition
           </p>
         </div>
-        {votingLocked && (
-          <span className="rounded-full bg-grey-100 px-3 py-1 text-xs font-semibold text-grey-600">
-            Voting locked
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {votingLocked && (
+            <span className="rounded-full bg-grey-100 px-3 py-1 text-xs font-semibold text-grey-600">
+              Competition under way
+            </span>
+          )}
+          {isHost && !['complete', 'archived'].includes(competitionStatus ?? '') && (
+            <Link
+              href={ROUTES.COMPETITION_SETTINGS(competitionId)}
+              className="rounded-full border border-grey-200 px-3 py-1 text-xs font-semibold text-grey-600 hover:border-primary hover:text-primary"
+            >
+              Manage events
+            </Link>
+          )}
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-lg border border-grey-200 bg-white">
@@ -115,16 +154,17 @@ export function EventsList({
                     <h2 className="truncate text-sm font-semibold text-grey-800">
                       {event?.name ?? 'Untitled event'}
                     </h2>
-                    <span className="rounded-full bg-grey-100 px-2 py-0.5 text-xs capitalize text-grey-600">
-                      {status.replaceAll('_', ' ')}
+                    <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS_STYLES[status] ?? 'bg-grey-100 text-grey-600'}`}>
+                      {STATUS_LABELS[status] ?? status.replaceAll('_', ' ')}
                     </span>
                   </div>
                   <p className="mt-0.5 text-xs text-grey-500">
                     {event?.event_categories?.name ?? 'Uncategorised'}
-                    {event?.result_type ? ` - ${event.result_type}` : ''}
-                    {competitionEvent.weight_multiplier
-                      ? ` - ${competitionEvent.weight_multiplier}x`
+                    {competitionEvent.weight_multiplier && competitionEvent.weight_multiplier !== 1
+                      ? ` · ${competitionEvent.weight_multiplier}× weight`
                       : ''}
+                    {event?.is_team_event ? ' · Team event' : ''}
+                    {status === 'cancelled' && competitionEvent.cancelled_reason ? ` · ${competitionEvent.cancelled_reason}` : ''}
                   </p>
                 </div>
               </>

@@ -1,3 +1,7 @@
+/*
+ * This migration updates the database for 00009 create teams.
+ */
+
 -- Migration 00009: teams, team_members, and strength_rating_votes tables
 
 CREATE TABLE public.teams (

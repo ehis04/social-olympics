@@ -1,3 +1,7 @@
+/*
+ * This file verifies Ris behavior.
+ */
+
 -- supabase/tests/rls.test.sql
 -- pgTAP tests for Row Level Security policies
 
@@ -7,9 +11,9 @@ SELECT plan(10);
 
 -- Test 1: Unauthenticated user cannot read profiles
 SET LOCAL role = anon;
-SELECT is(
-  (SELECT COUNT(*)::integer FROM public.profiles),
-  0,
+SELECT throws_like(
+  'SELECT COUNT(*) FROM public.profiles',
+  '%permission denied%',
   'Unauthenticated user cannot read profiles'
 );
 RESET role;
@@ -150,7 +154,7 @@ SELECT throws_like(
       '00000000-0000-0000-0000-000000000001',
       'mvp'
     )$$,
-  '%no_self_mvp%',
+  '%row-level security%',
   'User cannot vote for themselves for MVP'
 );
 RESET role;

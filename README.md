@@ -1,76 +1,84 @@
 # Social Olympics
 
-A cross-platform application for creating and competing in custom Olympic-style competitions with friends, colleagues, or any group.
+A web and mobile app for running your own Olympic-style competitions with friends, colleagues or any group.
 
-A host creates a competition, selects events from a built-in library, and invites members. Competitors submit results, the host confirms them, and a live leaderboard tracks standings in real time. At the end of the competition, a virtual podium is generated and winners are crowned.
+A host creates a competition, picks events from a built-in library (or adds custom ones) and invites people with a link, code or QR code. Competitors submit results, the host confirms them, and a live leaderboard keeps score. When the last event is done the host finalises the competition, the podium is revealed, and a new season can start with one tap.
 
 ---
 
 ## Features
 
-- **52-event library** across 16 categories — track, swimming, field, football, basketball, racket sports, volleyball, weightlifting, cycling, rock climbing, golf, and more
-- **Structured scoring engine** — points scale, event weight multipliers, best-of-N scoring, MVP and worst performer bonuses
-- **Team competitions** — peer-voted strength ratings with automated, balanced team assignment
-- **Weightlifting bid format** — Olympic-style bidding rounds with shared-place tiebreaking
-- **Tiebreaker system** — medal count comparison, sealed event nomination, host resolution
-- **Live leaderboard** — real-time updates via Supabase Realtime, no page refresh required
-- **Social layer** — activity feed, group chat, direct messages, reactions, comments
-- **Podium reveal** — final rankings with shareable results
-- **Ghost profiles** — add competitors who haven't signed up yet; results transfer automatically when they claim their profile
-- **GDPR compliant** — registered in Ireland, 16+ only, right to deletion
-- **Moderation** — report queue with keyword filtering on competition creation
+- **Event library**: 52 events across 16 categories (track, swimming, field, football, basketball, racket sports, weightlifting, cycling, golf and more), plus custom events
+- **Scoring**: points table, event weightings, participation points, MVP and worst performer awards, best-of-N
+- **Results**: friendly time, distance and weight entry, built-in stopwatch, photo or link evidence, host recording for in-person events, 24-hour dispute window
+- **Team events**: peer-voted strength ratings, balanced team assignment and shared team results
+- **Tiebreakers**: medal count, sealed event nomination and host resolution
+- **Live leaderboard and podium**, with shared places for genuine ties
+- **Seasons**: start the next season of a finished competition with the same events and members
+- **Social**: activity feed, comments, reactions, group chat, direct messages, following, and in-app plus push notifications
+- **Guest profiles**: add people who haven't signed up yet; their results move across when they claim the profile
+- **Safety**: reporting, blocking, keyword filtering, moderation queue and creation suspensions
+- **Privacy**: 16+ only, self-service account deletion, Privacy Policy (`/privacy`) and Terms of Use (`/terms`) pages
 
 ---
 
-## Tech Stack
+## Tech stack
 
-**Web:** Next.js 14 (App Router), Supabase, TanStack Query, Zustand, Tailwind CSS, React Hook Form + Zod
+| Area | Technology |
+|---|---|
+| Web | Next.js 16 (App Router), TanStack Query, Zustand, Tailwind CSS, React Hook Form + Zod |
+| Mobile | Expo SDK 54, React Native, Expo Router, NativeWind |
+| Backend | Supabase (PostgreSQL, Auth, Realtime, Storage) with business logic in Next.js API routes |
+| Shared | Turborepo + pnpm workspaces, TypeScript packages for scoring, validation, types, constants and Supabase queries |
+| Hosting | Cloudflare Workers via OpenNext (web), EAS Build and Submit (mobile), Upstash Redis (rate limiting) |
+| Testing | Vitest, Playwright (web E2E), Supabase integration tests, pgTAP (database) |
 
-**Mobile:** React Native + Expo, NativeWind, Expo Router
+## Repository layout
 
-**Shared:** Turborepo monorepo, pnpm workspaces, TypeScript throughout
-
-**Backend:** Supabase (PostgreSQL, Auth, Realtime, Storage, Edge Functions), Upstash Redis (rate limiting)
-
-**Testing:** Vitest, Jest, Playwright (web E2E), pgTAP (database)
-
-**Infrastructure:** Cloudflare Pages (web hosting), EAS (mobile builds), GitHub Actions (CI/CD)
-
----
-
-## Quick Start
-
-```bash
-git clone https://github.com/your-org/social-olympics.git
-cd social-olympics
-pnpm install
-cp .env.example .env.local   # then fill in your Supabase project values
-supabase start                # starts local Supabase via Docker
-pnpm dev                        # starts web and mobile dev servers together
+```
+apps/
+  web/        Next.js app: pages, API routes (the backend for web and mobile), E2E tests
+  mobile/     Expo app for iOS and Android, calls the web API with a bearer token
+packages/
+  scoring/    Pure scoring, ranking and result-entry logic shared by web and mobile
+  supabase/   Typed Supabase clients, queries and mutations
+  types/      Generated database types and shared TypeScript types
+  validations/ Zod schemas
+  constants/  Shared constants
+  config/     Shared ESLint and TypeScript config
+supabase/
+  migrations/ Database schema, RLS policies, functions and seed data
+  tests/      pgTAP database tests
+docs/         Manuals, setup and contribution guides
 ```
 
-Web app: [http://localhost:3000](http://localhost:3000)
-Mobile app: follow the Expo CLI prompts
-
-Full setup instructions: [`docs/SETUP.md`](docs/SETUP.md)
-
 ---
+
+## Quick start
+
+```bash
+pnpm install
+supabase start                         # local Supabase in Docker
+cp .env.example apps/web/.env.local    # fill in the values printed by `supabase status`
+pnpm --filter web dev                  # http://localhost:3000
+pnpm --filter mobile dev               # Expo; scan the QR code with Expo Go
+```
+
+Full instructions: [docs/SETUP.md](docs/SETUP.md). Going live: [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ## Documentation
 
-| Document | Audience |
+| Document | For |
 |---|---|
-| [`docs/SETUP.md`](docs/SETUP.md) | Local dev quickstart |
-| [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) | Branching, commits, PR process |
-| [`docs/manuals/user-manual.md`](docs/manuals/user-manual.md) | End users — how to use the app |
-| [`docs/manuals/host-manual.md`](docs/manuals/host-manual.md) | Hosts — competition management |
-| [`docs/manuals/testing-manual.md`](docs/manuals/testing-manual.md) | Developers — full test suite reference |
-| [`docs/manuals/technical-manual.md`](docs/manuals/technical-manual.md) | Developers — architecture and operations |
-| [`docs/decisions/`](docs/decisions) | Architecture Decision Records |
-| [`docs/V2_IDEAS.txt`](docs/V2_IDEAS.txt) | Post-v1 ideas, prioritised |
+| [docs/SETUP.md](docs/SETUP.md) | Local development |
+| [DEPLOYMENT.md](DEPLOYMENT.md) | Deploying Supabase, the web app and the mobile apps |
+| [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) | Branching, commits and pull requests |
+| [docs/user-manual.md](docs/user-manual.md) | Everyone using the app |
+| [docs/host-manual.md](docs/host-manual.md) | Hosts running competitions |
+| [docs/technical-manual.md](docs/technical-manual.md) | Architecture and operations |
+| [docs/testing-manual.md](docs/testing-manual.md) | The test suites and how to run them |
+| [docs/V2_IDEAS.txt](docs/V2_IDEAS.txt) | Ideas for after version 1 |
 
----
+## Status
 
-## Project Status
-
-**v1.0** — feature complete for web and mobile.
+Version 1 is feature complete on web and mobile.

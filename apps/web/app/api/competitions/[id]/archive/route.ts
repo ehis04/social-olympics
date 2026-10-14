@@ -1,3 +1,7 @@
+/*
+ * This file handles requests for the archive API route.
+ */
+
 // POST /api/competitions/[id]/archive — move a complete competition to archived
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerClient } from '@/lib/supabase/server';
@@ -9,6 +13,7 @@ interface Params {
   params: Promise<{ id: string }>;
 }
 
+// Handles post.
 export async function POST(_req: NextRequest, { params }: Params) {
   const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();

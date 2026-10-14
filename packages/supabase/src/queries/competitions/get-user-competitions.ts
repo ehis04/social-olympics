@@ -1,7 +1,12 @@
+/*
+ * This file defines the get user competitions module.
+ */
+
 // Fetches all competitions a user is a member of (active and archived).
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
 
+// Handles get user competitions.
 export async function getUserCompetitions(
   client: SupabaseClient,
   profileId: string,
@@ -32,7 +37,7 @@ export async function getUserCompetitions(
 
     const { data, error } = await client
       .from('competitions')
-      .select('id, name, description, status, country_code, city, is_public, created_at, total_events, host_id')
+      .select('id, name, description, status, country_code, city, is_public, created_at, total_events, host_id, cohost_id')
       .in('id', competitionIds)
       .order('created_at', { ascending: false });
 

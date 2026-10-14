@@ -1,6 +1,11 @@
+/*
+ * This file defines the (auth) application layout.
+ */
+
 import Image from 'next/image';
 import Link from 'next/link';
 
+// Renders the auth layout component.
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-grey-100 px-4 py-12">

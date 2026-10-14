@@ -1,7 +1,12 @@
+/*
+ * This file defines the delete message module.
+ */
+
 // Soft-deletes a message — blanks content and sets deleted_at, row is preserved.
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
 
+// Handles delete message.
 export async function deleteMessage(
   client: SupabaseClient,
   messageId: string,

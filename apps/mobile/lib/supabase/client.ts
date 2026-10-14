@@ -1,14 +1,13 @@
+/*
+ * This file defines the client module.
+ */
+
 // Mobile Supabase client — uses expo-secure-store for session persistence.
 import { createClient } from '@supabase/supabase-js';
-import * as SecureStore from 'expo-secure-store';
 import type { Database } from '@repo/types';
+import { secureStorage } from './secure-storage';
 
-const ExpoSecureStoreAdapter = {
-  getItem: (key: string) => SecureStore.getItemAsync(key),
-  setItem: (key: string, value: string) => SecureStore.setItemAsync(key, value),
-  removeItem: (key: string) => SecureStore.deleteItemAsync(key),
-};
-
+// Handles get supabase url.
 function getSupabaseUrl(): string {
   const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
 
@@ -19,6 +18,7 @@ function getSupabaseUrl(): string {
   return url.replace(/\/rest\/v1\/?$/, '');
 }
 
+// Handles get supabase anon key.
 function getSupabaseAnonKey(): string {
   const key = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -34,7 +34,7 @@ export const supabase = createClient<Database>(
   getSupabaseAnonKey(),
   {
     auth: {
-      storage: ExpoSecureStoreAdapter,
+      storage: secureStorage,
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: false,

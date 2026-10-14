@@ -1,3 +1,7 @@
+/*
+ * This file defines the CompetitionCard user-interface component.
+ */
+
 // Displays a single competition summary card; fully clickable to competition feed
 import Link from 'next/link';
 import { Users, Calendar } from 'lucide-react';
@@ -15,8 +19,9 @@ interface Props {
   onJoin?: (id: string) => void;
 }
 
+// Renders the competition card component.
 export default function CompetitionCard({ competition, memberCount, showJoinButton, isJoined = false, onJoin }: Props) {
-  const statusColour = STATUS_COLOURS[competition.status as keyof typeof STATUS_COLOURS] ?? 'bg-grey-100 text-grey-600';
+  const statusColour = STATUS_COLOURS[competition.status] ?? '#6B7280';
 
   return (
     <div className="relative rounded-lg border border-grey-200 bg-white shadow-sm transition-shadow hover:shadow-md">
@@ -28,9 +33,13 @@ export default function CompetitionCard({ competition, memberCount, showJoinButt
         <div className="mb-3 flex items-start justify-between gap-2">
           <h2 className="text-base font-bold text-grey-800 leading-tight line-clamp-2">
             {competition.name}
+            {(competition.season_number ?? 1) > 1 && (
+              <span className="ml-1.5 text-xs font-semibold text-grey-500">Season {competition.season_number}</span>
+            )}
           </h2>
           <span
-            className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold capitalize ${statusColour}`}
+            className="shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold capitalize"
+            style={{ color: statusColour, backgroundColor: `${statusColour}1a` }}
           >
             {competition.status}
           </span>

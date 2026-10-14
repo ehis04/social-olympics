@@ -1,3 +1,7 @@
+/*
+ * This file verifies 17 completion podium behavior.
+ */
+
 // Journey 17 — competition completion and podium
 import { test, expect } from '@playwright/test';
 import { AUTH_FILE, HOST_AUTH_FILE } from './fixtures/auth-state';

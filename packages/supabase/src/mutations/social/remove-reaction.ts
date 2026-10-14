@@ -1,7 +1,12 @@
+/*
+ * This file defines the remove reaction module.
+ */
+
 // Removes a reaction (RLS enforces profile_id = auth.uid()).
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
 
+// Handles remove reaction.
 export async function removeReaction(
   client: SupabaseClient,
   reactionId: string,

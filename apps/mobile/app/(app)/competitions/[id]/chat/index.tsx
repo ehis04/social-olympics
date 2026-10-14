@@ -1,3 +1,7 @@
+/*
+ * This file defines the index module.
+ */
+
 // Group chat screen — realtime messages, inverted list, keyboard-avoiding input.
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -13,13 +17,16 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
-import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { Send } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase/client';
-import { getGroupChat, subscribeGroupChat, sendMessage, deleteMessage } from '@repo/supabase';
+import { getCompetition, getGroupChat, subscribeGroupChat } from '@repo/supabase';
+import { apiCall } from '@/lib/api/client';
+import { toast } from '@/lib/toast';
 import { useAuthStore } from '@/stores/auth';
 import { formatRelativeTime } from '@/utils/formatters/date';
+import { ReportSheet } from '@/components/moderation/ReportButton';
 
 interface ChatMessage {
   id: string;
@@ -30,6 +37,7 @@ interface ChatMessage {
   sender: { id: string; display_name: string; avatar_url: string | null } | null;
 }
 
+// Renders the chat screen component.
 export default function ChatScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { profile } = useAuthStore();
@@ -37,6 +45,24 @@ export default function ChatScreen() {
   const [messageText, setMessageText] = useState('');
   const [sending, setSending] = useState(false);
   const flatListRef = useRef<FlatList>(null);
+  const [reportMessageId, setReportMessageId] = useState<string | null>(null);
+
+  const { data: competition } = useQuery({
+    queryKey: ['competition', id],
+    queryFn: async () => (await getCompetition(supabase, id)).data as { host_id: string; cohost_id: string | null } | null,
+    enabled: !!id,
+  });
+  const isHost = competition?.host_id === profile?.id || competition?.cohost_id === profile?.id;
+
+  // Messages from people you have blocked are hidden.
+  const { data: blockedIds } = useQuery({
+    queryKey: ['blocked-people'],
+    queryFn: async () => {
+      const result = await apiCall<{ blocked_id: string }[]>('/api/users/blocked');
+      return result.data ?? [];
+    },
+    select: (rows) => new Set(rows.map((row) => row.blocked_id)),
+  });
 
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery({
@@ -62,7 +88,8 @@ export default function ChatScreen() {
   }, [id, queryClient]);
 
   // Messages arrive newest-first from query, reverse for display (newest at bottom)
-  const allMessages = data?.pages.flatMap((p) => (p.data as ChatMessage[] | null) ?? []) ?? [];
+  const allMessages = (data?.pages.flatMap((p) => (p.data as ChatMessage[] | null) ?? []) ?? [])
+    .filter((message) => !blockedIds?.has(message.sender_profile_id));
   const messages = [...allMessages].reverse();
 
   async function handleSend() {
@@ -70,14 +97,17 @@ export default function ChatScreen() {
     if (!trimmed || sending) return;
     setSending(true);
     setMessageText('');
-    await sendMessage(supabase, {
-      competition_id: id,
-      sender_profile_id: profile?.id ?? '',
-      content: trimmed,
-      message_type: 'group_chat',
+    const { error } = await apiCall(`/api/competitions/${id}/chat`, {
+      method: 'POST',
+      body: JSON.stringify({ content: trimmed }),
     });
     setSending(false);
-    queryClient.invalidateQueries({ queryKey: ['competition', id, 'chat'] });
+    if (error) {
+      setMessageText(trimmed);
+      toast.error(error.message);
+      return;
+    }
+    void queryClient.invalidateQueries({ queryKey: ['competition', id, 'chat'] });
   }
 
   function confirmDelete(messageId: string) {
@@ -87,10 +117,27 @@ export default function ChatScreen() {
         text: 'Delete',
         style: 'destructive',
         onPress: async () => {
-          await deleteMessage(supabase, messageId);
-          queryClient.invalidateQueries({ queryKey: ['competition', id, 'chat'] });
+          const { error } = await apiCall(`/api/competitions/${id}/chat`, {
+            method: 'DELETE',
+            body: JSON.stringify({ messageId }),
+          });
+          if (error) toast.error(error.message);
+          void queryClient.invalidateQueries({ queryKey: ['competition', id, 'chat'] });
         },
       },
+    ]);
+  }
+
+  // Long-pressing someone else's message lets you report it; hosts can also delete it.
+  function showMessageActions(message: ChatMessage) {
+    if (message.sender_profile_id === profile?.id) {
+      confirmDelete(message.id);
+      return;
+    }
+    Alert.alert(message.sender?.display_name ?? 'Message', undefined, [
+      { text: 'Report message', onPress: () => setReportMessageId(message.id) },
+      ...(isHost ? [{ text: 'Delete message', style: 'destructive' as const, onPress: () => confirmDelete(message.id) }] : []),
+      { text: 'Cancel', style: 'cancel' as const },
     ]);
   }
 
@@ -101,8 +148,8 @@ export default function ChatScreen() {
 
     return (
       <TouchableOpacity
-        onLongPress={() => isOwn && confirmDelete(item.id)}
-        activeOpacity={isOwn ? 0.7 : 1}
+        onLongPress={() => showMessageActions(item)}
+        activeOpacity={0.7}
       >
         <View className={`flex-row items-end gap-2 mb-3 ${isOwn ? 'flex-row-reverse' : ''}`}>
           {!isOwn && (
@@ -208,6 +255,13 @@ export default function ChatScreen() {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+      <ReportSheet
+        visible={reportMessageId !== null}
+        onClose={() => setReportMessageId(null)}
+        targetType="message"
+        targetId={reportMessageId ?? ''}
+        competitionId={id}
+      />
     </SafeAreaView>
   );
 }

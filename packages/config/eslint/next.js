@@ -1,3 +1,7 @@
+/*
+ * This file defines the next module.
+ */
+
 module.exports = {
   extends: [
     require.resolve('./index.js'),

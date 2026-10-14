@@ -1,7 +1,12 @@
+/*
+ * This file renders the reset password application page.
+ */
+
 import { ResetPasswordForm } from '@/components/auth/ResetPasswordForm';
 
 export const metadata = { title: 'Choose a new password: Social Olympics' };
 
+// Renders the reset password page component.
 export default function ResetPasswordPage() {
   return (
     <div className="mx-auto w-full max-w-md">

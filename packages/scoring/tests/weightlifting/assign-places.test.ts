@@ -1,7 +1,12 @@
+/*
+ * This file verifies assign places behavior.
+ */
+
 // Unit tests for assignWeightliftingPlaces — dense sequential place assignment.
 import { describe, expect, it } from 'vitest';
 import { assignWeightliftingPlaces } from '../../src/weightlifting/assign-places';
 
+// Handles get place.
 function getPlace(placements: ReturnType<typeof assignWeightliftingPlaces>, id: string) {
   return placements.find((p) => p.profileId === id)?.place;
 }

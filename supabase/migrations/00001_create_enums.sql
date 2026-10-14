@@ -1,3 +1,7 @@
+/*
+ * This migration updates the database for 00001 create enums.
+ */
+
 -- Migration 00001: all platform enum types
 CREATE TYPE result_type AS ENUM (
   'time', 'distance', 'score', 'inverted_score',

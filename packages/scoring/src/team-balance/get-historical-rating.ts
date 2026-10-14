@@ -1,3 +1,7 @@
+/*
+ * This file defines the get historical rating module.
+ */
+
 // Derives a 1–10 strength rating from historical results using similarity group inference.
 import { RESULT_TYPE_CONFIG, SIMILARITY_GROUPS } from '@repo/constants';
 
@@ -8,10 +12,12 @@ export interface HistoricalResult {
   resultType: string;
 }
 
+// Handles is lower better.
 function isLowerBetter(resultType: string): boolean {
   return (RESULT_TYPE_CONFIG as Record<string, { lowerIsBetter?: boolean }>)[resultType]?.lowerIsBetter ?? false;
 }
 
+// Handles get group slugs.
 function getGroupSlugs(eventSlug: string): string[] {
   for (const group of Object.values(SIMILARITY_GROUPS) as string[][]) {
     if (group.includes(eventSlug)) return group;
@@ -19,6 +25,7 @@ function getGroupSlugs(eventSlug: string): string[] {
   return [eventSlug]; // standalone: exact match only
 }
 
+// Handles relative score.
 function relativeScore(value: number, best: number, worst: number, lowerIsBetter: boolean): number {
   if (best === worst) return 0.5; // all identical — mid score
   return lowerIsBetter
@@ -26,6 +33,7 @@ function relativeScore(value: number, best: number, worst: number, lowerIsBetter
     : (value - worst) / (best - worst);
 }
 
+// Handles get historical rating.
 export function getHistoricalRating(
   targetProfileId: string,
   eventSlug: string,

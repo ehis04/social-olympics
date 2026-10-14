@@ -1,3 +1,7 @@
+/*
+ * This migration updates the database for 00020 seed event categories.
+ */
+
 -- Migration 00020: seed event categories (permanent data migration)
 
 INSERT INTO public.event_categories (slug, name) VALUES

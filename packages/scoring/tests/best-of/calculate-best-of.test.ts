@@ -1,7 +1,12 @@
+/*
+ * This file verifies calculate best of behavior.
+ */
+
 // Unit tests for calculateBestOf.
 import { describe, expect, it } from 'vitest';
 import { calculateBestOf } from '../../src/best-of/calculate-best-of';
 
+// Handles make result.
 function makeResult(eventId: string, totalPoints: number, isDnf = false) {
   return { eventId, totalPoints, isDnf };
 }

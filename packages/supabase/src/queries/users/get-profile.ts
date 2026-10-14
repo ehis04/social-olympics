@@ -1,7 +1,12 @@
+/*
+ * This file defines the get profile module.
+ */
+
 // Fetches a single profile with career stats.
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
 
+// Handles get profile.
 export async function getProfile(
   client: SupabaseClient,
   profileId: string,

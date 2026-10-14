@@ -1,3 +1,7 @@
+/*
+ * This file defines the process bid round module.
+ */
+
 // Processes a completed weightlifting bid round to determine eliminations and advances.
 import type { AttemptStatus } from '@repo/types';
 
@@ -13,6 +17,7 @@ export interface BidRoundResult {
   roundWeight: number;
 }
 
+// Handles process bid round.
 export function processBidRound(bids: BidAttempt[]): BidRoundResult {
   const hasPending = bids.some((b) => b.attemptStatus === 'pending');
   if (hasPending) {

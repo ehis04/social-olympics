@@ -1,6 +1,11 @@
+/*
+ * This file defines the loading module.
+ */
+
 // Competition events loading skeleton
 import { SkeletonLine, SkeletonRow } from '@/components/ui/Skeletons';
 
+// Renders the events loading component.
 export default function EventsLoading() {
   return (
     <div className="space-y-4">

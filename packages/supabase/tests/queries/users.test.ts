@@ -1,3 +1,7 @@
+/*
+ * This file verifies users behavior.
+ */
+
 // Integration tests for user profile queries against local Supabase.
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { getProfile } from '../../src/queries/users/get-profile';

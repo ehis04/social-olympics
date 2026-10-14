@@ -1,9 +1,14 @@
+/*
+ * This file handles requests for the confirm API route.
+ */
+
 // POST /api/competitions/[id]/events/[eventId]/confirm — host confirms ranked results.
 import { NextResponse } from 'next/server';
 import { getServerClient } from '@/lib/supabase/server';
 import { createAdminClient, getCompetition, confirmResult } from '@repo/supabase';
 import { createNotifications } from '@/lib/notifications/create-notification';
-import { calculatePoints, getParticipationPoints } from '@repo/scoring';
+import { loadPointsTable, scoreForPlace } from '@/lib/scoring/event-scoring';
+import { z } from 'zod';
 import type { Database } from '@repo/types';
 
 type CompetitionRow = Database['public']['Tables']['competitions']['Row'];
@@ -12,11 +17,11 @@ interface RouteParams {
   params: Promise<{ id: string; eventId: string }>;
 }
 
-interface RankingEntry {
-  resultId: string;
-  place: number;
-}
+const RankingsSchema = z.object({
+  rankings: z.array(z.object({ resultId: z.string().uuid(), place: z.number().int().positive() })).min(1),
+});
 
+// Handles post.
 export async function POST(request: Request, { params }: RouteParams) {
   const { id, eventId } = await params;
   const client = await getServerClient();
@@ -28,67 +33,70 @@ export async function POST(request: Request, { params }: RouteParams) {
   if (compError || !compData) return NextResponse.json({ error: 'Competition not found' }, { status: 404 });
 
   const competition = compData as CompetitionRow;
+  if (['complete', 'archived'].includes(competition.status)) {
+    return NextResponse.json({ error: 'This competition is finished. Results and events are locked.' }, { status: 409 });
+  }
   const isHostOrCohost = competition.host_id === user.id || competition.cohost_id === user.id;
   if (!isHostOrCohost) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-  let body: { rankings?: RankingEntry[] };
+  let input: unknown;
   try {
-    body = (await request.json()) as typeof body;
+    input = await request.json();
   } catch {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
 
-  if (!Array.isArray(body.rankings) || body.rankings.length === 0) {
-    return NextResponse.json({ error: 'rankings must be a non-empty array' }, { status: 400 });
+  const parsed = RankingsSchema.safeParse(input);
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'rankings must contain valid result IDs and positive integer places' }, { status: 400 });
+  }
+  const body = parsed.data;
+  const resultIds = body.rankings.map((ranking) => ranking.resultId);
+  if (new Set(resultIds).size !== resultIds.length || body.rankings.some((ranking) => ranking.place > resultIds.length)) {
+    return NextResponse.json({ error: 'Rankings contain duplicate results or invalid places' }, { status: 400 });
   }
 
   // Fetch event config for scoring
   const { data: eventData } = await client
     .from('competition_events')
-    .select('weight_multiplier, best_of, total_attempts, events(name)')
+    .select('events(name)')
     .eq('id', eventId)
+    .eq('competition_id', id)
     .single();
 
   const ev = eventData as {
-    weight_multiplier: number;
-    best_of: number | null;
-    total_attempts: number | null;
     events: { name: string } | null;
   } | null;
 
   if (!ev) return NextResponse.json({ error: 'Event not found' }, { status: 404 });
 
-  // Fetch points config for this competition
-  const { data: pointsConfig } = await client
-    .from('event_points_config')
-    .select('finishing_place, points_value')
-    .eq('competition_id', id)
-    .order('finishing_place', { ascending: true });
+  // Validate the complete batch before using the admin client to mutate results.
+  const { data: eventResults, error: resultsError } = await adminClient
+    .from('results')
+    .select('id, is_dnf, is_disqualified')
+    .eq('competition_event_id', eventId)
+    .in('id', resultIds);
+  if (resultsError) return NextResponse.json({ error: 'Failed to validate results' }, { status: 500 });
+  if (eventResults?.length !== resultIds.length) {
+    return NextResponse.json({ error: 'Every result must belong to this event' }, { status: 400 });
+  }
 
-  const placesPoints = (pointsConfig ?? []) as Array<{
-    finishing_place: number;
-    points_value: number;
-  }>;
-
-  const totalParticipants = body.rankings.length;
-  const weightMultiplier = ev.weight_multiplier ?? 1;
+  const pointsTable = await loadPointsTable(adminClient, id);
 
   // Confirm each result with calculated points
   const confirmErrors: string[] = [];
   await Promise.all(
     body.rankings.map(async ({ resultId, place }) => {
-      const configuredPoints = placesPoints.find((p) => p.finishing_place === place)?.points_value;
-      const pointsAwarded =
-        configuredPoints !== undefined
-          ? configuredPoints * weightMultiplier
-          : calculatePoints(place, weightMultiplier);
-      const participationPoints = getParticipationPoints(false);
+      const result = eventResults.find((entry) => entry.id === resultId)!;
+      const ineligible = result.is_dnf || result.is_disqualified;
+      const score = scoreForPlace(ineligible ? null : place, ineligible, pointsTable);
 
       const { error } = await confirmResult(adminClient, {
         result_id: resultId,
-        finishing_place: place,
-        points_awarded: pointsAwarded,
-        participation_points: participationPoints,
+        finishing_place: ineligible ? null : place,
+        points_awarded: score.points_awarded,
+        participation_points: score.participation_points,
+        confirmed_by: user.id,
       });
 
       if (error) confirmErrors.push(`${resultId}: ${error.message}`);
@@ -100,10 +108,11 @@ export async function POST(request: Request, { params }: RouteParams) {
   }
 
   // Move event to confirmed
-  await adminClient
+  const { error: updateError } = await adminClient
     .from('competition_events')
     .update({ status: 'confirmed', confirmed_at: new Date().toISOString() })
     .eq('id', eventId);
+  if (updateError) return NextResponse.json({ error: 'Failed to update event status' }, { status: 500 });
 
   const { data: members } = await adminClient
     .from('competition_members')

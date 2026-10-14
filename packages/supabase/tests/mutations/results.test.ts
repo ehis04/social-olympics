@@ -1,3 +1,7 @@
+/*
+ * This file verifies results behavior.
+ */
+
 // Integration tests for result queries and mutations against local Supabase.
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { getResultsForEvent } from '../../src/queries/results/get-results-for-event';

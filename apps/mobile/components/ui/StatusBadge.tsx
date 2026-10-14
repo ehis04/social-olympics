@@ -1,3 +1,7 @@
+/*
+ * This file defines the StatusBadge user-interface component.
+ */
+
 // Status badge — maps competition/event status to colour tokens.
 import { View, Text } from 'react-native';
 import type { Database } from '@repo/types';
@@ -35,6 +39,7 @@ const STATUS_TEXT: Record<string, string> = {
   cancelled: 'text-neutral-500',
 };
 
+// Renders the status badge component.
 export function StatusBadge({ status }: Props) {
   const bg = STATUS_BG[status] ?? 'bg-neutral-100';
   const text = STATUS_TEXT[status] ?? 'text-neutral-500';

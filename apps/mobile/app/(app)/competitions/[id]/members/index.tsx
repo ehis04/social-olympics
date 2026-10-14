@@ -1,4 +1,8 @@
-// Members screen — list with roles, host context menu, invite code display.
+/*
+ * This file defines the index module.
+ */
+
+// Members screen — list with roles, host and co-host management, guests and invite code.
 import { useState } from 'react';
 import {
   View,
@@ -8,13 +12,12 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
-  ActionSheetIOS,
-  Platform,
   ActivityIndicator,
   Modal,
+  Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { UserPlus, Copy, Users } from 'lucide-react-native';
 import { Image } from 'expo-image';
@@ -23,6 +26,7 @@ import { getCompetition, getCompetitionMembers } from '@repo/supabase';
 import { apiCall } from '@/lib/api/client';
 import { toast } from '@/lib/toast';
 import { useAuthStore } from '@/stores/auth';
+import { MOBILE_ROUTES } from '@/constants/routes';
 import * as Clipboard from 'expo-clipboard';
 import type { Database } from '@repo/types';
 
@@ -32,22 +36,29 @@ type MemberRow = Database['public']['Tables']['competition_members']['Row'] & {
 type MemberRole = Database['public']['Enums']['member_role'];
 type CompetitionRow = Database['public']['Tables']['competitions']['Row'];
 
-const ROLE_LABELS: Record<MemberRole, string> = {
+type Badge = 'host' | MemberRole;
+
+const ROLE_LABELS: Record<Badge, string> = {
+  host: 'Host',
   cohost: 'Co-host',
   competitor: 'Competitor',
   spectator: 'Spectator',
 };
 
-const ROLE_COLOURS: Record<MemberRole, string> = {
+const ROLE_COLOURS: Record<Badge, string> = {
+  host: 'bg-primary-muted text-primary',
   cohost: 'bg-blue-100 text-blue-700',
   competitor: 'bg-neutral-100 text-neutral-600',
   spectator: 'bg-neutral-100 text-neutral-500',
 };
 
+// Renders the members screen component.
 export default function MembersScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
   const { profile } = useAuthStore();
   const queryClient = useQueryClient();
+  const [actionMember, setActionMember] = useState<MemberRow | null>(null);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showGuestModal, setShowGuestModal] = useState(false);
   const [guestName, setGuestName] = useState('');
@@ -71,11 +82,13 @@ export default function MembersScreen() {
     enabled: !!id,
   });
 
-  const members = membersData ?? [];
+  // People who left stay on the leaderboard with their results, but not in the member list.
+  const members = (membersData ?? []).filter((member) => member.status !== 'withdrawn');
   const competition = compData;
   const isHost = competition?.host_id === profile?.id;
   const isCohost = competition?.cohost_id === profile?.id;
-  const canManage = isHost || isCohost;
+  const isFinished = competition?.status === 'complete' || competition?.status === 'archived';
+  const canManage = (isHost || isCohost) && !isFinished;
   const inviteCode = competition?.invite_code ?? '';
 
   async function copyInviteCode() {
@@ -92,8 +105,9 @@ export default function MembersScreen() {
       toast.error(error.message);
       return;
     }
-    toast.success('Role updated');
-    queryClient.invalidateQueries({ queryKey: ['competition', id, 'members'] });
+    toast.success(newRole === 'cohost' ? 'Co-host appointed' : 'Role updated');
+    void queryClient.invalidateQueries({ queryKey: ['competition', id, 'members'] });
+    void queryClient.invalidateQueries({ queryKey: ['competition', id] });
   }
 
   async function handleRemove(member: MemberRow) {
@@ -123,35 +137,46 @@ export default function MembersScreen() {
   }
 
   function showMemberActions(member: MemberRow) {
-    if (!canManage || member.profile_id === profile?.id) return;
+    if (!canManage || member.profile_id === profile?.id || member.profile_id === competition?.host_id) return;
+    setActionMember(member);
+  }
 
-    const options = ['Change to Competitor', 'Change to Spectator', 'Remove Member', 'Cancel'];
-    const destructiveIndex = 2;
-    const cancelIndex = 3;
+  async function shareClaimLink(member: MemberRow) {
+    const baseUrl = (process.env.EXPO_PUBLIC_API_BASE_URL ?? '').replace(/\/$/, '');
+    const link = `${baseUrl}/claim/${member.profile_id}`;
+    await Share.share({
+      message: `Claim your Social Olympics results for ${competition?.name ?? 'our competition'}: ${link}`,
+    });
+  }
 
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        { options, destructiveButtonIndex: destructiveIndex, cancelButtonIndex: cancelIndex },
-        (index) => {
-          if (index === 0) handleRoleChange(member, 'competitor');
-          if (index === 1) handleRoleChange(member, 'spectator');
-          if (index === 2) handleRemove(member);
-        }
-      );
-    } else {
-      Alert.alert(member.profile?.display_name ?? 'Member', undefined, [
-        { text: 'Change to Competitor', onPress: () => handleRoleChange(member, 'competitor') },
-        { text: 'Change to Spectator', onPress: () => handleRoleChange(member, 'spectator') },
-        { text: 'Remove Member', style: 'destructive', onPress: () => handleRemove(member) },
-        { text: 'Cancel', style: 'cancel' },
-      ]);
+  // The actions a host or co-host can take on a member, shown in a bottom sheet.
+  function memberActions(member: MemberRow): { label: string; destructive?: boolean; run: () => void }[] {
+    const isMemberCohost = competition?.cohost_id === member.profile_id;
+    const isGuest = !!member.profile?.is_ghost;
+    const actions: { label: string; destructive?: boolean; run: () => void }[] = [];
+    if (isHost && !isGuest && !isMemberCohost && member.status === 'active') {
+      actions.push({ label: 'Make co-host', run: () => void handleRoleChange(member, 'cohost') });
     }
+    if (isMemberCohost && isHost) {
+      actions.push({ label: 'Remove as co-host', run: () => void handleRoleChange(member, 'competitor') });
+    }
+    if (!isMemberCohost && member.role !== 'competitor') {
+      actions.push({ label: 'Change to competitor', run: () => void handleRoleChange(member, 'competitor') });
+    }
+    if (!isMemberCohost && member.role !== 'spectator') {
+      actions.push({ label: 'Change to spectator', run: () => void handleRoleChange(member, 'spectator') });
+    }
+    if (isGuest && !member.profile?.claimed_by) {
+      actions.push({ label: 'Share claim link', run: () => void shareClaimLink(member) });
+    }
+    actions.push({ label: 'Remove from competition', destructive: true, run: () => void handleRemove(member) });
+    return actions;
   }
 
   async function handleAddGuest() {
     if (!guestName.trim()) return;
     setAddingGuest(true);
-    const { error } = await apiCall(`/api/competitions/${id}/members/ghost`, {
+    const { error } = await apiCall(`/api/competitions/${id}/ghost-profile`, {
       method: 'POST',
       body: JSON.stringify({ display_name: guestName.trim() }),
     });
@@ -168,14 +193,20 @@ export default function MembersScreen() {
 
   function renderMember({ item }: { item: MemberRow }) {
     const isMe = item.profile_id === profile?.id;
-    const role = item.role as MemberRole;
-    const roleBadge = ROLE_COLOURS[role] ?? 'bg-neutral-100 text-neutral-500';
+    const badge: Badge = item.profile_id === competition?.host_id
+      ? 'host'
+      : item.profile_id === competition?.cohost_id
+        ? 'cohost'
+        : (item.role as MemberRole);
+    const roleBadge = ROLE_COLOURS[badge] ?? 'bg-neutral-100 text-neutral-500';
+    const isGuest = !!item.profile?.is_ghost;
 
     return (
       <TouchableOpacity
         className="flex-row items-center px-4 py-3 border-b border-neutral-100"
+        onPress={() => router.push(MOBILE_ROUTES.PROFILE(item.profile_id))}
         onLongPress={() => showMemberActions(item)}
-        activeOpacity={canManage && !isMe ? 0.6 : 1}
+        activeOpacity={0.6}
       >
         <View className="w-10 h-10 rounded-full bg-neutral-200 mr-3 overflow-hidden">
           {item.profile?.avatar_url ? (
@@ -197,6 +228,16 @@ export default function MembersScreen() {
             {isMe && (
               <Text className="text-xs text-neutral-400">(you)</Text>
             )}
+            {item.status === 'invited' && (
+              <View className="rounded-full bg-amber-100 px-2 py-0.5">
+                <Text className="text-xs font-semibold text-amber-700">Invited</Text>
+              </View>
+            )}
+            {isGuest && (
+              <View className="rounded-full bg-neutral-100 px-2 py-0.5">
+                <Text className="text-xs font-semibold text-neutral-500">Guest</Text>
+              </View>
+            )}
           </View>
           {item.profile?.country_code ? (
             <Text className="text-xs text-neutral-500">{item.profile.country_code}</Text>
@@ -204,7 +245,7 @@ export default function MembersScreen() {
         </View>
 
         <View className={`rounded-full px-2 py-0.5 ${roleBadge}`}>
-          <Text className="text-xs font-semibold">{ROLE_LABELS[role] ?? role}</Text>
+          <Text className="text-xs font-semibold">{ROLE_LABELS[badge] ?? badge}</Text>
         </View>
       </TouchableOpacity>
     );
@@ -243,7 +284,7 @@ export default function MembersScreen() {
         ListHeaderComponent={
           <View className="px-4 py-2">
             <Text className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">
-              {members.length} {members.length === 1 ? 'member' : 'members'} - long press to manage
+              {members.length} {members.length === 1 ? 'member' : 'members'}{canManage ? ' · long press to manage' : ''}
             </Text>
           </View>
         }
@@ -256,6 +297,33 @@ export default function MembersScreen() {
           ) : null
         }
       />
+
+      {/* Member actions */}
+      <Modal visible={actionMember !== null} transparent animationType="slide" onRequestClose={() => setActionMember(null)}>
+        <TouchableOpacity className="flex-1 bg-black/50" activeOpacity={1} onPress={() => setActionMember(null)} />
+        <View className="bg-white rounded-t-2xl px-6 pt-5 pb-10">
+          <Text className="text-base font-bold text-neutral-800 mb-3">
+            {actionMember?.profile?.display_name ?? 'Member'}
+          </Text>
+          {actionMember && memberActions(actionMember).map((action) => (
+            <TouchableOpacity
+              key={action.label}
+              className="py-3.5 border-b border-neutral-100"
+              onPress={() => {
+                setActionMember(null);
+                action.run();
+              }}
+            >
+              <Text className={`text-base ${action.destructive ? 'text-error font-semibold' : 'text-neutral-800'}`}>
+                {action.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity className="py-3.5" onPress={() => setActionMember(null)}>
+            <Text className="text-base text-neutral-500">Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
 
       {/* Invite code modal */}
       <Modal visible={showInviteModal} transparent animationType="slide">

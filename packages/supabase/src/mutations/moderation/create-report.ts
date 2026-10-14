@@ -1,7 +1,12 @@
+/*
+ * This file defines the create report module.
+ */
+
 // Submits a moderation report (RLS enforces reporter_profile_id = auth.uid()).
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
 
+// Handles create report.
 export async function createReport(
   client: SupabaseClient,
   payload: Record<string, unknown>,

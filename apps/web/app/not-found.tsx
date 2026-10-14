@@ -1,5 +1,10 @@
+/*
+ * This file defines the not found module.
+ */
+
 import Link from 'next/link';
 
+// Renders the not found component.
 export default function NotFound() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 p-8">

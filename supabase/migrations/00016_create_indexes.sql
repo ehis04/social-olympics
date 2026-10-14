@@ -1,3 +1,7 @@
+/*
+ * This migration updates the database for 00016 create indexes.
+ */
+
 -- Migration 00016: performance indexes across all tables
 
 -- competition_members

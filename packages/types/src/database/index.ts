@@ -166,9 +166,11 @@ export type Database = {
           cancelled_reason: string | null
           competition_id: string
           confirmed_at: string | null
+          details: string | null
           dispute_window_closes_at: string | null
           event_id: string
           id: string
+          location: string | null
           name_override: string | null
           scheduled_at: string | null
           sequence_order: number
@@ -181,9 +183,11 @@ export type Database = {
           cancelled_reason?: string | null
           competition_id: string
           confirmed_at?: string | null
+          details?: string | null
           dispute_window_closes_at?: string | null
           event_id: string
           id?: string
+          location?: string | null
           name_override?: string | null
           scheduled_at?: string | null
           sequence_order: number
@@ -196,9 +200,11 @@ export type Database = {
           cancelled_reason?: string | null
           competition_id?: string
           confirmed_at?: string | null
+          details?: string | null
           dispute_window_closes_at?: string | null
           event_id?: string
           id?: string
+          location?: string | null
           name_override?: string | null
           scheduled_at?: string | null
           sequence_order?: number
@@ -787,6 +793,7 @@ export type Database = {
           claimed_by: string | null
           country_code: string | null
           created_at: string
+          deleted_at: string | null
           display_name: string
           favourite_sport: string | null
           id: string
@@ -800,6 +807,7 @@ export type Database = {
           claimed_by?: string | null
           country_code?: string | null
           created_at?: string
+          deleted_at?: string | null
           display_name: string
           favourite_sport?: string | null
           id?: string
@@ -813,6 +821,7 @@ export type Database = {
           claimed_by?: string | null
           country_code?: string | null
           created_at?: string
+          deleted_at?: string | null
           display_name?: string
           favourite_sport?: string | null
           id?: string
@@ -824,6 +833,108 @@ export type Database = {
             columns: ["claimed_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profile_blocks: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_blocks_blocked_id_fkey"
+            columns: ["blocked_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_blocks_blocker_id_fkey"
+            columns: ["blocker_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profile_follows: {
+        Row: {
+          created_at: string
+          follower_id: string
+          following_id: string
+        }
+        Insert: {
+          created_at?: string
+          follower_id: string
+          following_id: string
+        }
+        Update: {
+          created_at?: string
+          follower_id?: string
+          following_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_follows_follower_id_fkey"
+            columns: ["follower_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_follows_following_id_fkey"
+            columns: ["following_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profile_suspensions: {
+        Row: {
+          profile_id: string
+          reason: string | null
+          report_id: string | null
+          suspended_at: string
+        }
+        Insert: {
+          profile_id: string
+          reason?: string | null
+          report_id?: string | null
+          suspended_at?: string
+        }
+        Update: {
+          profile_id?: string
+          reason?: string | null
+          report_id?: string | null
+          suspended_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_suspensions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_suspensions_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
             referencedColumns: ["id"]
           },
         ]
@@ -1403,6 +1514,10 @@ export type Database = {
       }
       is_competition_host: { Args: { comp_id: string }; Returns: boolean }
       is_competition_member: { Args: { comp_id: string }; Returns: boolean }
+      is_blocked_between: {
+        Args: { a: string; b: string }
+        Returns: boolean
+      }
       recalculate_member_score: {
         Args: { p_competition_id: string; p_profile_id: string }
         Returns: undefined

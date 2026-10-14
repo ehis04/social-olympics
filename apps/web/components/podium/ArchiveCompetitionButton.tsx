@@ -1,3 +1,7 @@
+/*
+ * This file defines the ArchiveCompetitionButton user-interface component.
+ */
+
 // ArchiveCompetitionButton — host-only button to archive a complete competition
 'use client';
 
@@ -10,6 +14,7 @@ interface Props {
   competitionId: string;
 }
 
+// Renders the archive competition button component.
 export function ArchiveCompetitionButton({ competitionId }: Props) {
   const [confirming, setConfirming] = useState(false);
   const [isPending, setIsPending] = useState(false);

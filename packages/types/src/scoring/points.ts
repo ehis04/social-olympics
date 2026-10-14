@@ -1,3 +1,7 @@
+/*
+ * This file defines the points module.
+ */
+
 // Points calculation types.
 
 export interface PointsConfig {

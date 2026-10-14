@@ -1,3 +1,7 @@
+/*
+ * This file defines the ResetPasswordForm user-interface component.
+ */
+
 // ResetPasswordForm — completes the email recovery flow, then signs the temporary session out
 'use client';
 
@@ -7,12 +11,14 @@ import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@repo/supabase';
 import { toast } from '@/lib/toast';
 
+// Handles validate password.
 function validatePassword(password: string, confirmPassword: string): string | null {
   if (password.length < 6) return 'Password must be at least 6 characters';
   if (password !== confirmPassword) return 'Passwords do not match';
   return null;
 }
 
+// Renders the reset password form component.
 export function ResetPasswordForm() {
   const router = useRouter();
   const [password, setPassword] = useState('');
@@ -45,7 +51,7 @@ export function ResetPasswordForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form method="post" onSubmit={handleSubmit} className="space-y-5">
       <div className="space-y-1.5">
         <label htmlFor="new-password" className="block text-sm font-medium text-grey-700">
           New password
@@ -57,7 +63,7 @@ export function ResetPasswordForm() {
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             autoComplete="new-password"
-            className="w-full rounded-lg border border-grey-300 px-3.5 py-2.5 pr-10 text-sm text-grey-900 placeholder:text-grey-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+            className="w-full rounded-lg border border-grey-300 px-3.5 py-2.5 pr-10 text-sm text-grey-900 placeholder:text-grey-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
           />
           <button
             type="button"
@@ -80,7 +86,7 @@ export function ResetPasswordForm() {
           value={confirmPassword}
           onChange={(event) => setConfirmPassword(event.target.value)}
           autoComplete="new-password"
-          className="w-full rounded-lg border border-grey-300 px-3.5 py-2.5 text-sm text-grey-900 placeholder:text-grey-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+          className="w-full rounded-lg border border-grey-300 px-3.5 py-2.5 text-sm text-grey-900 placeholder:text-grey-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
         />
       </div>
 

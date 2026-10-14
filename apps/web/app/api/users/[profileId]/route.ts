@@ -1,3 +1,7 @@
+/*
+ * This file handles requests for the profileId API route.
+ */
+
 // GET /api/users/[profileId] — fetch a single profile with career stats
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerClient } from '@/lib/supabase/server';
@@ -8,6 +12,7 @@ interface Params {
   params: Promise<{ profileId: string }>;
 }
 
+// Handles get.
 export async function GET(_req: NextRequest, { params }: Params) {
   const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();

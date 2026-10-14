@@ -1,8 +1,13 @@
+/*
+ * This file handles requests for the events API route.
+ */
+
 // GET /api/events — fetches the active event library.
 import { NextResponse } from 'next/server';
 import { getServerClient } from '@/lib/supabase/server';
 import { getEventsLibrary } from '@repo/supabase';
 
+// Handles get.
 export async function GET(request: Request) {
   const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();
@@ -11,7 +16,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const categorySlug = searchParams.get('categorySlug') ?? undefined;
 
-  const { data, error } = await getEventsLibrary(client, categorySlug);
+  const { data, error } = await getEventsLibrary(client, categorySlug, user.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json({ data });

@@ -1,3 +1,7 @@
+/*
+ * This file verifies moderation behavior.
+ */
+
 // Integration tests for moderation mutations: createReport, resolveReport.
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createReport } from '../../src/mutations/moderation/create-report';

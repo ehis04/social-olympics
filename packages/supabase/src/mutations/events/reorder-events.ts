@@ -1,7 +1,12 @@
+/*
+ * This file defines the reorder events module.
+ */
+
 // Bulk updates sequence_order for a list of competition event IDs.
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
 
+// Handles reorder events.
 export async function reorderEvents(
   client: SupabaseClient,
   orderedIds: string[],

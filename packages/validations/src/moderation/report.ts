@@ -1,3 +1,7 @@
+/*
+ * This file defines the report module.
+ */
+
 // Content report schema.
 
 import { z } from 'zod';

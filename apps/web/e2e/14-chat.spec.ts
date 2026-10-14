@@ -1,3 +1,7 @@
+/*
+ * This file verifies 14 chat behavior.
+ */
+
 // Journey 14 — chat: group chat and direct messages
 import { test, expect } from '@playwright/test';
 import { AUTH_FILE } from './fixtures/auth-state';
@@ -17,11 +21,12 @@ test.describe('Group chat', () => {
     await page.goto(`/competitions/${competitionId}/chat`);
 
     const input = page.getByPlaceholder(/message|type/i).or(page.getByRole('textbox'));
-    await input.fill('E2E test message — please ignore');
+    const message = `E2E test message ${Date.now()}`;
+    await input.fill(message);
     await page.keyboard.press('Enter');
 
     // Message should appear in the chat
-    await expect(page.getByText(/E2E test message/i)).toBeVisible({ timeout: 8_000 });
+    await expect(page.getByText(message, { exact: true })).toBeVisible({ timeout: 8_000 });
   });
 
   test('empty message cannot be submitted', async ({ page }) => {

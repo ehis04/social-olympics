@@ -1,3 +1,7 @@
+/*
+ * This migration updates the database for 00025 create profile follows.
+ */
+
 -- Migration 00025: profile follow relationships
 
 CREATE TABLE public.profile_follows (

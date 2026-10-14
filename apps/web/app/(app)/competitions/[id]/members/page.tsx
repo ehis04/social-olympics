@@ -1,3 +1,7 @@
+/*
+ * This file renders the members application page.
+ */
+
 // Members page — fetches members with profiles and renders the members list
 import { getServerClient } from '@/lib/supabase/server';
 import { getCompetition, getCompetitionMembers } from '@repo/supabase';
@@ -14,6 +18,7 @@ interface Props {
   params: Promise<{ id: string }>;
 }
 
+// Renders the members page component.
 export default async function MembersPage({ params }: Props) {
   const client = await getServerClient();
   const {
@@ -40,6 +45,8 @@ export default async function MembersPage({ params }: Props) {
       isHost={isHost}
       isCohost={isCohost}
       competitionStatus={competition.status}
+      hostId={competition.host_id}
+      cohostId={competition.cohost_id}
     />
   );
 }

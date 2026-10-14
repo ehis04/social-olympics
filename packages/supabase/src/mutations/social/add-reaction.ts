@@ -1,7 +1,12 @@
+/*
+ * This file defines the add reaction module.
+ */
+
 // Adds a reaction — upserts so a user can only react once per emoji per target.
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
 
+// Handles add reaction.
 export async function addReaction(
   client: SupabaseClient,
   payload: Record<string, unknown>,

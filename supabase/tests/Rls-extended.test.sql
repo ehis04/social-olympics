@@ -1,9 +1,13 @@
+/*
+ * This file verifies Rls extended behavior.
+ */
+
 -- supabase/tests/Rls-extended.test.sql
 -- Extended pgTAP tests for Row Level Security edge cases
 
 BEGIN;
 
-SELECT plan(20);
+SELECT plan(24);
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- SETUP
@@ -118,7 +122,7 @@ SELECT ok(
 RESET role;
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- TEST 6: Non-member cannot read competition members list
+-- TEST 6: Public competition members are visible to authenticated visitors
 -- ─────────────────────────────────────────────────────────────────────────────
 
 SET LOCAL role = authenticated;
@@ -126,8 +130,8 @@ SET LOCAL "request.jwt.claims" = '{"sub": "30000000-0000-0000-0000-000000000004"
 SELECT is(
   (SELECT COUNT(*)::integer FROM public.competition_members
    WHERE competition_id = '30000000-0000-0000-0000-000000000010'),
-  0,
-  'Non-member cannot read competition members list'
+  3,
+  'Authenticated visitor can read public competition members'
 );
 RESET role;
 
@@ -345,10 +349,12 @@ SELECT throws_like(
       '30000000-0000-0000-0000-000000000001',
       'worst_performer'
     )$$,
-  '%no_self_mvp%',
+  '%row-level security%',
   'User cannot vote for themselves as worst_performer'
 );
 RESET role;
+
+UPDATE public.competition_events SET status='confirmed' WHERE id='30000000-0000-0000-0000-000000000030';
 
 SET LOCAL role = authenticated;
 SET LOCAL "request.jwt.claims" = '{"sub": "30000000-0000-0000-0000-000000000001"}';
@@ -363,6 +369,35 @@ SELECT lives_ok(
     )$$,
   'User can vote for someone else as worst_performer'
 );
+RESET role;
+
+-- Performance voting opens after results, independently of event-selection locking.
+UPDATE public.competition_events SET status='active' WHERE id='30000000-0000-0000-0000-000000000030';
+SET LOCAL role=authenticated;
+SET LOCAL "request.jwt.claims"='{"sub":"30000000-0000-0000-0000-000000000002"}';
+SELECT throws_like($$INSERT INTO performance_votes(competition_event_id,voter_profile_id,voted_for_profile_id,vote_type)
+ VALUES('30000000-0000-0000-0000-000000000030','30000000-0000-0000-0000-000000000002','30000000-0000-0000-0000-000000000001','mvp')$$,
+ '%row-level security%','Awards cannot be voted on before results are confirmed');
+RESET role;
+UPDATE public.competition_events SET status='confirmed' WHERE id='30000000-0000-0000-0000-000000000030';
+UPDATE public.competitions SET voting_locked=true WHERE id='30000000-0000-0000-0000-000000000010';
+SET LOCAL role=authenticated;
+SET LOCAL "request.jwt.claims"='{"sub":"30000000-0000-0000-0000-000000000002"}';
+SELECT lives_ok($$INSERT INTO performance_votes(competition_event_id,voter_profile_id,voted_for_profile_id,vote_type)
+ VALUES('30000000-0000-0000-0000-000000000030','30000000-0000-0000-0000-000000000002','30000000-0000-0000-0000-000000000001','mvp')$$,
+ 'Locking event selection does not close performance voting');
+RESET role;
+INSERT INTO performance_vote_results(competition_event_id,vote_type,winner_profile_id,vote_count,bonus_points)
+ VALUES('30000000-0000-0000-0000-000000000030','mvp','30000000-0000-0000-0000-000000000001',1,1);
+SET LOCAL role=authenticated;
+SET LOCAL "request.jwt.claims"='{"sub":"30000000-0000-0000-0000-000000000002"}';
+SELECT throws_like($$UPDATE performance_votes SET voted_for_profile_id='30000000-0000-0000-0000-000000000001'
+ WHERE voter_profile_id='30000000-0000-0000-0000-000000000002' AND vote_type='mvp'$$,
+ '%row-level security%','Existing votes cannot change after an award is finalised');
+SET LOCAL "request.jwt.claims"='{"sub":"30000000-0000-0000-0000-000000000001"}';
+SELECT throws_like($$INSERT INTO performance_votes(competition_event_id,voter_profile_id,voted_for_profile_id,vote_type)
+ VALUES('30000000-0000-0000-0000-000000000030','30000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000002','mvp')$$,
+ '%row-level security%','New votes cannot be added after an award is finalised');
 RESET role;
 
 SELECT * FROM finish();

@@ -1,7 +1,12 @@
+/*
+ * This file verifies process bid round behavior.
+ */
+
 // Unit tests for processBidRound.
 import { describe, expect, it } from 'vitest';
 import { processBidRound } from '../../src/weightlifting/process-bid-round';
 
+// Handles make bid.
 function makeBid(profileId: string, status: 'success' | 'fail' | 'pending' | 'withdrawn') {
   return { profileId, bidWeightKg: 100, attemptStatus: status as any };
 }
