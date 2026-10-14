@@ -1,7 +1,12 @@
+/*
+ * This file defines the get competition event module.
+ */
+
 // Fetches a single competition event by ID.
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
 
+// Handles get competition event.
 export async function getCompetitionEvent(
   client: SupabaseClient,
   id: string,

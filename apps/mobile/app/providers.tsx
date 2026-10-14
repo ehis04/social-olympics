@@ -1,3 +1,7 @@
+/*
+ * This file defines the providers module.
+ */
+
 // Client providers — auth listener, push notifications, toast setup.
 import { useEffect } from 'react';
 import Toast from 'react-native-toast-message';
@@ -15,11 +19,13 @@ interface ProvidersProps {
   children: React.ReactNode;
 }
 
+// Renders the push notification setup component.
 function PushNotificationSetup() {
   usePushNotifications();
   return null;
 }
 
+// Renders the providers component.
 export function Providers({ children }: ProvidersProps) {
   const { setSession, setProfile, setLoading, clearAuth } = useAuthStore();
 

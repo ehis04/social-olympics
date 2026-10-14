@@ -1,3 +1,7 @@
+/*
+ * This file defines the ConfirmResultsPanel user-interface component.
+ */
+
 // ConfirmResultsPanel — host reviews, reorders, and confirms submitted results.
 import { useState, useEffect } from 'react';
 import {
@@ -20,6 +24,7 @@ interface ResultRow {
   id: string;
   profile_id: string | null;
   result_value_primary: number | null;
+  is_dnf?: boolean | null;
   confirmed_at: string | null;
   profiles: { id: string; display_name: string | null; avatar_url: string | null } | null;
 }
@@ -29,6 +34,7 @@ interface RankedResult {
   displayName: string;
   avatarUrl: string | null;
   rawValue: number | null;
+  isDnf: boolean;
   place: number;
 }
 
@@ -41,11 +47,16 @@ interface Props {
   onConfirmed: () => void;
 }
 
+// Handles auto rank.
 function autoRank(results: ResultRow[], resultType: ResultType): RankedResult[] {
   const lowerIsBetter = resultType === 'time' || resultType === 'inverted_score';
   const pending = results.filter((r) => !r.confirmed_at);
 
+  // DNF and missing values always rank last, whatever the result type.
   const sorted = [...pending].sort((a, b) => {
+    const aMissing = !!a.is_dnf || a.result_value_primary == null;
+    const bMissing = !!b.is_dnf || b.result_value_primary == null;
+    if (aMissing !== bMissing) return aMissing ? 1 : -1;
     const av = a.result_value_primary ?? 0;
     const bv = b.result_value_primary ?? 0;
     return lowerIsBetter ? av - bv : bv - av;
@@ -56,15 +67,18 @@ function autoRank(results: ResultRow[], resultType: ResultType): RankedResult[] 
     displayName: r.profiles?.display_name ?? 'Unknown',
     avatarUrl: r.profiles?.avatar_url ?? null,
     rawValue: r.result_value_primary,
+    isDnf: !!r.is_dnf,
     place: idx + 1,
   }));
 }
 
+// Handles get place suffix.
 function getPlaceSuffix(place: number): string {
   const suffixes: Record<number, string> = { 1: 'st', 2: 'nd', 3: 'rd' };
   return `${place}${suffixes[place] ?? 'th'}`;
 }
 
+// Renders the confirm results panel component.
 export function ConfirmResultsPanel({
   competitionEventId,
   competitionId,
@@ -151,11 +165,11 @@ export function ConfirmResultsPanel({
               {result.displayName}
             </Text>
 
-            {result.rawValue != null && (
-              <Text className="text-xs text-neutral-500">
-                {formatResultValue(result.rawValue, resultType as Database['public']['Enums']['result_type'])}
-              </Text>
-            )}
+            {result.isDnf ? (
+              <Text className="text-xs font-semibold text-error">DNF</Text>
+            ) : result.rawValue != null ? (
+              <Text className="text-xs text-neutral-500">{formatResultValue(result.rawValue, resultType)}</Text>
+            ) : null}
 
             <View className="flex-col gap-0.5">
               <TouchableOpacity

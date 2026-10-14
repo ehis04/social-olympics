@@ -1,3 +1,7 @@
+/*
+ * This migration updates the database for 00017 rls policies.
+ */
+
 -- Migration 00017: enable RLS on all tables and define all access policies
 
 -- Enable RLS
@@ -29,6 +33,7 @@ ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.push_tokens ENABLE ROW LEVEL SECURITY;
 
 -- Returns true if the current user is an active member of the given competition
+-- Defines the is_competition_member database function.
 CREATE OR REPLACE FUNCTION public.is_competition_member(comp_id uuid)
 RETURNS boolean AS $$
   SELECT EXISTS (
@@ -40,6 +45,7 @@ RETURNS boolean AS $$
 $$ LANGUAGE sql SECURITY DEFINER STABLE;
 
 -- Returns true if the current user is the host or cohost of the given competition
+-- Defines the is_competition_host database function.
 CREATE OR REPLACE FUNCTION public.is_competition_host(comp_id uuid)
 RETURNS boolean AS $$
   SELECT EXISTS (

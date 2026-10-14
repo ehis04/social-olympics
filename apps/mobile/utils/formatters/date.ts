@@ -1,9 +1,14 @@
+/*
+ * This file defines the date module.
+ */
+
 // Date formatting utilities for display across mobile screens.
 export function formatDate(date: string | Date): string {
   const d = typeof date === 'string' ? new Date(date) : date;
   return d.toLocaleDateString('en-IE', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+// Handles format date time.
 export function formatDateTime(date: string | Date): string {
   const d = typeof date === 'string' ? new Date(date) : date;
   return d.toLocaleString('en-IE', {
@@ -15,6 +20,7 @@ export function formatDateTime(date: string | Date): string {
   });
 }
 
+// Handles format relative time.
 export function formatRelativeTime(date: string | Date): string {
   const d = typeof date === 'string' ? new Date(date) : date;
   const now = new Date();
@@ -31,6 +37,7 @@ export function formatRelativeTime(date: string | Date): string {
   return formatDate(d);
 }
 
+// Handles format time remaining.
 export function formatTimeRemaining(date: string | Date): string {
   const d = typeof date === 'string' ? new Date(date) : date;
   const now = new Date();

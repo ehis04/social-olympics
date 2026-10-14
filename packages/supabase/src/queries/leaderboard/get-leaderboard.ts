@@ -1,7 +1,12 @@
+/*
+ * This file defines the get leaderboard module.
+ */
+
 // Fetches raw leaderboard data (rankEntries from @repo/scoring adds ranks on top).
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
 
+// Handles get leaderboard.
 export async function getLeaderboard(
   client: SupabaseClient,
   competitionId: string,

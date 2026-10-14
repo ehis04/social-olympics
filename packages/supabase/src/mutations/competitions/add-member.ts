@@ -1,7 +1,12 @@
+/*
+ * This file defines the add member module.
+ */
+
 // Adds a profile as a competition member (spectator if competition is active).
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
 
+// Handles add member.
 export async function addMember(
   client: SupabaseClient,
   competitionId: string,

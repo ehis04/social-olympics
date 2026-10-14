@@ -1,3 +1,7 @@
+/*
+ * This file defines the DisputePanel user-interface component.
+ */
+
 'use client';
 
 // DisputePanel — allows a competitor to raise a dispute against their confirmed result.
@@ -11,6 +15,7 @@ interface DisputePanelProps {
   onSubmitted: () => void;
 }
 
+// Renders the dispute panel component.
 export function DisputePanel({ resultId, onClose, onSubmitted }: DisputePanelProps) {
   const [reason, setReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);

@@ -1,3 +1,7 @@
+/*
+ * This file defines the index module.
+ */
+
 // 4-step competition creation modal — mirrors web CreateCompetitionForm logic.
 import { useState } from 'react';
 import {
@@ -61,6 +65,7 @@ const COUNTRY_OPTIONS = [
 
 const STEP_LABELS = ['Basic Info', 'Events', 'Weighting', 'Review'];
 
+// Renders the create competition modal component.
 export default function CreateCompetitionModal() {
   const router = useRouter();
   const [step, setStep] = useState(1);
@@ -85,7 +90,8 @@ export default function CreateCompetitionModal() {
   const { data: eventsData } = useQuery({
     queryKey: ['events-library'],
     queryFn: async () => {
-      const { data } = await getEventsLibrary(supabase);
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data } = await getEventsLibrary(supabase, undefined, user?.id);
       return (data ?? []) as (EventRow & { event_categories?: { name: string; slug: string } | null })[];
     },
   });

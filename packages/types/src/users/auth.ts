@@ -1,3 +1,7 @@
+/*
+ * This file defines the auth module.
+ */
+
 // Authentication payload and user identity types.
 
 export interface AuthUser {

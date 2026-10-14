@@ -1,3 +1,7 @@
+/*
+ * This file defines the index module.
+ */
+
 // Profile settings — edit fields + avatar upload via expo-image-picker.
 import { useState, useEffect } from 'react';
 import {
@@ -10,6 +14,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -22,7 +27,12 @@ import { getProfile, uploadAvatar } from '@repo/supabase';
 import { apiCall } from '@/lib/api/client';
 import { toast } from '@/lib/toast';
 import { triggerSuccess, triggerError } from '@/utils/helpers/haptics';
+import { base64ToBytes } from '@/utils/helpers/base64';
 import { useAuthStore } from '@/stores/auth';
+import { queryClient as sharedQueryClient } from '@/lib/query-client';
+import { unregisterDevicePushToken } from '@/hooks/usePushNotifications';
+import { BlockedPeopleSection } from '@/components/profile/BlockedPeopleSection';
+import { DeleteAccountSection } from '@/components/profile/DeleteAccountSection';
 import type { Database } from '@repo/types';
 
 type ProfileRow = Database['public']['Tables']['profiles']['Row'];
@@ -40,6 +50,14 @@ const COUNTRY_OPTIONS = [
   { label: 'Canada', value: 'CA' },
 ];
 
+// Opens one of the website's pages, such as the privacy policy, in the browser.
+async function openWebPage(path: string) {
+  const baseUrl = process.env.EXPO_PUBLIC_API_BASE_URL;
+  if (!baseUrl) return;
+  await Linking.openURL(`${baseUrl.replace(/\/$/, '')}${path}`).catch(() => null);
+}
+
+// Renders the profile settings screen component.
 export default function ProfileSettingsScreen() {
   const router = useRouter();
   const { profile: authProfile } = useAuthStore();
@@ -81,35 +99,49 @@ export default function ProfileSettingsScreen() {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [1, 1],
-      quality: 0.8,
+      quality: 0.7,
+      base64: true,
     });
 
     if (result.canceled || !result.assets[0]) return;
 
     const asset = result.assets[0];
+    if (!authProfile?.id) return;
+    if (!asset.base64) {
+      toast.error('This photo could not be read. Please choose another.');
+      return;
+    }
+
+    // Edited photos are returned as JPEG; fall back to JPEG when the picker omits the type.
+    const contentType = asset.mimeType && asset.mimeType !== 'image/heic' && asset.mimeType !== 'image/heif'
+      ? asset.mimeType
+      : 'image/jpeg';
+
     setLocalAvatarUri(asset.uri);
     setUploadingAvatar(true);
 
     try {
-      // Fetch the image as a blob
-      const response = await fetch(asset.uri);
-      const blob = await response.blob();
-
-      const avatarFile = blob as unknown as File;
-      const { data, error } = await uploadAvatar(supabase, authProfile?.id ?? '', avatarFile);
+      // React Native blobs upload as empty files, so send the raw bytes with an explicit type.
+      const bytes = base64ToBytes(asset.base64);
+      const { data, error } = await uploadAvatar(supabase, authProfile.id, bytes, { contentType });
       if (error || !data) {
-        toast.error('Failed to upload avatar');
+        toast.error(error?.message ?? 'Failed to upload avatar');
         triggerError();
         setLocalAvatarUri(null);
         return;
       }
 
       triggerSuccess();
-      toast.success('Avatar updated');
-      queryClient.invalidateQueries({ queryKey: ['profile', authProfile?.id] });
+      toast.success('Profile photo updated');
+      useAuthStore.getState().setProfile(
+        useAuthStore.getState().profile
+          ? { ...useAuthStore.getState().profile!, avatar_url: data }
+          : null,
+      );
+      queryClient.invalidateQueries({ queryKey: ['profile', authProfile.id] });
     } catch {
       toast.error('Failed to upload avatar');
       triggerError();
@@ -150,7 +182,11 @@ export default function ProfileSettingsScreen() {
       {
         text: 'Sign out',
         style: 'destructive',
-        onPress: async () => { await supabase.auth.signOut(); },
+        onPress: async () => {
+          await unregisterDevicePushToken();
+          sharedQueryClient.clear();
+          await supabase.auth.signOut();
+        },
       },
     ]);
   }
@@ -216,7 +252,7 @@ export default function ProfileSettingsScreen() {
                 className="border border-neutral-200 rounded-lg px-4 py-3 text-neutral-800 bg-neutral-50"
                 value={displayName}
                 onChangeText={setDisplayName}
-                maxLength={40}
+                maxLength={30}
                 autoCapitalize="words"
               />
             </View>
@@ -227,7 +263,7 @@ export default function ProfileSettingsScreen() {
                 className="border border-neutral-200 rounded-lg px-4 py-3 text-neutral-800 bg-neutral-50"
                 value={bio}
                 onChangeText={setBio}
-                maxLength={200}
+                maxLength={500}
                 multiline
                 numberOfLines={3}
                 textAlignVertical="top"
@@ -286,12 +322,25 @@ export default function ProfileSettingsScreen() {
             </View>
           </View>
 
+          <BlockedPeopleSection />
+
           <TouchableOpacity
             className="rounded-lg border border-red-200 py-3 items-center"
             onPress={handleSignOut}
           >
             <Text className="text-sm font-semibold text-error">Sign Out</Text>
           </TouchableOpacity>
+
+          <DeleteAccountSection />
+
+          <View className="flex-row justify-center gap-4 pb-4">
+            <TouchableOpacity onPress={() => void openWebPage('/terms')}>
+              <Text className="text-xs text-neutral-400">Terms of Use</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => void openWebPage('/privacy')}>
+              <Text className="text-xs text-neutral-400">Privacy Policy</Text>
+            </TouchableOpacity>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

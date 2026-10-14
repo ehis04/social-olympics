@@ -1,3 +1,7 @@
+/*
+ * This file handles requests for the record API route.
+ */
+
 // POST /api/competitions/[id]/events/[eventId]/record — host submits and confirms all participant results in one go.
 import { NextResponse } from 'next/server';
 import { getServerClient } from '@/lib/supabase/server';
@@ -8,8 +12,9 @@ import {
   confirmResult,
 } from '@repo/supabase';
 import { createNotifications } from '@/lib/notifications/create-notification';
-import { calculatePoints, getParticipationPoints } from '@repo/scoring';
+import { loadPointsTable, scoreForPlace } from '@/lib/scoring/event-scoring';
 import type { Database } from '@repo/types';
+import { z } from 'zod';
 
 type CompetitionRow = Database['public']['Tables']['competitions']['Row'];
 
@@ -17,13 +22,12 @@ interface RouteParams {
   params: Promise<{ id: string; eventId: string }>;
 }
 
-interface ResultPayload {
-  profileId: string;
-  value: number | null;
-  notes: string | null;
-  isDnf: boolean;
-}
+const RecordResultsSchema = z.object({ results: z.array(z.object({
+  profileId: z.string().uuid(), value: z.number().finite().nonnegative().nullable(),
+  notes: z.string().max(300).nullable().optional(), isDnf: z.boolean(),
+})).min(1) });
 
+// Handles post.
 export async function POST(request: Request, { params }: RouteParams) {
   const { id, eventId } = await params;
   const client = await getServerClient();
@@ -37,21 +41,32 @@ export async function POST(request: Request, { params }: RouteParams) {
   }
 
   const competition = compData as CompetitionRow;
+  if (['complete', 'archived'].includes(competition.status)) {
+    return NextResponse.json({ error: 'This competition is finished. Results and events are locked.' }, { status: 409 });
+  }
   const isHostOrCohost = competition.host_id === user.id || competition.cohost_id === user.id;
   if (!isHostOrCohost) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  let body: { results?: ResultPayload[] };
+  let input: unknown;
   try {
-    body = (await request.json()) as typeof body;
+    input = await request.json();
   } catch {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
 
-  if (!Array.isArray(body.results) || body.results.length === 0) {
-    return NextResponse.json({ error: 'results must be a non-empty array' }, { status: 400 });
+  const parsed = RecordResultsSchema.safeParse(input);
+  if (!parsed.success) return NextResponse.json({ error: 'Results must contain valid participant IDs and values' }, { status: 400 });
+  const body = parsed.data;
+  const participantIds = body.results.map((result) => result.profileId);
+  if (new Set(participantIds).size !== participantIds.length) {
+    return NextResponse.json({ error: 'Each participant may only appear once' }, { status: 400 });
   }
+  const { data: participants, error: participantError } = await adminClient.from('competition_members')
+    .select('profile_id').eq('competition_id', id).eq('status', 'active').in('profile_id', participantIds);
+  if (participantError) return NextResponse.json({ error: 'Failed to validate participants' }, { status: 500 });
+  if (participants?.length !== participantIds.length) return NextResponse.json({ error: 'Participants must be active members of this competition' }, { status: 400 });
 
   const { data: eventData } = await adminClient
     .from('competition_events')
@@ -70,25 +85,15 @@ export async function POST(request: Request, { params }: RouteParams) {
     events: { name: string; result_type: string } | null;
   };
 
-  if (ev.status !== 'active') {
+  if (!['active', 'results_pending'].includes(ev.status)) {
     return NextResponse.json(
-      { error: 'Event must be active to record results' },
+      { error: 'Start the event before recording results' },
       { status: 409 },
     );
   }
 
-  const { data: pointsConfig } = await adminClient
-    .from('event_points_config')
-    .select('finishing_place, points_value')
-    .eq('competition_id', id)
-    .order('finishing_place', { ascending: true });
+  const pointsTable = await loadPointsTable(adminClient, id);
 
-  const placesPoints = (pointsConfig ?? []) as Array<{
-    finishing_place: number;
-    points_value: number;
-  }>;
-
-  const weightMultiplier = ev.weight_multiplier ?? 1;
   const resultType = ev.events?.result_type ?? 'score';
   const lowerIsBetter = resultType === 'time' || resultType === 'inverted_score';
 
@@ -129,21 +134,24 @@ export async function POST(request: Request, { params }: RouteParams) {
 
       if (existingResult) {
         resultId = (existingResult as { id: string }).id;
-        await adminClient
+        const { error: updateError } = await adminClient
           .from('results')
           .update({
             result_value_primary: entry.value,
+            is_dnf: entry.isDnf,
             notes: entry.notes ?? null,
             submitted_by: user.id,
             submitted_at: new Date().toISOString(),
           })
           .eq('id', resultId);
+        if (updateError) { errors.push(`${entry.profileId}: ${updateError.message}`); return; }
       } else {
         const { data: newResult, error: submitErr } = await submitResult(adminClient, {
           competition_event_id: eventId,
           profile_id: entry.profileId,
           submitted_by: user.id,
           result_value_primary: entry.value,
+          is_dnf: entry.isDnf,
           ...(entry.notes ? { notes: entry.notes } : {}),
         });
 
@@ -156,28 +164,14 @@ export async function POST(request: Request, { params }: RouteParams) {
       }
 
       const place = rankMap[entry.profileId] ?? null;
-      const configuredPoints = place !== null
-        ? placesPoints.find((p) => p.finishing_place === place)?.points_value
-        : undefined;
-      const pointsAwarded =
-        entry.isDnf
-          ? 0
-          : configuredPoints !== undefined
-            ? configuredPoints * weightMultiplier
-            : place !== null
-              ? calculatePoints(place, weightMultiplier)
-              : 0;
-
-      // Participation points only for non-DNF players who earned no placement points
-      const participationPoints = (!entry.isDnf && pointsAwarded === 0)
-        ? getParticipationPoints(false)
-        : 0;
+      const score = scoreForPlace(place, entry.isDnf, pointsTable);
 
       const { error: confirmErr } = await confirmResult(adminClient, {
         result_id: resultId,
         finishing_place: place,
-        points_awarded: pointsAwarded,
-        participation_points: participationPoints,
+        points_awarded: score.points_awarded,
+        participation_points: score.participation_points,
+        confirmed_by: user.id,
       });
 
       if (confirmErr) {
@@ -192,6 +186,15 @@ export async function POST(request: Request, { params }: RouteParams) {
       { status: 500 },
     );
   }
+
+  // Submissions from people the host left out of this event are discarded so none stay pending.
+  const recordedIds = resultsWithValues.map((entry) => entry.profileId);
+  await adminClient
+    .from('results')
+    .delete()
+    .eq('competition_event_id', eventId)
+    .is('confirmed_at', null)
+    .not('profile_id', 'in', `(${recordedIds.join(',')})`);
 
   await adminClient
     .from('competition_events')

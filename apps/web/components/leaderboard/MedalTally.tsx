@@ -1,3 +1,7 @@
+/*
+ * This file defines the MedalTally user-interface component.
+ */
+
 // MedalTally — inline medal count display for leaderboard rows
 interface Props {
   gold: number;
@@ -5,6 +9,7 @@ interface Props {
   bronze: number;
 }
 
+// Renders the medal tally component.
 export function MedalTally({ gold, silver, bronze }: Props) {
   if (gold === 0 && silver === 0 && bronze === 0) return null;
 

@@ -1,3 +1,7 @@
+/*
+ * This file defines the invite module.
+ */
+
 // Invite code configuration and competition window constants.
 
 export const INVITE_CODE_LENGTH = 8;

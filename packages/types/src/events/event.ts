@@ -1,3 +1,7 @@
+/*
+ * This file defines the event module.
+ */
+
 // Event library entity types.
 
 import type { ResultType } from '../database/enums';

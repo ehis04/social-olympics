@@ -1,3 +1,7 @@
+/*
+ * This file defines the index module.
+ */
+
 // Barrel export — all shared platform constants.
 
 export * from './src/scoring/points';

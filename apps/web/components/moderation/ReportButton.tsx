@@ -1,3 +1,7 @@
+/*
+ * This file defines the ReportButton user-interface component.
+ */
+
 'use client';
 
 // ReportButton — triggers a report modal for any content type
@@ -23,6 +27,7 @@ const REASON_OPTIONS = [
   'Other',
 ];
 
+// Renders the report button component.
 export function ReportButton({ targetType, targetId, competitionId, label }: Props) {
   const [showModal, setShowModal] = useState(false);
   const [reason, setReason] = useState('');

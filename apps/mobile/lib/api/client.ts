@@ -1,35 +1,59 @@
-// HTTP client for calling the web app Route Handlers with Bearer auth.
+// HTTP client for the web API, shared by mobile screens and mutations.
 import { supabase } from '../supabase/client';
 
-export async function apiCall<T>(
-  path: string,
-  options: RequestInit = {}
-): Promise<{ data: T | null; error: { code: string; message: string } | null }> {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  const token = session?.access_token;
+type ApiResult<T> = {
+  data: T | null;
+  error: { code: string; message: string } | null;
+  // Set by paginated endpoints such as feeds and message lists.
+  hasMore?: boolean;
+  nextCursor?: string;
+};
 
-  const response = await fetch(
-    `${process.env.EXPO_PUBLIC_API_BASE_URL}${path}`,
-    {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...(options.headers as Record<string, string> | undefined),
-      },
-    }
-  );
-
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    return {
-      data: null,
-      error: body.error ?? { code: String(response.status), message: response.statusText },
-    };
+export async function apiCall<T>(path: string, options: RequestInit = {}): Promise<ApiResult<T>> {
+  const baseUrl = process.env.EXPO_PUBLIC_API_BASE_URL;
+  if (!baseUrl) {
+    return { data: null, error: { code: 'CONFIGURATION', message: 'The API server URL is not configured.' } };
   }
 
-  const body = (await response.json()) as { data: T | null; error: { code: string; message: string } | null };
-  return body;
+  try {
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError) return { data: null, error: { code: 'AUTH', message: sessionError.message } };
+
+    const headers = new Headers(options.headers);
+    // Photo uploads send FormData, which sets its own multipart Content-Type.
+    if (!headers.has('Content-Type') && !(options.body instanceof FormData)) {
+      headers.set('Content-Type', 'application/json');
+    }
+    if (session?.access_token) headers.set('Authorization', `Bearer ${session.access_token}`);
+
+    const response = await fetch(`${baseUrl.replace(/\/$/, '')}${path}`, { ...options, headers });
+    if (response.status === 204) return { data: null, error: null };
+
+    const body = await response.json().catch(() => null) as {
+      data?: T;
+      error?: string | { code?: string; message?: string };
+      hasMore?: boolean;
+      nextCursor?: string;
+    } | null;
+    if (!response.ok) {
+      const error = body?.error;
+      return {
+        data: null,
+        error: {
+          code: typeof error === 'object' && error?.code ? error.code : String(response.status),
+          message: typeof error === 'string' ? error
+            : error?.message ?? (response.statusText || 'The request failed. Please try again.'),
+        },
+      };
+    }
+    if (!body) return { data: null, error: { code: 'INVALID_RESPONSE', message: 'The server returned an invalid response.' } };
+    return {
+      data: body.data ?? null,
+      error: null,
+      ...(typeof body.hasMore === 'boolean' ? { hasMore: body.hasMore } : {}),
+      ...(body.nextCursor ? { nextCursor: body.nextCursor } : {}),
+    };
+  } catch {
+    return { data: null, error: { code: 'NETWORK', message: 'Unable to reach the server. Check your connection and try again.' } };
+  }
 }

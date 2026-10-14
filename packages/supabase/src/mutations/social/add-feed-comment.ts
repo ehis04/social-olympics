@@ -1,7 +1,12 @@
+/*
+ * This file defines the add feed comment module.
+ */
+
 // Adds a comment to a feed item.
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
 
+// Handles add feed comment.
 export async function addFeedComment(
   client: SupabaseClient,
   feedItemId: string,

@@ -1,8 +1,12 @@
+/*
+ * This file handles requests for the leaderboard API route.
+ */
+
 // GET /api/competitions/[id]/leaderboard — ranked leaderboard for a competition
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerClient } from '@/lib/supabase/server';
 import { getLeaderboard, getCompetitionMembers } from '@repo/supabase';
-import { rankEntries } from '@repo/scoring';
+import { rankStandings } from '@repo/scoring';
 import type { Database } from '@repo/types';
 
 type CompetitionMemberRow = Database['public']['Tables']['competition_members']['Row'];
@@ -18,6 +22,7 @@ interface Params {
   params: Promise<{ id: string }>;
 }
 
+// Handles get.
 export async function GET(_req: NextRequest, { params }: Params) {
   const client = await getServerClient();
   const {
@@ -33,28 +38,15 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const { data, error } = await getLeaderboard(client, (await params).id);
   if (error) return NextResponse.json({ error: 'Failed to fetch leaderboard' }, { status: 500 });
 
-  const entries = (data ?? []) as MemberWithProfile[];
-
-  const ranked = rankEntries(
-    entries.map((m) => ({
-      profileId: m.profile_id,
-      totalPoints: m.total_points ?? 0,
-      gold: m.gold_count ?? 0,
-      silver: m.silver_count ?? 0,
-      bronze: m.bronze_count ?? 0,
-    })),
+  // Competitors appear on the board; people who left keep their place if they already scored.
+  const entries = ((data ?? []) as MemberWithProfile[]).filter((member) =>
+    member.role === 'competitor' &&
+    (member.status === 'active' || (member.status === 'withdrawn' && (member.events_completed ?? 0) > 0)),
   );
 
-  const merged = ranked
-    .map((r) => {
-      const member = entries.find((m) => m.profile_id === r.profileId);
-      if (!member) return null;
-      return { ...member, rank: r.rank, isTied: r.isTied };
-    })
-    .filter(
-      (member): member is MemberWithProfile & { rank: number; isTied: boolean } =>
-        member !== null,
-    );
+  const merged = rankStandings(
+    entries.map((member) => ({ ...member, total_points: Number(member.total_points ?? 0) })),
+  );
 
   return NextResponse.json({ data: merged, error: null });
 }

@@ -1,3 +1,7 @@
+/*
+ * This file defines the update module.
+ */
+
 // Competition update schema with status field.
 
 import { z } from 'zod';

@@ -1,3 +1,7 @@
+/*
+ * This file defines the MembersList user-interface component.
+ */
+
 'use client';
 
 import { useState } from 'react';
@@ -8,6 +12,7 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import InvitePanel from '@/components/competition/InvitePanel';
 import GhostProfileForm from '@/components/competition/GhostProfileForm';
 import { toast } from '@/lib/toast';
+import { formatPoints } from '@/utils/formatters/points';
 import type { Database } from '@repo/types';
 
 type MemberRole = Database['public']['Enums']['member_role'];
@@ -53,6 +58,8 @@ interface Props {
   isHost: boolean;
   isCohost: boolean;
   competitionStatus: string;
+  hostId?: string;
+  cohostId?: string | null;
 }
 
 const ROLE_LABELS: Record<string, string> = {
@@ -67,6 +74,7 @@ const ROLE_ICONS: Record<string, React.ReactNode> = {
   cohost: <Shield size={12} />,
 };
 
+// Handles place label.
 function placeLabel(place: number | null): string {
   if (!place) return '-';
   if (place === 1) return '1st';
@@ -75,6 +83,7 @@ function placeLabel(place: number | null): string {
   return `${place}th`;
 }
 
+// Handles format result.
 function formatResult(value: number | null, resultType: string | undefined): string | null {
   if (value === null) return null;
   if (resultType === 'time') {
@@ -86,6 +95,7 @@ function formatResult(value: number | null, resultType: string | undefined): str
   return String(value);
 }
 
+// Renders the members list component.
 export default function MembersList({
   members,
   competitionId,
@@ -94,6 +104,8 @@ export default function MembersList({
   isHost,
   isCohost,
   competitionStatus,
+  hostId,
+  cohostId = null,
 }: Props) {
   const router = useRouter();
   const [confirmRemove, setConfirmRemove] = useState<MemberWithProfile | null>(null);
@@ -101,7 +113,18 @@ export default function MembersList({
   const [selectedMember, setSelectedMember] = useState<MemberWithProfile | null>(null);
   const [memberEvents, setMemberEvents] = useState<MemberEventData | null>(null);
   const [memberEventsLoading, setMemberEventsLoading] = useState(false);
-  const canManage = isHost || isCohost;
+  const isFinished = competitionStatus === 'complete' || competitionStatus === 'archived';
+  const canManage = (isHost || isCohost) && !isFinished;
+
+  async function copyClaimLink(member: MemberWithProfile) {
+    const link = `${window.location.origin}/claim/${member.profile_id}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      toast.success(`Claim link for ${member.profile?.display_name ?? 'guest'} copied`);
+    } catch {
+      toast.info(link);
+    }
+  }
 
   async function openMemberDrawer(member: MemberWithProfile) {
     setSelectedMember(member);
@@ -145,11 +168,11 @@ export default function MembersList({
         },
       );
       if (!res.ok) {
-        const json = await res.json();
-        toast.error(json.error ?? 'Failed to update role');
+        const json = await res.json().catch(() => null);
+        toast.error(json?.error ?? 'Failed to update role');
         return;
       }
-      toast.success('Role updated');
+      toast.success(role === 'cohost' ? 'Co-host appointed' : 'Role updated');
       router.refresh();
     } catch {
       toast.error('Something went wrong');
@@ -202,8 +225,11 @@ export default function MembersList({
               const isCurrentUser = member.id === currentMemberId;
               const displayName = member.profile?.display_name ?? 'Unknown';
               const avatarUrl = member.profile?.avatar_url ?? null;
-              const role = member.role as MemberRole;
+              const isMemberHost = member.profile_id === hostId;
+              const isMemberCohost = !!cohostId && member.profile_id === cohostId;
+              const role = (isMemberCohost ? 'cohost' : member.role) as MemberRole;
               const isGhost = member.profile?.is_ghost ?? false;
+              const isInvited = member.status === 'invited';
 
               return (
                 <li key={member.id}>
@@ -245,6 +271,16 @@ export default function MembersList({
                             You
                           </span>
                         )}
+                        {isMemberHost && (
+                          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
+                            Host
+                          </span>
+                        )}
+                        {isInvited && (
+                          <span className="rounded-full bg-grey-100 px-2 py-0.5 text-xs text-grey-500">
+                            Invited
+                          </span>
+                        )}
                       </div>
                       <div className="mt-0.5 flex items-center gap-1 text-xs text-grey-500">
                         {ROLE_ICONS[role]}
@@ -263,25 +299,36 @@ export default function MembersList({
                         {member.bronze_count ?? 0}
                       </span>
                       <span className="font-semibold text-grey-700">
-                        {member.total_points ?? 0} pts
+                        {formatPoints(Number(member.total_points ?? 0))} pts
                       </span>
                       <ChevronRight size={14} className="text-grey-300" />
                     </div>
                   </button>
 
                   {/* Host management controls (separate row so they don't trigger the drawer) */}
-                  {canManage && !isCurrentUser && (
-                    <div className="flex items-center gap-2 border-t border-grey-50 px-4 py-2">
+                  {canManage && !isCurrentUser && !isMemberHost && (
+                    <div className="flex flex-wrap items-center gap-2 border-t border-grey-50 px-4 py-2">
                       <select
                         value={role}
+                        disabled={isMemberCohost && !isHost}
+                        aria-label={`Role for ${displayName}`}
                         onChange={(e) => handleRoleChange(member, e.target.value as MemberRole)}
                         onClick={(e) => e.stopPropagation()}
                         className="rounded border border-grey-200 px-2 py-1 text-xs text-grey-700 focus:border-primary focus:outline-none"
                       >
                         <option value="competitor">Competitor</option>
                         <option value="spectator">Spectator</option>
-                        <option value="cohost">Co-host</option>
+                        {(isHost || isMemberCohost) && <option value="cohost">Co-host</option>}
                       </select>
+                      {isGhost && (
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); void copyClaimLink(member); }}
+                          className="rounded-lg border border-grey-200 px-3 py-1 text-xs font-semibold text-grey-600 hover:border-primary hover:text-primary"
+                        >
+                          Copy claim link
+                        </button>
+                      )}
                       <button
                         onClick={(e) => { e.stopPropagation(); setConfirmRemove(member); }}
                         className="rounded border border-grey-200 px-2 py-1 text-xs text-grey-600 transition-colors hover:border-red-300 hover:text-red-600"
@@ -299,7 +346,7 @@ export default function MembersList({
 
       {canManage && (
         <div className="space-y-4">
-          <InvitePanel competitionId={competitionId} inviteCode={inviteCode} />
+          <InvitePanel inviteCode={inviteCode} />
           <button
             onClick={() => setShowGhostForm(true)}
             className="w-full rounded-lg border border-dashed border-grey-300 py-2.5 text-sm font-semibold text-grey-600 transition-colors hover:border-primary hover:text-primary"

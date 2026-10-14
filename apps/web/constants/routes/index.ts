@@ -1,3 +1,7 @@
+/*
+ * This file defines the index module.
+ */
+
 import type { Route } from 'next';
 
 const ROUTES = {
@@ -5,6 +9,7 @@ const ROUTES = {
   DASHBOARD: '/dashboard',
   DISCOVER: '/competitions/discover',
   CREATE_COMPETITION: '/competitions/create',
+  JOIN_COMPETITION: '/competitions/join',
   COMPETITION: (id: string) => `/competitions/${id}` as Route,
   COMPETITION_FEED: (id: string) => `/competitions/${id}/feed` as Route,
   COMPETITION_LEADERBOARD: (id: string) => `/competitions/${id}/leaderboard` as Route,
@@ -28,6 +33,7 @@ const ROUTES = {
   FORGOT_PASSWORD: '/forgot-password',
   ABOUT: '/about',
   TERMS: '/terms',
+  PRIVACY: '/privacy',
 } as const;
 
 export default ROUTES;

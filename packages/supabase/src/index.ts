@@ -1,3 +1,7 @@
+/*
+ * This file defines the index module.
+ */
+
 // Public API for the supabase package.
 
 // Clients
@@ -13,6 +17,8 @@ export { getCompetitionByInviteCode } from './queries/competitions/get-competiti
 export { getCompetitionMembers } from './queries/competitions/get-competition-members';
 export { getPublicCompetitions } from './queries/competitions/get-public-competitions';
 export { getUserCompetitions } from './queries/competitions/get-user-competitions';
+export { getCompetitionHistory } from './queries/competitions/get-competition-history';
+export type { CompetitionHistoryEntry } from './queries/competitions/get-competition-history';
 
 // Event queries
 export { getCompetitionEvent } from './queries/events/get-competition-event';
@@ -49,7 +55,8 @@ export { updateCompetition } from './mutations/competitions/update-competition';
 export { addMember } from './mutations/competitions/add-member';
 export { updateMemberRole } from './mutations/competitions/update-member-role';
 export { createGhostProfile } from './mutations/competitions/create-ghost-profile';
-export { completeCompetition } from './mutations/competitions/complete-competition';
+export { completeCompetition, rankMembersForCompletion } from './mutations/competitions/complete-competition';
+export type { TiebreakerOutcome } from './mutations/competitions/complete-competition';
 
 // Event mutations
 export { addCompetitionEvent } from './mutations/events/add-competition-event';
@@ -78,7 +85,7 @@ export { submitStrengthVote } from './mutations/social/submit-strength-vote';
 export { submitPerformanceVote } from './mutations/social/submit-performance-vote';
 export { submitTiebreakerNomination } from './mutations/social/submit-tiebreaker-nomination';
 export { markNotificationsRead } from './mutations/social/mark-notifications-read';
-export { registerPushToken } from './mutations/social/register-push-token';
+export { registerPushToken, unregisterPushToken } from './mutations/social/register-push-token';
 export type { StrengthVoteResult } from './mutations/social/submit-strength-vote';
 
 // User mutations

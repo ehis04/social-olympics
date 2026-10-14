@@ -1,3 +1,7 @@
+/*
+ * This file defines the commitlint.config module.
+ */
+
 module.exports = {
   extends: ['@commitlint/config-conventional'],
   rules: {

@@ -1,7 +1,12 @@
+/*
+ * This file defines the get results for member module.
+ */
+
 // Fetches all results for a member within a specific competition.
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
 
+// Handles get results for member.
 export async function getResultsForMember(
   client: SupabaseClient,
   profileId: string,

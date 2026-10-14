@@ -1,7 +1,12 @@
+/*
+ * This file defines the raise dispute module.
+ */
+
 // Raises a dispute against a result and sets the event status to disputed.
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
 
+// Handles raise dispute.
 export async function raiseDispute(
   client: SupabaseClient,
   payload: Record<string, unknown>,

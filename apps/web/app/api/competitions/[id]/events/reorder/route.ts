@@ -1,3 +1,7 @@
+/*
+ * This file handles requests for the reorder API route.
+ */
+
 // PATCH /api/competitions/[id]/events/reorder — bulk updates event sequence order.
 import { NextResponse } from 'next/server';
 import { getServerClient } from '@/lib/supabase/server';
@@ -10,6 +14,7 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
+// Handles patch.
 export async function PATCH(request: Request, { params }: RouteParams) {
   const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();
@@ -21,6 +26,9 @@ export async function PATCH(request: Request, { params }: RouteParams) {
   const competition = compData as CompetitionRow;
   const isHostOrCohost = competition.host_id === user.id || competition.cohost_id === user.id;
   if (!isHostOrCohost) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (['complete', 'archived'].includes(competition.status)) {
+    return NextResponse.json({ error: 'This competition is finished. Events can no longer be reordered.' }, { status: 409 });
+  }
 
   let body: { orderedIds?: string[] };
   try {

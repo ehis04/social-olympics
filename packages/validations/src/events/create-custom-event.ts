@@ -1,3 +1,7 @@
+/*
+ * This file defines the create custom event module.
+ */
+
 // Schema for creating a custom event.
 
 import { z } from 'zod';

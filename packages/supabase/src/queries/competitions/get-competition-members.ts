@@ -1,7 +1,12 @@
+/*
+ * This file defines the get competition members module.
+ */
+
 // Fetches all members of a competition with profile summaries.
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
 
+// Handles get competition members.
 export async function getCompetitionMembers(
   client: SupabaseClient,
   competitionId: string,

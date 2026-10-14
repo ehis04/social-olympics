@@ -1,3 +1,7 @@
+/*
+ * This migration updates the database for 00030 fix reports fk and points config rls.
+ */
+
 -- Migration 00030: Fix reports.reviewed_by FK and add event_points_config write policies
 
 -- 1. Add missing FK on reports.reviewed_by so referential integrity is enforced

@@ -1,3 +1,7 @@
+/*
+ * This file verifies CompetitionCard behavior.
+ */
+
 // Tests for CompetitionCard component
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
@@ -6,6 +10,7 @@ import type { Database } from '@repo/types';
 
 type CompetitionRow = Database['public']['Tables']['competitions']['Row'];
 
+// Handles make competition.
 function makeCompetition(overrides: Partial<CompetitionRow> = {}): CompetitionRow {
   return {
     id: 'comp-1',

@@ -1,7 +1,12 @@
+/*
+ * This file renders the about application page.
+ */
+
 import Link from 'next/link';
 
 export const metadata = { title: 'About: Social Olympics' };
 
+// Renders the about page component.
 export default function AboutPage() {
   return (
     <div className="mx-auto max-w-2xl">

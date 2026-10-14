@@ -1,3 +1,7 @@
+/*
+ * This file verifies social behavior.
+ */
+
 // Integration tests for social mutations against local Supabase.
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { sendMessage } from '../../src/mutations/social/send-message';

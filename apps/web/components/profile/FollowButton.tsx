@@ -1,3 +1,7 @@
+/*
+ * This file defines the FollowButton user-interface component.
+ */
+
 // FollowButton — follow/unfollow another profile
 'use client';
 
@@ -14,6 +18,7 @@ interface Props {
   profileId: string;
 }
 
+// Renders the follow button component.
 export function FollowButton({ profileId }: Props) {
   const [state, setState] = useState<FollowState | null>(null);
   const [isLoading, setIsLoading] = useState(true);

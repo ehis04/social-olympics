@@ -1,15 +1,23 @@
+/*
+ * This file renders the join application page.
+ */
+
 'use client';
 
 // Join competition page — handles invite code input and auto-submit from invite links
 import { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Trophy } from 'lucide-react';
 import ROUTES from '@/constants/routes';
 import { toast } from '@/lib/toast';
+import { getApiErrorMessage, readJson } from '@/lib/api/error-message';
 
+// Renders the join page component.
 export default function JoinPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const initialCode = searchParams.get('code')?.toUpperCase() ?? '';
   const [code, setCode] = useState(initialCode);
@@ -37,15 +45,23 @@ export default function JoinPage() {
         body: JSON.stringify({ invite_code: codeToUse }),
       });
 
-      const json = await res.json();
+      const json = await readJson(res);
 
       if (!res.ok) {
-        toast.error(json.error ?? 'Failed to join competition');
+        toast.error(getApiErrorMessage(json, 'Failed to join competition'));
         return;
       }
 
-      toast.success('Joined competition!');
-      router.replace(ROUTES.COMPETITION_FEED(json.data.competitionId));
+      const data = (json as { data: { competitionId: string; alreadyMember?: boolean; role?: string } }).data;
+      toast.success(
+        data.alreadyMember
+          ? "You're already a member: taking you there"
+          : data.role === 'spectator'
+            ? 'You joined as a spectator because the competition has already started. The host can make you a competitor.'
+            : 'Joined competition!',
+      );
+      void queryClient.invalidateQueries({ queryKey: ['competitions', 'user'] });
+      router.replace(ROUTES.COMPETITION_FEED(data.competitionId));
       router.refresh();
     } catch {
       toast.error('Something went wrong. Please try again.');

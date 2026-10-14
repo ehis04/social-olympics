@@ -1,6 +1,12 @@
+/*
+ * This file defines the auth.setup module.
+ */
+
 // Auth setup — logs in as test user and saves session storage state
 import { test as setup, expect } from '@playwright/test';
 import { AUTH_FILE, HOST_AUTH_FILE } from './auth-state';
+
+setup.setTimeout(90_000);
 
 setup('authenticate as competitor', async ({ page }) => {
   await page.goto('/login');

@@ -1,3 +1,7 @@
+/*
+ * This file defines the build leaderboard module.
+ */
+
 // Assembles a ranked leaderboard from raw competition member data.
 import { calculateMemberScore, type MemberEventResult } from './calculate-member-score';
 import { getMedalCounts } from './medal-counts';
@@ -13,6 +17,7 @@ export interface LeaderboardEntry extends RankedEntry {
   eventsCompleted: number;
 }
 
+// Handles build leaderboard.
 export function buildLeaderboard(
   members: CompetitionMemberInput[],
   n: number,

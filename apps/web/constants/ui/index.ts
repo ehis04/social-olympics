@@ -1,3 +1,7 @@
+/*
+ * This file defines the index module.
+ */
+
 export const UI = {
   DEBOUNCE_MS: 300,
   TOAST_DURATION_MS: 4000,

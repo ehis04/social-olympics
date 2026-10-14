@@ -1,3 +1,7 @@
+/*
+ * This file defines the report module.
+ */
+
 // Content moderation report types.
 
 import type { ReportStatus, ReportTargetType } from '../database/enums';

@@ -1,3 +1,7 @@
+/*
+ * This file defines the social module.
+ */
+
 // Shared social types for feed, chat, and notification features
 
 export interface ProfileSnippet {
@@ -23,7 +27,7 @@ export interface FeedReaction {
 export interface FeedItem {
   id: string;
   competition_id: string;
-  activity_type: string;
+  event_type: string;
   actor_profile_id: string | null;
   subject_profile_id: string | null;
   metadata: Record<string, unknown> | null;
@@ -67,14 +71,17 @@ export interface Notification {
   created_at: string;
 }
 
+// Handles is feed item.
 export function isFeedItem(v: unknown): v is FeedItem {
-  return typeof v === 'object' && v !== null && 'activity_type' in v;
+  return typeof v === 'object' && v !== null && 'event_type' in v && typeof v.event_type === 'string';
 }
 
+// Handles is chat message.
 export function isChatMessage(v: unknown): v is ChatMessage {
   return typeof v === 'object' && v !== null && 'message_type' in v && 'sender_profile_id' in v;
 }
 
+// Handles is notification.
 export function isNotification(v: unknown): v is Notification {
   return typeof v === 'object' && v !== null && 'type' in v && 'title' in v && 'profile_id' in v;
 }

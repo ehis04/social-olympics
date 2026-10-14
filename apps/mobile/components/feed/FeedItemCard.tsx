@@ -1,5 +1,9 @@
-// Mobile feed item card — activity text, emoji reactions, collapsible comments.
-import { useState } from 'react';
+/*
+ * This file defines the FeedItemCard user-interface component.
+ */
+
+// Mobile feed item card — activity text, emoji reactions, collapsible comments and reporting.
+import { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
 import { MessageCircle, Send } from 'lucide-react-native';
@@ -8,6 +12,9 @@ import { apiCall } from '@/lib/api/client';
 import { toast } from '@/lib/toast';
 import { formatRelativeTime } from '@/utils/formatters/date';
 import { MOBILE_ROUTES } from '@/constants/routes';
+import { formatPlace } from '@/utils/formatters/result';
+import { useAuthStore } from '@/stores/auth';
+import { ReportButton } from '@/components/moderation/ReportButton';
 
 interface FeedActor {
   id: string;
@@ -15,7 +22,7 @@ interface FeedActor {
   avatar_url: string | null;
 }
 
-interface FeedComment {
+export interface FeedComment {
   id: string;
   profile_id: string;
   content: string;
@@ -23,15 +30,15 @@ interface FeedComment {
   profiles: { id: string; display_name: string; avatar_url: string | null } | null;
 }
 
-interface FeedReaction {
+export interface FeedReaction {
   emoji: string;
   count: number;
   reactedByMe: boolean;
 }
 
-interface FeedItem {
+export interface FeedItem {
   id: string;
-  activity_type: string;
+  event_type: string;
   created_at: string;
   metadata: Record<string, unknown> | null;
   actor: FeedActor | null;
@@ -40,31 +47,73 @@ interface FeedItem {
 
 interface Props {
   item: FeedItem;
+  competitionId?: string;
   comments?: FeedComment[];
   reactions?: FeedReaction[];
 }
 
+const EMPTY_COMMENTS: FeedComment[] = [];
+const EMPTY_REACTIONS: FeedReaction[] = [];
+
 const REACTION_EMOJIS = ['👏', '🔥', '🥇', '😂', '😮'];
 
-function formatActivityType(type: string, metadata: Record<string, unknown> | null): string {
+interface FeedDescription {
+  lead: FeedActor | null;
+  text: string;
+  trailing?: FeedActor | null;
+}
+
+// Handles medal for place.
+function medalForPlace(place: number): string {
+  if (place === 1) return ' 🥇';
+  if (place === 2) return ' 🥈';
+  if (place === 3) return ' 🥉';
+  return '';
+}
+
+// Builds the sentence shown for a feed item from its type and metadata, matching the web feed.
+function describeFeedItem(item: FeedItem): FeedDescription {
+  const metadata = item.metadata;
   const eventName = typeof metadata?.event_name === 'string' ? metadata.event_name : 'an event';
-  switch (type) {
-    case 'result_confirmed': return `confirmed a result in ${eventName}`;
-    case 'event_started': return `started ${eventName}`;
-    case 'event_completed': return `completed ${eventName}`;
-    case 'member_joined': return 'joined the competition';
-    case 'gold_medal': return `won gold 🥇 in ${eventName}`;
-    case 'silver_medal': return `won silver 🥈 in ${eventName}`;
-    case 'bronze_medal': return `won bronze 🥉 in ${eventName}`;
-    case 'personal_best': return `set a personal best in ${eventName}`;
-    case 'dispute_raised': return `raised a dispute in ${eventName}`;
-    case 'dispute_resolved': return `resolved a dispute in ${eventName}`;
-    case 'tiebreaker_initiated': return 'initiated a tiebreaker';
-    case 'mvp_awarded': return 'was awarded MVP 🏆';
-    default: return type.replace(/_/g, ' ');
+  const actor = item.actor ?? null;
+  const subject = item.subject ?? null;
+
+  switch (item.event_type) {
+    case 'result_confirmed': {
+      const place = typeof metadata?.finishing_place === 'number' ? metadata.finishing_place : null;
+      const isDnf = metadata?.is_dnf === true;
+      if (subject && (place !== null || isDnf)) {
+        return {
+          lead: subject,
+          text: isDnf ? `did not finish ${eventName}` : `finished ${formatPlace(place)}${medalForPlace(place!)} in ${eventName}`,
+        };
+      }
+      return { lead: actor, text: `confirmed a result in ${eventName}` };
+    }
+    case 'event_started': return { lead: actor, text: `started ${eventName}` };
+    case 'event_completed': return { lead: actor, text: `completed ${eventName}` };
+    case 'member_joined': return { lead: actor ?? subject, text: 'joined the competition' };
+    case 'personal_best': return { lead: subject ?? actor, text: `set a personal best in ${eventName}` };
+    case 'dispute_raised': return { lead: actor, text: `raised a dispute in ${eventName}` };
+    case 'dispute_resolved':
+      return {
+        lead: actor,
+        text: `${metadata?.outcome === 'dismiss' ? 'dismissed' : 'resolved'} a dispute in ${eventName}`,
+        trailing: subject && subject.id !== actor?.id ? subject : null,
+      };
+    case 'tiebreaker_initiated': return { lead: actor, text: 'started a tiebreaker' };
+    case 'mvp_awarded':
+      return {
+        lead: actor ?? subject,
+        text: typeof metadata?.event_name === 'string' ? `was voted MVP in ${eventName} 🏆` : 'was awarded MVP 🏆',
+      };
+    case 'competition_completed':
+      return { lead: null, text: '🏆 The competition is complete. Final standings are on the podium.' };
+    default: return { lead: actor, text: item.event_type.replace(/_/g, ' ') };
   }
 }
 
+// Renders the avatar circle component.
 function AvatarCircle({ displayName, avatarUrl, size = 36 }: { displayName: string; avatarUrl: string | null; size?: number }) {
   return (
     <View style={{ width: size, height: size }} className="rounded-full bg-neutral-200 overflow-hidden">
@@ -81,8 +130,15 @@ function AvatarCircle({ displayName, avatarUrl, size = 36 }: { displayName: stri
   );
 }
 
-export function FeedItemCard({ item, comments: initialComments = [], reactions: initialReactions = [] }: Props) {
+// Renders the feed item card component.
+export function FeedItemCard({
+  item,
+  competitionId,
+  comments: initialComments = EMPTY_COMMENTS,
+  reactions: initialReactions = EMPTY_REACTIONS,
+}: Props) {
   const router = useRouter();
+  const viewerId = useAuthStore((state) => state.profile?.id ?? null);
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState<FeedComment[]>(initialComments);
   const [reactions, setReactions] = useState<FeedReaction[]>(initialReactions);
@@ -90,9 +146,12 @@ export function FeedItemCard({ item, comments: initialComments = [], reactions: 
   const [isPosting, setIsPosting] = useState(false);
   const [reactingEmoji, setReactingEmoji] = useState<string | null>(null);
 
-  const actor = item.actor;
-  const subject = item.subject;
-  const action = formatActivityType(item.activity_type, item.metadata);
+  // Refreshed feed data replaces local state, so other people's new comments and reactions appear.
+  useEffect(() => setComments(initialComments), [initialComments]);
+  useEffect(() => setReactions(initialReactions), [initialReactions]);
+
+  const { lead, text, trailing } = describeFeedItem(item);
+  const isOwnItem = !!viewerId && (item.actor?.id === viewerId || item.subject?.id === viewerId);
   const activeReactions = reactions.filter((r) => r.count > 0);
 
   async function handleReaction(emoji: string) {
@@ -128,8 +187,12 @@ export function FeedItemCard({ item, comments: initialComments = [], reactions: 
       body: JSON.stringify({ content: commentText.trim() }),
     });
     setIsPosting(false);
-    if (error || !data) { toast.error('Failed to post comment'); return; }
-    setComments((prev) => [...prev, data]);
+    if (error || !data) { toast.error(error?.message ?? 'Failed to post comment'); return; }
+    const me = useAuthStore.getState().profile;
+    setComments((prev) => [
+      ...prev,
+      { ...data, profiles: data.profiles ?? (me ? { id: me.id, display_name: me.display_name, avatar_url: me.avatar_url } : null) },
+    ]);
     setCommentText('');
   }
 
@@ -137,9 +200,9 @@ export function FeedItemCard({ item, comments: initialComments = [], reactions: 
     <View className="rounded-lg border border-neutral-100 bg-white shadow-sm mb-3">
       {/* Main row */}
       <View className="flex-row items-start gap-3 p-4">
-        <TouchableOpacity onPress={() => actor && router.push(MOBILE_ROUTES.PROFILE(actor.id))}>
-          {actor ? (
-            <AvatarCircle displayName={actor.display_name} avatarUrl={actor.avatar_url} />
+        <TouchableOpacity onPress={() => lead && router.push(MOBILE_ROUTES.PROFILE(lead.id))}>
+          {lead ? (
+            <AvatarCircle displayName={lead.display_name} avatarUrl={lead.avatar_url} />
           ) : (
             <View className="w-9 h-9 rounded-full bg-primary-muted items-center justify-center">
               <Text className="text-lg">🏅</Text>
@@ -149,29 +212,43 @@ export function FeedItemCard({ item, comments: initialComments = [], reactions: 
 
         <View className="flex-1 min-w-0">
           <Text className="text-sm text-neutral-700 flex-wrap">
-            {actor && (
+            {lead && (
               <Text
                 className="font-semibold text-neutral-900"
-                onPress={() => router.push(MOBILE_ROUTES.PROFILE(actor.id))}
+                onPress={() => router.push(MOBILE_ROUTES.PROFILE(lead.id))}
               >
-                {actor.display_name}{' '}
+                {lead.display_name}{' '}
               </Text>
             )}
-            <Text>{action}</Text>
-            {subject && subject.id !== actor?.id && (
+            <Text>{text}</Text>
+            {trailing && (
               <Text>
-                {' '}against{' '}
+                {' '}for{' '}
                 <Text
                   className="font-semibold text-neutral-900"
-                  onPress={() => router.push(MOBILE_ROUTES.PROFILE(subject.id))}
+                  onPress={() => router.push(MOBILE_ROUTES.PROFILE(trailing.id))}
                 >
-                  {subject.display_name}
+                  {trailing.display_name}
                 </Text>
               </Text>
             )}
           </Text>
           <Text className="mt-0.5 text-xs text-neutral-400">{formatRelativeTime(item.created_at)}</Text>
+          {item.event_type === 'competition_completed' && competitionId && (
+            <TouchableOpacity onPress={() => router.push(MOBILE_ROUTES.COMPETITION_PODIUM(competitionId))}>
+              <Text className="mt-1 text-xs font-semibold text-primary">View podium</Text>
+            </TouchableOpacity>
+          )}
         </View>
+
+        {!isOwnItem && (
+          <ReportButton
+            targetType="feed_item"
+            targetId={item.id}
+            compact
+            {...(competitionId ? { competitionId } : {})}
+          />
+        )}
       </View>
 
       {/* Reactions */}

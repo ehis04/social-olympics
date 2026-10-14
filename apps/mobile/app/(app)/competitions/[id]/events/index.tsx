@@ -1,3 +1,7 @@
+/*
+ * This file defines the index module.
+ */
+
 // Events list screen — all competition events with status, host start/add controls.
 import { useState } from 'react';
 import {
@@ -37,6 +41,7 @@ interface CompetitionEvent {
   } | null;
 }
 
+// Renders the events screen component.
 export default function EventsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -161,7 +166,7 @@ export default function EventsScreen() {
             {isHost && (
               <TouchableOpacity
                 className="flex-row items-center gap-1.5 bg-primary rounded-lg px-3 py-2"
-                onPress={() => router.push(MOBILE_ROUTES.MODAL_ADD_EVENT)}
+                onPress={() => router.push({ pathname: MOBILE_ROUTES.MODAL_ADD_EVENT, params: { id } })}
               >
                 <Plus size={14} color="#fff" />
                 <Text className="text-white text-xs font-semibold">Add Event</Text>
@@ -177,7 +182,7 @@ export default function EventsScreen() {
               {isHost && (
                 <TouchableOpacity
                   className="mt-4 bg-primary rounded-lg px-5 py-2.5"
-                  onPress={() => router.push(MOBILE_ROUTES.MODAL_ADD_EVENT)}
+                  onPress={() => router.push({ pathname: MOBILE_ROUTES.MODAL_ADD_EVENT, params: { id } })}
                 >
                   <Text className="text-white text-sm font-semibold">Add First Event</Text>
                 </TouchableOpacity>

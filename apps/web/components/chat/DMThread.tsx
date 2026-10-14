@@ -1,3 +1,7 @@
+/*
+ * This file defines the DMThread user-interface component.
+ */
+
 // DMThread — direct message thread with realtime and infinite scroll
 'use client';
 
@@ -10,14 +14,20 @@ import { ChatMessageBubble } from './ChatMessageBubble';
 import { MessageInput } from './MessageInput';
 import { isChatMessage } from '@/types/social';
 import { toast } from '@/lib/toast';
+import Image from 'next/image';
+import Link from 'next/link';
+import ROUTES from '@/constants/routes';
 import type { ProfileSnippet } from '@/types/social';
 
 interface Props {
   partnerId: string;
   partner: ProfileSnippet;
+  // Shown instead of the message box when the conversation can no longer continue.
+  unavailableReason?: string | null;
 }
 
-export function DMThread({ partnerId, partner }: Props) {
+// Renders the dmthread component.
+export function DMThread({ partnerId, partner, unavailableReason = null }: Props) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -43,16 +53,22 @@ export function DMThread({ partnerId, partner }: Props) {
   }, [messages.length]);
 
   function handleSend(content: string) {
-    sendDM(content, { onError: () => toast.error('Failed to send message') });
+    sendDM(content, { onError: (error) => toast.error(error instanceof Error ? error.message : 'Failed to send message') });
   }
 
   return (
     <div className="flex h-[65vh] flex-col rounded-lg border border-grey-200 bg-white">
       <div className="flex items-center gap-3 border-b border-grey-200 px-4 py-3">
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-grey-200 text-sm font-semibold text-grey-600">
-          {partner.display_name.charAt(0).toUpperCase()}
-        </div>
-        <span className="font-medium text-grey-900">{partner.display_name}</span>
+        <Link href={ROUTES.PROFILE(partner.id)} className="flex items-center gap-3 hover:underline">
+          <span className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-grey-200 text-sm font-semibold text-grey-600">
+            {partner.avatar_url ? (
+              <Image src={partner.avatar_url} alt={partner.display_name} fill sizes="32px" className="object-cover" />
+            ) : (
+              partner.display_name.charAt(0).toUpperCase()
+            )}
+          </span>
+          <span className="font-medium text-grey-900">{partner.display_name}</span>
+        </Link>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -98,11 +114,15 @@ export function DMThread({ partnerId, partner }: Props) {
         <div ref={bottomRef} />
       </div>
 
-      <MessageInput
-        onSend={handleSend}
-        isSending={isSending}
-        placeholder={`Message ${partner.display_name}…`}
-      />
+      {unavailableReason ? (
+        <p className="border-t border-grey-200 px-4 py-3 text-center text-sm text-grey-500">{unavailableReason}</p>
+      ) : (
+        <MessageInput
+          onSend={handleSend}
+          isSending={isSending}
+          placeholder={`Message ${partner.display_name}…`}
+        />
+      )}
     </div>
   );
 }

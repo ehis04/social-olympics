@@ -1,3 +1,7 @@
+/*
+ * This file verifies PrizePoolDisplay behavior.
+ */
+
 // Tests for PrizePoolDisplay component
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';

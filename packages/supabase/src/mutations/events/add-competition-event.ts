@@ -1,7 +1,12 @@
+/*
+ * This file defines the add competition event module.
+ */
+
 // Adds an event to a competition (trigger auto-increments total_events).
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
 
+// Handles add competition event.
 export async function addCompetitionEvent(
   client: SupabaseClient,
   payload: Record<string, unknown>,

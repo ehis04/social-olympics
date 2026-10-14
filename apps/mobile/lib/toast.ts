@@ -1,3 +1,7 @@
+/*
+ * This file defines the toast module.
+ */
+
 // Toast notification helper — wraps react-native-toast-message with success/error/info.
 import Toast from 'react-native-toast-message';
 

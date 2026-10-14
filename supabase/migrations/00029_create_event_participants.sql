@@ -1,3 +1,7 @@
+/*
+ * This migration updates the database for 00029 create event participants.
+ */
+
 -- Migration 00029: competition_event_participants — pre-assigned participants per event
 
 CREATE TABLE public.competition_event_participants (

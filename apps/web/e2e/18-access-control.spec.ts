@@ -1,3 +1,7 @@
+/*
+ * This file verifies 18 access control behavior.
+ */
+
 // Journey: Access control — non-member, host-only, and responsive smoke
 import { test, expect } from '@playwright/test';
 import { AUTH_FILE } from './fixtures/auth-state';

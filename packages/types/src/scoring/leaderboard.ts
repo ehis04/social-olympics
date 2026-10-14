@@ -1,3 +1,7 @@
+/*
+ * This file defines the leaderboard module.
+ */
+
 // Leaderboard entry types for individual and team standings.
 
 import type { ProfileSummary } from '../users/profile';

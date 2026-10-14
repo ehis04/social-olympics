@@ -1,9 +1,13 @@
+/*
+ * This file defines the index module.
+ */
+
 // Dashboard — user's competitions with pull-to-refresh and create FAB.
 import { View, Text, FlatList, RefreshControl, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { Plus } from 'lucide-react-native';
+import { MessageCircle, Plus } from 'lucide-react-native';
 import { CompetitionCard } from '@/components/competition/CompetitionCard';
 import { MOBILE_ROUTES } from '@/constants/routes';
 import { apiCall } from '@/lib/api/client';
@@ -12,6 +16,7 @@ import type { Database } from '@repo/types';
 
 type CompetitionRow = Database['public']['Tables']['competitions']['Row'];
 
+// Renders the dashboard screen component.
 export default function DashboardScreen() {
   const router = useRouter();
   const { profile } = useAuthStore();
@@ -31,9 +36,14 @@ export default function DashboardScreen() {
     <SafeAreaView className="flex-1 bg-neutral-50">
       <View className="flex-row items-center justify-between px-4 py-4 bg-white border-b border-neutral-200">
         <Text className="text-xl font-bold text-neutral-800">My Competitions</Text>
-        <TouchableOpacity onPress={() => router.push(MOBILE_ROUTES.DISCOVER)}>
-          <Text className="text-sm font-semibold text-primary">Discover</Text>
-        </TouchableOpacity>
+        <View className="flex-row items-center gap-4">
+          <TouchableOpacity onPress={() => router.push(MOBILE_ROUTES.MODAL_JOIN_COMPETITION)}>
+            <Text className="text-sm font-semibold text-primary">Join</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push(MOBILE_ROUTES.MESSAGES)} accessibilityLabel="Messages">
+            <MessageCircle size={22} color="#2D6A4F" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <FlatList
@@ -48,13 +58,19 @@ export default function DashboardScreen() {
             <View className="items-center justify-center py-20">
               <Text className="text-neutral-800 font-semibold text-base mb-1">No competitions yet</Text>
               <Text className="text-neutral-500 text-sm text-center mb-6">
-                Create your own or discover public competitions to join.
+                Create your own, join with an invite code, or discover public competitions.
               </Text>
               <TouchableOpacity
-                className="bg-primary rounded-lg px-6 py-3"
+                className="bg-primary rounded-lg px-6 py-3 mb-3"
                 onPress={() => router.push(MOBILE_ROUTES.MODAL_CREATE_COMPETITION)}
               >
                 <Text className="text-white font-semibold text-sm">Create Competition</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className="border border-primary rounded-lg px-6 py-3"
+                onPress={() => router.push(MOBILE_ROUTES.MODAL_JOIN_COMPETITION)}
+              >
+                <Text className="text-primary font-semibold text-sm">Join with a code</Text>
               </TouchableOpacity>
             </View>
           ) : null

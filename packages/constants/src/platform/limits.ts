@@ -1,3 +1,7 @@
+/*
+ * This file defines the limits module.
+ */
+
 // Platform-wide numeric limits and constraints.
 
 export const MIN_AGE_YEARS = 16;

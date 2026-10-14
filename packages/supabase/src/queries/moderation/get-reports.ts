@@ -1,7 +1,12 @@
+/*
+ * This file defines the get reports module.
+ */
+
 // Fetches paginated moderation reports (admin client only).
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { PaginatedResponse, PaginationParams } from '@repo/types';
 
+// Handles get reports.
 export async function getReports(
   client: SupabaseClient,
   status?: string,

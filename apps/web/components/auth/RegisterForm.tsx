@@ -1,3 +1,7 @@
+/*
+ * This file defines the RegisterForm user-interface component.
+ */
+
 'use client';
 
 import { useState } from 'react';
@@ -8,7 +12,9 @@ import Link from 'next/link';
 import { Eye, EyeOff } from 'lucide-react';
 import { createBrowserClient } from '@repo/supabase';
 import { RegisterSchema, type RegisterInput } from '@repo/validations';
+import type { Route } from 'next';
 import { toast } from '@/lib/toast';
+import { getSafeNextPath, withNext } from '@/lib/auth/safe-next';
 
 const COUNTRIES = [
   { code: 'IE', name: 'Ireland' },
@@ -33,6 +39,7 @@ const COUNTRIES = [
   { code: 'JP', name: 'Japan' },
 ];
 
+// Handles get password strength.
 function getPasswordStrength(password: string): { label: string; color: string; width: string } {
   if (!password) return { label: '', color: 'bg-grey-200', width: 'w-0' };
   if (password.length < 6) return { label: 'Weak', color: 'bg-error', width: 'w-1/4' };
@@ -42,9 +49,11 @@ function getPasswordStrength(password: string): { label: string; color: string; 
   return { label: 'Good', color: 'bg-primary', width: 'w-3/4' };
 }
 
-export default function RegisterForm() {
+// Renders the register form component.
+export default function RegisterForm({ next = null }: { next?: string | null }) {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
+  const [confirmationEmail, setConfirmationEmail] = useState<string | null>(null);
 
   const {
     register,
@@ -61,11 +70,12 @@ export default function RegisterForm() {
 
   async function onSubmit(values: RegisterInput) {
     const supabase = createBrowserClient();
-    const { error } = await supabase.auth.signUp({
+    const safeNext = getSafeNextPath(next);
+    const { data, error } = await supabase.auth.signUp({
       email: values.email,
       password: values.password,
       options: {
-        emailRedirectTo: `${window.location.origin}/api/auth/callback`,
+        emailRedirectTo: `${window.location.origin}/api/auth/callback?next=${encodeURIComponent(safeNext)}`,
         data: {
           display_name: values.display_name,
           date_of_birth: values.date_of_birth,
@@ -80,12 +90,33 @@ export default function RegisterForm() {
       return;
     }
 
+    // When email confirmation is required, Supabase creates the account without a session.
+    if (!data.session) {
+      setConfirmationEmail(values.email);
+      return;
+    }
+
     toast.success('Account created! Welcome to Social Olympics.');
-    router.push('/dashboard');
+    router.replace(safeNext as Route);
+    router.refresh();
+  }
+
+  if (confirmationEmail) {
+    return (
+      <div className="space-y-4 text-center">
+        <p className="text-sm text-grey-700">
+          We sent a confirmation link to <span className="font-semibold">{confirmationEmail}</span>.
+          Open it to activate your account, then sign in.
+        </p>
+        <Link href={withNext('/login', next) as Route} className="inline-block text-sm font-semibold text-primary hover:underline">
+          Back to sign in
+        </Link>
+      </div>
+    );
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
+    <form method="post" onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
       <div className="flex flex-col gap-1">
         <label htmlFor="display_name" className="text-xs font-semibold text-grey-800">
           Display name
@@ -202,9 +233,16 @@ export default function RegisterForm() {
         {isSubmitting ? 'Creating account…' : 'Create account'}
       </button>
 
+      <p className="text-center text-xs text-grey-500">
+        By creating an account you agree to the{' '}
+        <Link href="/terms" target="_blank" className="font-semibold text-primary hover:underline">Terms of Use</Link>
+        {' '}and{' '}
+        <Link href="/privacy" target="_blank" className="font-semibold text-primary hover:underline">Privacy Policy</Link>.
+      </p>
+
       <p className="text-center text-xs text-grey-600">
         Already have an account?{' '}
-        <Link href="/login" className="font-semibold text-primary hover:underline">
+        <Link href={withNext('/login', next) as Route} className="font-semibold text-primary hover:underline">
           Sign in
         </Link>
       </p>

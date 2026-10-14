@@ -1,12 +1,34 @@
+/*
+ * This file verifies balance teams behavior.
+ */
+
 // Unit tests for balanceTeams — snake draft and tolerance checking.
 import { describe, expect, it } from 'vitest';
-import { balanceTeams } from '../../src/team-balance/balance-teams';
+import { balanceTeams, balanceTeamsByCount } from '../../src/team-balance/balance-teams';
 
+// Handles make players.
 function makePlayers(ratings: number[]) {
   return ratings.map((r, i) => ({ profileId: `p${i}`, strengthRating: r }));
 }
 
 describe('balanceTeams', () => {
+  it('creates exactly the requested count, including uneven teams', () => {
+    for (const [playersCount, teamCount] of [[10, 2], [10, 3], [5, 4]]) {
+      const players = makePlayers(Array.from({ length: playersCount! }, (_, i) => i + 1));
+      const result = balanceTeamsByCount(players, teamCount!);
+      expect(result.teams).toHaveLength(teamCount!);
+      expect(result.teams.flatMap((team) => team.players)).toHaveLength(playersCount!);
+      const sizes = result.teams.map((team) => team.players.length);
+      expect(Math.max(...sizes) - Math.min(...sizes)).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it('rejects invalid team sizes and counts', () => {
+    const players = makePlayers([1, 2, 3]);
+    expect(() => balanceTeams(players, 0)).toThrow();
+    expect(() => balanceTeamsByCount(players, 0)).toThrow();
+    expect(() => balanceTeamsByCount(players, 4)).toThrow();
+  });
   it('10 players, teamSize=5: produces 2 balanced teams within tolerance', () => {
     const players = makePlayers([10, 9, 8, 7, 6, 5, 4, 3, 2, 1]);
     const result = balanceTeams(players, 5);

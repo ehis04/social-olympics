@@ -1,3 +1,7 @@
+/*
+ * This file renders the podium application page.
+ */
+
 // Podium page — final results display for complete and archived competitions
 import { notFound, redirect } from 'next/navigation';
 import { getServerClient } from '@/lib/supabase/server';
@@ -6,6 +10,7 @@ import { PodiumStand } from '@/components/podium/PodiumStand';
 import { PodiumCard } from '@/components/podium/PodiumCard';
 import { FullResultsTable } from '@/components/podium/FullResultsTable';
 import { ArchiveCompetitionButton } from '@/components/podium/ArchiveCompetitionButton';
+import { NewSeasonButton } from '@/components/podium/NewSeasonButton';
 import ROUTES from '@/constants/routes';
 import type { Database } from '@repo/types';
 import type { Route } from 'next';
@@ -31,6 +36,7 @@ interface Props {
   params: Promise<{ id: string }>;
 }
 
+// Renders the podium page component.
 export default async function PodiumPage({ params }: Props) {
   const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();
@@ -49,15 +55,43 @@ export default async function PodiumPage({ params }: Props) {
     redirect(ROUTES.COMPETITION_LEADERBOARD((await params).id));
   }
 
-  const finishers = ((leaderboardData ?? []) as Finisher[]).sort(
-    (a, b) => (a.final_rank ?? 999) - (b.final_rank ?? 999),
-  );
+  const finishers = ((leaderboardData ?? []) as Finisher[])
+    .filter((finisher) => finisher.final_rank != null)
+    .sort((a, b) => (a.final_rank ?? 999) - (b.final_rank ?? 999));
 
   const isHost = competition.host_id === user.id;
-  const first = finishers.find((f) => f.final_rank === 1);
-  const second = finishers.find((f) => f.final_rank === 2);
-  const third = finishers.find((f) => f.final_rank === 3);
+  const { data: nextSeason } = isHost
+    ? await client
+        .from('competitions')
+        .select('id, season_number')
+        .eq('parent_competition_id', competition.id)
+        .limit(1)
+        .maybeSingle()
+    : { data: null };
+  // Final ranks are dense, so competitors who stayed level share a podium place.
+  const atPlace = (place: number) => finishers.filter((f) => f.final_rank === place);
+  const podium = ([1, 2, 3] as const).map((place) => ({ place, finishers: atPlace(place) }));
   const rest = finishers.filter((f) => (f.final_rank ?? 0) > 3);
+
+  const renderCards = (place: 1 | 2 | 3, group: Finisher[]) => (
+    <div className="flex flex-wrap items-end justify-center gap-2">
+      {group.map((finisher) => (
+        <PodiumCard
+          key={finisher.profile_id}
+          profileId={finisher.profile_id}
+          displayName={finisher.profiles?.display_name ?? 'Unknown'}
+          avatarUrl={finisher.profiles?.avatar_url ?? null}
+          countryCode={finisher.profiles?.country_code ?? null}
+          totalPoints={finisher.total_points}
+          gold={finisher.gold_count}
+          silver={finisher.silver_count}
+          bronze={finisher.bronze_count}
+          place={place}
+          shared={group.length > 1}
+        />
+      ))}
+    </div>
+  );
 
   return (
     <div className="space-y-10">
@@ -68,54 +102,14 @@ export default async function PodiumPage({ params }: Props) {
         <p className="mt-1 text-sm text-grey-500">{competition.name}</p>
       </div>
 
-      {(first ?? second ?? third) && (
+      {podium.some((step) => step.finishers.length > 0) && (
         <div className="flex items-end justify-center gap-2">
-          {second && (
-            <PodiumStand place={2}>
-              <PodiumCard
-                profileId={second.profile_id}
-                displayName={second.profiles?.display_name ?? 'Unknown'}
-                avatarUrl={second.profiles?.avatar_url ?? null}
-                countryCode={second.profiles?.country_code ?? null}
-                totalPoints={second.total_points}
-                gold={second.gold_count}
-                silver={second.silver_count}
-                bronze={second.bronze_count}
-                place={2}
-              />
-            </PodiumStand>
-          )}
-
-          {first && (
-            <PodiumStand place={1}>
-              <PodiumCard
-                profileId={first.profile_id}
-                displayName={first.profiles?.display_name ?? 'Unknown'}
-                avatarUrl={first.profiles?.avatar_url ?? null}
-                countryCode={first.profiles?.country_code ?? null}
-                totalPoints={first.total_points}
-                gold={first.gold_count}
-                silver={first.silver_count}
-                bronze={first.bronze_count}
-                place={1}
-              />
-            </PodiumStand>
-          )}
-
-          {third && (
-            <PodiumStand place={3}>
-              <PodiumCard
-                profileId={third.profile_id}
-                displayName={third.profiles?.display_name ?? 'Unknown'}
-                avatarUrl={third.profiles?.avatar_url ?? null}
-                countryCode={third.profiles?.country_code ?? null}
-                totalPoints={third.total_points}
-                gold={third.gold_count}
-                silver={third.silver_count}
-                bronze={third.bronze_count}
-                place={3}
-              />
-            </PodiumStand>
+          {podium.map((step) =>
+            step.finishers.length > 0 ? (
+              <PodiumStand key={step.place} place={step.place}>
+                {renderCards(step.place, step.finishers)}
+              </PodiumStand>
+            ) : null,
           )}
         </div>
       )}
@@ -131,9 +125,10 @@ export default async function PodiumPage({ params }: Props) {
         <FullResultsTable finishers={finishers} currentUserId={user.id} />
       )}
 
-      {isHost && competition.status === 'complete' && (
-        <div className="flex justify-end">
-          <ArchiveCompetitionButton competitionId={competition.id} />
+      {isHost && (
+        <div className="flex flex-wrap justify-end gap-3">
+          {competition.status === 'complete' && <ArchiveCompetitionButton competitionId={competition.id} />}
+          <NewSeasonButton competitionId={competition.id} nextSeason={nextSeason} />
         </div>
       )}
     </div>

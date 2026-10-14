@@ -1,3 +1,7 @@
+/*
+ * This file verifies calculate team strength behavior.
+ */
+
 // Unit tests for calculateTeamStrength.
 import { describe, expect, it } from 'vitest';
 import { calculateTeamStrength } from '../../src/team-balance/calculate-team-strength';

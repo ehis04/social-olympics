@@ -1,7 +1,12 @@
+/*
+ * This file defines the update competition module.
+ */
+
 // Updates a competition row (status transitions validated in Route Handler before calling).
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
 
+// Handles update competition.
 export async function updateCompetition(
   client: SupabaseClient,
   id: string,

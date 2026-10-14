@@ -1,3 +1,7 @@
+/*
+ * This file defines the medal counts module.
+ */
+
 // Counts gold, silver, and bronze medals from a set of results.
 export interface MedalCounts {
   gold: number;
@@ -5,6 +9,7 @@ export interface MedalCounts {
   bronze: number;
 }
 
+// Handles get medal counts.
 export function getMedalCounts(
   results: Array<{ finishingPlace: number | null }>,
 ): MedalCounts {

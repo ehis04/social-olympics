@@ -1,3 +1,7 @@
+/*
+ * This migration updates the database for 00007 create competition members.
+ */
+
 -- Migration 00007: competition_members table
 
 CREATE TABLE public.competition_members (

@@ -1,8 +1,13 @@
+/*
+ * This file verifies calculate member score behavior.
+ */
+
 // Unit tests for calculateMemberScore.
 import { describe, expect, it } from 'vitest';
 import { calculateMemberScore } from '../../src/leaderboard/calculate-member-score';
 import type { MemberEventResult } from '../../src/leaderboard/calculate-member-score';
 
+// Handles make result.
 function makeResult(
   id: string,
   pointsAwarded: number,

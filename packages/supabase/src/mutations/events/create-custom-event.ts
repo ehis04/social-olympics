@@ -1,7 +1,12 @@
+/*
+ * This file defines the create custom event module.
+ */
+
 // Creates a custom event in the library (is_custom = true).
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
 
+// Handles create custom event.
 export async function createCustomEvent(
   client: SupabaseClient,
   payload: Record<string, unknown>,

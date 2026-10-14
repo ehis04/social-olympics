@@ -1,3 +1,7 @@
+/*
+ * This file defines the invite module.
+ */
+
 // Invite by email and join by code schemas.
 
 import { z } from 'zod';

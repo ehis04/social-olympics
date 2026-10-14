@@ -1,3 +1,7 @@
+/*
+ * This file defines the index module.
+ */
+
 // Barrel export — all platform TypeScript types.
 
 export * from './src/database/enums';

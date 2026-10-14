@@ -1,7 +1,12 @@
+/*
+ * This file defines the get direct messages module.
+ */
+
 // Fetches paginated direct messages between two profiles.
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { PaginatedResponse, PaginationParams } from '@repo/types';
 
+// Handles get direct messages.
 export async function getDirectMessages(
   client: SupabaseClient,
   profileIdA: string,

@@ -1,22 +1,29 @@
+/*
+ * This file defines the EventDetail user-interface component.
+ */
+
 'use client';
 
 // EventDetail — renders event info, results table, and host/competitor action panels.
 import { useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Play, CheckCircle, AlertTriangle, ChevronLeft } from 'lucide-react';
+import { Play, CheckCircle, AlertTriangle, ChevronLeft, Ban } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from '@/lib/toast';
-import { formatResultValue } from '@/utils/formatters/result';
+import { formatResultValue } from '@repo/scoring';
 import { formatPoints } from '@/utils/formatters/points';
 import { getPlaceSuffix, canSubmitResult } from '@/utils/helpers/results';
 import { ResultSubmissionForm } from './ResultSubmissionForm';
 import { ConfirmResultsPanel } from './ConfirmResultsPanel';
 import { DisputePanel } from './DisputePanel';
 import { PerformanceVotePanel } from './PerformanceVotePanel';
-import { StrengthVoteWidget } from './StrengthVoteWidget';
-import { TeamAssignmentPanel } from './TeamAssignmentPanel';
+import { TeamEventPanel } from './TeamEventPanel';
 import { HostEventManagementPanel } from './HostEventManagementPanel';
+import { HostDisputePanel, type OpenDispute } from './HostDisputePanel';
+import { EventAwardsPanel, type AwardWinner } from './EventAwardsPanel';
+import { getApiErrorMessage, readJson } from '@/lib/api/error-message';
+import type { TeamEventState } from '@/lib/teams/team-event';
 import ROUTES from '@/constants/routes';
 import type { Database } from '@repo/types';
 
@@ -29,27 +36,6 @@ interface Competitor {
   avatarUrl: string | null;
 }
 
-interface TeamMemberRating {
-  teamMemberId: string;
-  profileId: string;
-  displayName: string;
-  avatarUrl: string | null;
-  strengthRating: number;
-  ratingSource: string;
-  submissionRound: 1 | 2;
-}
-
-interface RatedPlayer {
-  profileId: string;
-  displayName: string;
-  strengthRating: number;
-}
-
-interface AssignedTeam {
-  teamId: string;
-  members: RatedPlayer[];
-}
-
 interface EventDetailProps {
   event: Record<string, unknown>;
   competition: CompetitionRow;
@@ -58,14 +44,17 @@ interface EventDetailProps {
   currentUserId: string | null;
   isHost: boolean;
   memberRole: MemberRole | null;
-  pendingStrengthRatings?: TeamMemberRating[];
-  ratedPlayers?: RatedPlayer[];
-  existingTeams?: AssignedTeam[] | null;
   existingMvpVote?: string | null;
   existingWorstVote?: string | null;
+  mvpAward?: AwardWinner | null;
+  worstAward?: AwardWinner | null;
+  ballotCounts?: { mvp: number; worst: number } | null;
+  teamState?: TeamEventState | null;
+  openDisputes?: OpenDispute[];
 }
 
-function getStatusBanner(status: string) {
+// Handles get status banner.
+function getStatusBanner(status: string, cancelledReason: string | null) {
   switch (status) {
     case 'active':
       return (
@@ -95,11 +84,25 @@ function getStatusBanner(status: string) {
           Results confirmed
         </div>
       );
+    case 'cancelled':
+      return (
+        <div className="flex items-center gap-2 rounded-lg bg-grey-50 border border-grey-200 px-4 py-3 text-sm font-medium text-grey-700">
+          <Ban className="h-4 w-4 shrink-0" />
+          This event was cancelled{cancelledReason ? `: ${cancelledReason}` : ''}
+        </div>
+      );
+    case 'pending':
+      return (
+        <div className="rounded-lg bg-grey-50 border border-grey-200 px-4 py-3 text-sm text-grey-600">
+          Upcoming: results can be entered once the host starts this event.
+        </div>
+      );
     default:
       return null;
   }
 }
 
+// Renders the event detail component.
 export function EventDetail({
   event,
   competition,
@@ -108,11 +111,13 @@ export function EventDetail({
   currentUserId,
   isHost,
   memberRole,
-  pendingStrengthRatings = [],
-  ratedPlayers = [],
-  existingTeams = null,
   existingMvpVote = null,
   existingWorstVote = null,
+  mvpAward = null,
+  worstAward = null,
+  ballotCounts = null,
+  teamState = null,
+  openDisputes = [],
 }: EventDetailProps) {
   const router = useRouter();
   const [isStarting, setIsStarting] = useState(false);
@@ -128,7 +133,7 @@ export function EventDetail({
   const competitionEventId = event.id as string;
   const weightTag = (event.weight_tag as string) ?? 'standard';
   const weightMultiplier = (event.weight_multiplier as number) ?? 1;
-  const isTeamEvent = !!(event.is_team_event as boolean | undefined);
+  const isTeamEvent = !!(eventLibrary?.is_team_event as boolean | undefined);
   const scheduledAt = (event.scheduled_at as string | null | undefined) ?? null;
   const eventLocation = (event.location as string | null | undefined) ?? null;
   const eventDetails = (event.details as string | null | undefined) ?? null;
@@ -137,20 +142,26 @@ export function EventDetail({
   const isActive = status === 'active';
   const isResultsPending = status === 'results_pending';
   const isConfirmed = status === 'confirmed';
+  const isDisputed = status === 'disputed';
+  const isCancelled = status === 'cancelled';
+  const competitionFinished = competition.status === 'complete' || competition.status === 'archived';
+  const hasTeams = (teamState?.teams.length ?? 0) > 0;
+  const isActiveCompetitor = memberRole === 'competitor';
 
-  const canStart = isHost && isPending &&
+  const canStart = isHost && isPending && !competitionFinished &&
     ['setup', 'open', 'active'].includes(competition.status);
 
   const userHasSubmitted = results.some(
     (r) => (r.profiles as Record<string, unknown> | null)?.id === currentUserId ||
       r.profile_id === currentUserId,
   );
-  const showSubmit = !isHost && memberRole !== null &&
-    canSubmitResult(memberRole, status) && !userHasSubmitted;
+  // Team results are entered per team by the host once teams exist.
+  const showSubmit = !isHost && memberRole !== null && !competitionFinished &&
+    canSubmitResult(memberRole, status) && !userHasSubmitted && !(isTeamEvent && hasTeams);
 
   const pendingResults = results.filter((r) => !r.confirmed_at);
   const confirmedResults = results.filter((r) => !!r.confirmed_at);
-  const canConfirm = isHost && isResultsPending && pendingResults.length > 0;
+  const canConfirm = isHost && isResultsPending && pendingResults.length > 0 && !(isTeamEvent && hasTeams);
   const submittedProfileIds = results
     .map((result) => result.profile_id as string | undefined)
     .filter((profileId): profileId is string => Boolean(profileId));
@@ -159,14 +170,16 @@ export function EventDetail({
     (r) => (r.profiles as Record<string, unknown> | null)?.id === currentUserId ||
       r.profile_id === currentUserId,
   );
-  const canDispute = !isHost && !!currentUserResult && isConfirmed &&
-    event.dispute_window_closes_at != null &&
+  const disputeWindowOpen = event.dispute_window_closes_at != null &&
     new Date(event.dispute_window_closes_at as string) > new Date();
+  const canDispute = !isHost && !!currentUserResult && (isConfirmed || isDisputed) &&
+    !competitionFinished && disputeWindowOpen;
 
-  const showVoting = isConfirmed && memberRole !== null && !isHost;
-  const showStrengthVoting = isTeamEvent && isActive && memberRole !== null && !isHost &&
-    pendingStrengthRatings.length > 0;
-  const showTeamAssignment = isTeamEvent && isHost && isActive;
+  const mvpOpen = competition.mvp_voting_enabled && !mvpAward;
+  const worstOpen = competition.worst_performer_enabled && !worstAward;
+  const showVoting = isConfirmed && isActiveCompetitor && !competitionFinished && (mvpOpen || worstOpen);
+  const showAwards = (isConfirmed || isDisputed) && (competition.mvp_voting_enabled || competition.worst_performer_enabled);
+  const showTeamPanel = isTeamEvent && !isCancelled && !!teamState;
 
   const competitors: Competitor[] = members
     .map((m) => {
@@ -181,7 +194,12 @@ export function EventDetail({
       };
     })
     .filter((c): c is Competitor => c !== null);
-  const participantOptions = competitors;
+  const participantOptions = competitors.filter((competitor) => {
+    const member = members.find((m) => m.profile_id === competitor.profileId);
+    return member?.status === 'active' && member?.role !== 'spectator';
+  });
+  const resultProfileIds = new Set(submittedProfileIds);
+  const voteCandidates = competitors.filter((competitor) => resultProfileIds.has(competitor.profileId));
 
   async function handleStart() {
     setIsStarting(true);
@@ -190,8 +208,7 @@ export function EventDetail({
         `/api/competitions/${competition.id}/events/${competitionEventId}/start`,
         { method: 'POST' },
       );
-      const json = (await res.json()) as { error?: string };
-      if (!res.ok) { toast.error(json.error ?? 'Failed to start event'); return; }
+      if (!res.ok) { toast.error(getApiErrorMessage(await readJson(res), 'Failed to start event')); return; }
       if (!isTeamEvent) {
         router.push(ROUTES.EVENT_RECORD(competition.id, competitionEventId));
       } else {
@@ -245,7 +262,7 @@ export function EventDetail({
               {isStarting ? 'Starting…' : 'Start Event'}
             </button>
           )}
-          {isHost && isActive && !isTeamEvent && (
+          {isHost && (isActive || isResultsPending) && !isTeamEvent && !competitionFinished && (
             <Link
               href={ROUTES.EVENT_RECORD(competition.id, competitionEventId)}
               className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark"
@@ -256,9 +273,9 @@ export function EventDetail({
         </div>
       </div>
 
-      {getStatusBanner(status)}
+      {getStatusBanner(status, (event.cancelled_reason as string | null) ?? null)}
 
-      {isHost && !isConfirmed && (
+      {isHost && !isConfirmed && !isDisputed && !isCancelled && !competitionFinished && (
         <HostEventManagementPanel
           competitionId={competition.id}
           competitionEventId={competitionEventId}
@@ -270,7 +287,7 @@ export function EventDetail({
           members={participantOptions}
           submittedProfileIds={submittedProfileIds}
           onSaved={() => router.refresh()}
-          showResultEntry={isTeamEvent}
+          showResultEntry={isTeamEvent && !hasTeams && !(teamState?.pool.length)}
         />
       )}
 
@@ -302,23 +319,22 @@ export function EventDetail({
         </section>
       )}
 
-      {/* Strength voting for peers */}
-      {showStrengthVoting && currentUserId && (
-        <StrengthVoteWidget
-          competitionId={competition.id}
-          competitionEventId={competitionEventId}
-          pendingRatings={pendingStrengthRatings}
-          currentUserId={currentUserId}
-        />
+      {/* Host dispute review */}
+      {isHost && openDisputes.length > 0 && (
+        <HostDisputePanel competitionId={competition.id} resultType={resultType} disputes={openDisputes} />
       )}
 
-      {/* Team assignment for host */}
-      {showTeamAssignment && (
-        <TeamAssignmentPanel
+      {/* Team events: ratings, balancing and team results */}
+      {showTeamPanel && teamState && (
+        <TeamEventPanel
           competitionId={competition.id}
           competitionEventId={competitionEventId}
-          ratedPlayers={ratedPlayers}
-          existingTeams={existingTeams}
+          state={teamState}
+          viewerId={currentUserId}
+          isHost={isHost && !competitionFinished}
+          isCompetitor={isActiveCompetitor}
+          eventStatus={status}
+          resultType={resultType}
         />
       )}
 
@@ -378,14 +394,20 @@ export function EventDetail({
               const avatarUrl = profile?.avatar_url as string | null;
               const place = result.finishing_place as number | null;
               const rawValue = result.result_value_primary as number | null;
-              const points = result.points_awarded as number | null;
+              // Points shown are what counts towards the total: place points, participation and event weight.
+              const points = result.points_awarded == null
+                ? null
+                : (Number(result.points_awarded) + Number(result.participation_points ?? 0)) * Number(weightMultiplier);
               const confirmed = !!result.confirmed_at;
               const isCurrentUser =
                 (profile?.id as string) === currentUserId || result.profile_id === currentUserId;
-              const disputes = (result.result_disputes as { status: string }[] | null) ?? [];
-              const isDisputed = disputes.some((d) => d.status === 'open');
+              const disputes = (result.result_disputes as { status: string; reason?: string }[] | null) ?? [];
+              const openDispute = disputes.find((d) => d.status === 'open');
+              const resultDisputed = !!openDispute;
               const canDisputeThis =
-                !isHost && isCurrentUser && canDispute && confirmed && !isDisputed;
+                !isHost && isCurrentUser && canDispute && confirmed && !resultDisputed;
+              const teamName = (result.teams as { name?: string } | null)?.name ?? null;
+              const isDnf = !!result.is_dnf;
 
               return (
                 <li
@@ -417,8 +439,15 @@ export function EventDetail({
                       {displayName}
                       {isCurrentUser && <span className="ml-1 text-xs text-grey-400">(you)</span>}
                     </p>
-                    {rawValue != null && (
-                      <p className="text-xs text-grey-500">{formatResultValue(rawValue, resultType)}</p>
+                    <p className="text-xs text-grey-500">
+                      {isDnf ? <span className="font-semibold text-red-600">DNF</span> : rawValue != null && formatResultValue(rawValue, resultType)}
+                      {teamName && <span className="ml-1.5 rounded bg-grey-100 px-1.5 py-0.5 text-grey-600">{teamName}</span>}
+                      {resultDisputed && (
+                        <span className="ml-1.5 rounded bg-orange-100 px-1.5 py-0.5 font-medium text-orange-700">Disputed</span>
+                      )}
+                    </p>
+                    {resultDisputed && isCurrentUser && openDispute?.reason && (
+                      <p className="mt-0.5 text-xs text-orange-700">Your dispute: “{openDispute.reason}”</p>
                     )}
                   </div>
                   <div className="text-right">
@@ -448,14 +477,29 @@ export function EventDetail({
         )}
       </div>
 
+      {/* Awards */}
+      {showAwards && (
+        <EventAwardsPanel
+          competitionId={competition.id}
+          competitionEventId={competitionEventId}
+          mvpEnabled={competition.mvp_voting_enabled}
+          worstEnabled={competition.worst_performer_enabled}
+          mvp={mvpAward}
+          worst={worstAward}
+          isHost={isHost}
+          canFinalise={isConfirmed && !competitionFinished}
+          ballotCounts={ballotCounts}
+        />
+      )}
+
       {/* Performance voting */}
       {showVoting && currentUserId && (
         <PerformanceVotePanel
           competitionId={competition.id}
           competitionEventId={competitionEventId}
-          competitors={competitors}
-          mvpEnabled={competition.mvp_voting_enabled}
-          worstPerformerEnabled={competition.worst_performer_enabled}
+          competitors={voteCandidates}
+          mvpEnabled={mvpOpen}
+          worstPerformerEnabled={worstOpen}
           currentUserId={currentUserId}
           existingMvpVote={existingMvpVote}
           existingWorstVote={existingWorstVote}

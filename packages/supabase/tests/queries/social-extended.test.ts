@@ -1,3 +1,7 @@
+/*
+ * This file verifies social extended behavior.
+ */
+
 // Integration tests for social queries: feed, chat, DMs, notifications, conversations.
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { getFeed } from '../../src/queries/social/get-feed';

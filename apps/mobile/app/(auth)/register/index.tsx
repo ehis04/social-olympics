@@ -1,3 +1,7 @@
+/*
+ * This file defines the index module.
+ */
+
 // Register screen — new account creation with 16+ age enforcement.
 import { useState } from 'react';
 import {
@@ -9,6 +13,7 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
@@ -20,6 +25,7 @@ import type { z } from 'zod';
 
 type RegisterForm = z.infer<typeof RegisterSchema>;
 
+// Handles format date of birth input.
 function formatDateOfBirthInput(value: string): string {
   const digits = value.replace(/\D/g, '').slice(0, 8);
   const day = digits.slice(0, 2);
@@ -29,6 +35,7 @@ function formatDateOfBirthInput(value: string): string {
   return [day, month, year].filter(Boolean).join('-');
 }
 
+// Handles to iso date of birth.
 function toIsoDateOfBirth(value: string): string {
   const [day, month, year] = value.split('-');
 
@@ -39,6 +46,7 @@ function toIsoDateOfBirth(value: string): string {
   return `${year}-${month}-${day}`;
 }
 
+// Handles get email redirect to.
 function getEmailRedirectTo(): string | undefined {
   const explicitRedirectUrl = process.env.EXPO_PUBLIC_AUTH_REDIRECT_URL;
 
@@ -55,10 +63,18 @@ function getEmailRedirectTo(): string | undefined {
   return `${baseUrl.replace(/\/$/, '')}/api/auth/callback`;
 }
 
+// Opens one of the website's pages, such as the privacy policy, in the browser.
+function openWebPage(path: string) {
+  const baseUrl = process.env.EXPO_PUBLIC_API_BASE_URL;
+  if (baseUrl) void Linking.openURL(`${baseUrl.replace(/\/$/, '')}${path}`).catch(() => null);
+}
+
+// Renders the register screen component.
 export default function RegisterScreen() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [confirmationEmail, setConfirmationEmail] = useState<string | null>(null);
 
   const {
     control,
@@ -77,7 +93,7 @@ export default function RegisterScreen() {
   async function onSubmit(values: RegisterForm) {
     setAuthError(null);
     const emailRedirectTo = getEmailRedirectTo();
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: values.email,
       password: values.password,
       options: {
@@ -90,9 +106,29 @@ export default function RegisterScreen() {
     });
     if (error) {
       setAuthError(error.message);
-    } else {
+    } else if (data.session) {
       router.replace('/(app)/(tabs)/dashboard');
+    } else {
+      // The project requires email confirmation, so there is no session until the link is opened.
+      setConfirmationEmail(values.email);
     }
+  }
+
+  if (confirmationEmail) {
+    return (
+      <View className="flex-1 bg-white px-6 justify-center">
+        <Text className="text-2xl font-bold text-primary mb-3">Check your email</Text>
+        <Text className="text-neutral-600 text-base leading-6 mb-8">
+          We sent a confirmation link to {confirmationEmail}. Open it to activate your account, then sign in here.
+        </Text>
+        <TouchableOpacity
+          className="bg-primary rounded-lg py-4 items-center"
+          onPress={() => router.replace('/(auth)/login')}
+        >
+          <Text className="text-white font-semibold text-base">Go to sign in</Text>
+        </TouchableOpacity>
+      </View>
+    );
   }
 
   return (
@@ -228,6 +264,13 @@ export default function RegisterScreen() {
               <Text className="text-white font-semibold text-base">Create account</Text>
             )}
           </TouchableOpacity>
+
+          <Text className="text-xs text-neutral-500 text-center leading-5">
+            By creating an account you agree to the{' '}
+            <Text className="text-primary font-medium" onPress={() => openWebPage('/terms')}>Terms of Use</Text>
+            {' '}and{' '}
+            <Text className="text-primary font-medium" onPress={() => openWebPage('/privacy')}>Privacy Policy</Text>.
+          </Text>
         </View>
 
         <View className="flex-row justify-center mt-6 gap-1">

@@ -1,3 +1,7 @@
+/*
+ * This file handles requests for the report API route.
+ */
+
 // POST /api/report — submit a moderation report for review.
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -11,6 +15,7 @@ const CreateReportSchema = z.object({
   reason: z.string().min(5).max(500),
 });
 
+// Handles get report error status.
 function getReportErrorStatus(code?: string): number {
   if (code?.startsWith('23') || code?.startsWith('PGRST')) {
     return 422;
@@ -19,6 +24,7 @@ function getReportErrorStatus(code?: string): number {
   return 500;
 }
 
+// Handles post.
 export async function POST(request: NextRequest) {
   const client = await getServerClient();
   const {

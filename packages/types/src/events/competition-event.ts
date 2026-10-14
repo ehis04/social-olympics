@@ -1,3 +1,7 @@
+/*
+ * This file defines the competition event module.
+ */
+
 // Competition event (event-within-a-competition) types.
 
 import type { CompetitionEventStatus, WeightTag } from '../database/enums';

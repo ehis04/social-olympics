@@ -1,7 +1,12 @@
+/*
+ * This file defines the start event module.
+ */
+
 // Sets a competition event to active (trigger locks voting and sets competition active).
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
 
+// Handles start event.
 export async function startEvent(
   client: SupabaseClient,
   competitionEventId: string,

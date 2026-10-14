@@ -1,3 +1,7 @@
+/*
+ * This file renders the discover application page.
+ */
+
 // Discover page — server component that fetches public competitions and the user's joined set
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
@@ -16,6 +20,7 @@ interface PageProps {
   searchParams: Promise<{ q?: string; country_code?: string; city?: string }>;
 }
 
+// Renders the discover page component.
 export default async function DiscoverPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const client = await getServerClient();

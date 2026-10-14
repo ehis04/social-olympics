@@ -1,3 +1,7 @@
+/*
+ * This file defines the TabBar user-interface component.
+ */
+
 'use client';
 
 // Horizontal scrollable tab bar; uses pathname to determine active tab
@@ -14,6 +18,7 @@ interface Props {
   tabs: Tab[];
 }
 
+// Renders the tab bar component.
 export default function TabBar({ tabs }: Props) {
   const pathname = usePathname();
 

@@ -1,3 +1,7 @@
+/*
+ * This file defines the index module.
+ */
+
 // Podium screen — top 3 with animated reveal, full results list, share button.
 import { useEffect, useRef } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Animated, Share } from 'react-native';
@@ -10,6 +14,7 @@ import { getLeaderboard, getCompetition } from '@repo/supabase';
 import { useAuthStore } from '@/stores/auth';
 import { MOBILE_ROUTES } from '@/constants/routes';
 import { formatPoints } from '@/utils/formatters/points';
+import { FinishedCompetitionActions } from '@/components/competition/FinishedCompetitionActions';
 import type { Database } from '@repo/types';
 
 type CompetitionRow = Database['public']['Tables']['competitions']['Row'];
@@ -28,6 +33,7 @@ interface Finisher {
   } | null;
 }
 
+// Handles get flag emoji.
 function getFlagEmoji(code: string | null): string {
   if (!code || code.length !== 2) return '';
   const pts = code.toUpperCase().split('').map((c) => 127397 + c.charCodeAt(0));
@@ -37,6 +43,7 @@ function getFlagEmoji(code: string | null): string {
 const CROWN: Record<number, string> = { 1: '👑', 2: '🥈', 3: '🥉' };
 const STAND_HEIGHTS: Record<number, number> = { 1: 80, 2: 60, 3: 48 };
 
+// Renders the podium card component.
 function PodiumCard({ finisher, place }: { finisher: Finisher; place: number }) {
   const displayName = finisher.profiles?.display_name ?? 'Unknown';
   const avatarUrl = finisher.profiles?.avatar_url ?? null;
@@ -66,6 +73,7 @@ function PodiumCard({ finisher, place }: { finisher: Finisher; place: number }) 
   );
 }
 
+// Renders the podium screen component.
 export default function PodiumScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -83,7 +91,7 @@ export default function PodiumScreen() {
   });
 
   const { data: leaderboardData } = useQuery({
-    queryKey: ['competition', id, 'leaderboard'],
+    queryKey: ['competition', id, 'podium'],
     queryFn: async () => {
       const { data } = await getLeaderboard(supabase, id);
       return (data ?? []) as Finisher[];
@@ -98,17 +106,20 @@ export default function PodiumScreen() {
     ]).start();
   }, [fadeAnim, slideAnim]);
 
-  const finishers = (leaderboardData ?? []).sort(
-    (a, b) => (a.final_rank ?? 999) - (b.final_rank ?? 999)
-  );
+  const finishers = (leaderboardData ?? [])
+    .filter((f) => f.final_rank != null)
+    .sort((a, b) => (a.final_rank ?? 999) - (b.final_rank ?? 999));
 
-  const first = finishers.find((f) => f.final_rank === 1);
-  const second = finishers.find((f) => f.final_rank === 2);
-  const third = finishers.find((f) => f.final_rank === 3);
+  // Final ranks are dense, so competitors who finished level share a podium place.
+  const atPlace = (place: number) => finishers.filter((f) => f.final_rank === place);
+  const first = atPlace(1);
+  const second = atPlace(2);
+  const third = atPlace(3);
   const rest = finishers.filter((f) => (f.final_rank ?? 0) > 3);
+  const isHost = compData?.host_id === profile?.id;
 
   async function handleShare() {
-    const lines = finishers.slice(0, 3).map((f) => {
+    const lines = finishers.filter((f) => (f.final_rank ?? 99) <= 3).map((f) => {
       const name = f.profiles?.display_name ?? 'Unknown';
       return `${CROWN[f.final_rank ?? 0] ?? f.final_rank}. ${name}: ${formatPoints(f.total_points ?? 0)}`;
     });
@@ -131,14 +142,14 @@ export default function PodiumScreen() {
         </Animated.View>
 
         {/* Podium visual */}
-        {(first ?? second ?? third) && (
+        {first.length + second.length + third.length > 0 && (
           <Animated.View
             style={{ opacity: fadeAnim }}
             className="flex-row items-end justify-center gap-4 px-6 pb-8"
           >
             {/* 2nd place */}
             <View className="items-center gap-2">
-              {second && <PodiumCard finisher={second} place={2} />}
+              {second.map((f) => <PodiumCard key={f.profile_id} finisher={f} place={2} />)}
               <View
                 style={{ height: STAND_HEIGHTS[2] }}
                 className="w-24 bg-neutral-300 rounded-t-lg items-center justify-center"
@@ -149,7 +160,7 @@ export default function PodiumScreen() {
 
             {/* 1st place */}
             <View className="items-center gap-2">
-              {first && <PodiumCard finisher={first} place={1} />}
+              {first.map((f) => <PodiumCard key={f.profile_id} finisher={f} place={1} />)}
               <View
                 style={{ height: STAND_HEIGHTS[1] }}
                 className="w-24 bg-gold rounded-t-lg items-center justify-center"
@@ -160,7 +171,7 @@ export default function PodiumScreen() {
 
             {/* 3rd place */}
             <View className="items-center gap-2">
-              {third && <PodiumCard finisher={third} place={3} />}
+              {third.map((f) => <PodiumCard key={f.profile_id} finisher={f} place={3} />)}
               <View
                 style={{ height: STAND_HEIGHTS[3] }}
                 className="w-24 bg-bronze rounded-t-lg items-center justify-center"
@@ -186,6 +197,12 @@ export default function PodiumScreen() {
             <Text className="text-sm font-semibold text-white">Share Results</Text>
           </TouchableOpacity>
         </View>
+
+        {isHost && compData && (
+          <View className="px-6 mb-6">
+            <FinishedCompetitionActions competitionId={id} status={compData.status} />
+          </View>
+        )}
 
         {/* All finishers list */}
         {rest.length > 0 && (

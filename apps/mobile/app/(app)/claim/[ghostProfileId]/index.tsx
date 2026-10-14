@@ -1,3 +1,7 @@
+/*
+ * This file defines the index module.
+ */
+
 // Ghost profile claim screen — transfers ghost stats to the authenticated user.
 import { View, Text, TouchableOpacity, ActivityIndicator, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -13,6 +17,7 @@ import type { Database } from '@repo/types';
 
 type ProfileRow = Database['public']['Tables']['profiles']['Row'];
 
+// Renders the claim screen component.
 export default function ClaimScreen() {
   const { ghostProfileId } = useLocalSearchParams<{ ghostProfileId: string }>();
   const router = useRouter();
@@ -29,7 +34,7 @@ export default function ClaimScreen() {
 
   async function handleClaim() {
     setClaiming(true);
-    const { error } = await apiCall(`/api/profile/claim/${ghostProfileId}`, {
+    const { error } = await apiCall(`/api/claim/${ghostProfileId}`, {
       method: 'POST',
     });
     setClaiming(false);

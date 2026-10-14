@@ -1,8 +1,13 @@
+/*
+ * This file defines the middleware module.
+ */
+
 // Middleware Supabase client for Next.js middleware session refresh.
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { createServerClient, parseCookieHeader, serializeCookieHeader } from '@supabase/ssr';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@repo/types';
 
+// Handles create middleware client.
 export function createMiddlewareClient(
   request: Request,
   response: Response,
@@ -16,21 +21,26 @@ export function createMiddlewareClient(
 
   const supabase = createServerClient<Database>(url, key, {
     cookies: {
-      get(name: string) {
-        const cookie = request.headers.get('cookie') ?? '';
-        const match = cookie
-          .split(';')
-          .map((c) => c.trim())
-          .find((c) => c.startsWith(`${name}=`));
-        return match ? decodeURIComponent(match.split('=').slice(1).join('=')) : undefined;
+      getAll() {
+        return parseCookieHeader(request.headers.get('cookie') ?? '').map(({ name, value }) => ({
+          name,
+          value: value ?? '',
+        }));
       },
-      set(name: string, value: string, options: CookieOptions) {
-        const cookieStr = `${name}=${encodeURIComponent(value)}; Path=${options.path ?? '/'}; SameSite=${options.sameSite ?? 'Lax'}${options.httpOnly ? '; HttpOnly' : ''}${options.secure ? '; Secure' : ''}${options.maxAge !== undefined ? `; Max-Age=${options.maxAge}` : ''}`;
-        response.headers.append('Set-Cookie', cookieStr);
-      },
-      remove(name: string, options: CookieOptions) {
-        const cookieStr = `${name}=; Path=${options.path ?? '/'}; Max-Age=0`;
-        response.headers.append('Set-Cookie', cookieStr);
+      setAll(cookiesToSet, headers) {
+        // Downstream rendering must see refreshed or removed sessions immediately.
+        const cookies = new Map(
+          parseCookieHeader(request.headers.get('cookie') ?? '').map(({ name, value }) => [name, value ?? '']),
+        );
+        for (const { name, value, options } of cookiesToSet) {
+          if (options.maxAge === 0) cookies.delete(name);
+          else cookies.set(name, value);
+          response.headers.append('Set-Cookie', serializeCookieHeader(name, value, options));
+        }
+        request.headers.set('cookie', Array.from(cookies, ([name, value]) => `${name}=${encodeURIComponent(value)}`).join('; '));
+        for (const [name, value] of Object.entries(headers ?? {})) {
+          response.headers.set(name, value);
+        }
       },
     },
   });

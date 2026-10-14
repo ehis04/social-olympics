@@ -1,6 +1,11 @@
+/*
+ * This file provides the useChat React hook.
+ */
+
 // TanStack Query hooks for group chat and direct messages
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/auth/useAuth';
+import { getApiErrorMessage, readJson } from '@/lib/api/error-message';
 import type { ChatMessage, Conversation } from '@/types/social';
 
 interface MessagesPage {
@@ -19,6 +24,7 @@ async function fetchGroupChatPage(competitionId: string, cursor?: string): Promi
   return res.json() as Promise<MessagesPage>;
 }
 
+// Provides the use group chat hook.
 export function useGroupChat(competitionId: string | undefined) {
   const { session } = useAuth();
 
@@ -33,6 +39,7 @@ export function useGroupChat(competitionId: string | undefined) {
   });
 }
 
+// Provides the use send group message hook.
 export function useSendGroupMessage(competitionId: string) {
   const queryClient = useQueryClient();
 
@@ -43,7 +50,7 @@ export function useSendGroupMessage(competitionId: string) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content }),
       });
-      if (!res.ok) throw new Error('Failed to send message');
+      if (!res.ok) throw new Error(getApiErrorMessage(await readJson(res), 'Failed to send message'));
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['competition', competitionId, 'chat'] });
@@ -51,6 +58,7 @@ export function useSendGroupMessage(competitionId: string) {
   });
 }
 
+// Provides the use delete group message hook.
 export function useDeleteGroupMessage(competitionId: string) {
   const queryClient = useQueryClient();
 
@@ -79,6 +87,7 @@ async function fetchDMPage(partnerId: string, cursor?: string): Promise<Messages
   return res.json() as Promise<MessagesPage>;
 }
 
+// Provides the use direct messages hook.
 export function useDirectMessages(partnerId: string | undefined) {
   const { session } = useAuth();
 
@@ -93,6 +102,7 @@ export function useDirectMessages(partnerId: string | undefined) {
   });
 }
 
+// Provides the use send dm hook.
 export function useSendDM(partnerId: string) {
   const queryClient = useQueryClient();
 
@@ -103,7 +113,7 @@ export function useSendDM(partnerId: string) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ recipientId: partnerId, content }),
       });
-      if (!res.ok) throw new Error('Failed to send message');
+      if (!res.ok) throw new Error(getApiErrorMessage(await readJson(res), 'Failed to send message'));
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['dm', partnerId] });
@@ -112,6 +122,7 @@ export function useSendDM(partnerId: string) {
   });
 }
 
+// Provides the use delete dm hook.
 export function useDeleteDM(partnerId: string) {
   const queryClient = useQueryClient();
 
@@ -138,6 +149,7 @@ async function fetchConversations(): Promise<{ data: Conversation[] }> {
   return res.json() as Promise<{ data: Conversation[] }>;
 }
 
+// Provides the use conversations hook.
 export function useConversations() {
   const { session } = useAuth();
 

@@ -1,3 +1,7 @@
+/*
+ * This file defines the LeaderboardTable user-interface component.
+ */
+
 // LeaderboardTable — renders ranked competitor rows with medals and status
 import Image from 'next/image';
 import type { Route } from 'next';
@@ -10,11 +14,13 @@ interface Props {
   currentUserId: string;
 }
 
+// Handles format points.
 function formatPoints(points: number): string {
   if (Number.isInteger(points)) return points.toString();
   return points.toFixed(1);
 }
 
+// Handles get flag emoji.
 function getFlagEmoji(countryCode: string | null): string {
   if (!countryCode || countryCode.length !== 2) return '';
   const codePoints = countryCode
@@ -24,6 +30,7 @@ function getFlagEmoji(countryCode: string | null): string {
   return String.fromCodePoint(...codePoints);
 }
 
+// Renders the leaderboard table component.
 export function LeaderboardTable({ entries, currentUserId }: Props) {
   if (entries.length === 0) {
     return (
@@ -58,7 +65,7 @@ export function LeaderboardTable({ entries, currentUserId }: Props) {
                 key={entry.profile_id}
                 className={[
                   'transition-colors hover:bg-grey-50',
-                  isCurrentUser ? 'bg-primary-50' : '',
+                  isCurrentUser ? 'bg-primary-muted' : '',
                   entry.isTied ? 'bg-amber-50 hover:bg-amber-100' : '',
                 ]
                   .filter(Boolean)
@@ -94,7 +101,7 @@ export function LeaderboardTable({ entries, currentUserId }: Props) {
                       {displayName}
                       {flag && <span className="ml-1.5 text-base">{flag}</span>}
                       {isCurrentUser && (
-                        <span className="ml-1.5 text-xs text-primary-600">(you)</span>
+                        <span className="ml-1.5 text-xs text-primary">(you)</span>
                       )}
                     </span>
                   </Link>
@@ -121,7 +128,7 @@ export function LeaderboardTable({ entries, currentUserId }: Props) {
                 <td className="px-4 py-3 hidden lg:table-cell">
                   {entry.isTied && (
                     <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
-                      Tiebreaker pending
+                      Tied
                     </span>
                   )}
                 </td>

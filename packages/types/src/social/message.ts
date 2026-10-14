@@ -1,3 +1,7 @@
+/*
+ * This file defines the message module.
+ */
+
 // Messaging and conversation types.
 
 import type { MessageType } from '../database/enums';

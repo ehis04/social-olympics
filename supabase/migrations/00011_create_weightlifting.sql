@@ -1,3 +1,7 @@
+/*
+ * This migration updates the database for 00011 create weightlifting.
+ */
+
 -- Migration 00011: weightlifting_bids table
 
 CREATE TABLE public.weightlifting_bids (

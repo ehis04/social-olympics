@@ -1,3 +1,7 @@
+/*
+ * This file defines the index module.
+ */
+
 // DM thread — realtime direct messages between two users.
 import { useEffect, useState } from 'react';
 import {
@@ -17,8 +21,10 @@ import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { ChevronLeft, Send } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase/client';
-import { getDirectMessages, subscribeDirectMessages, sendMessage, deleteMessage, getProfile } from '@repo/supabase';
+import { getDirectMessages, subscribeDirectMessages, getProfile } from '@repo/supabase';
 import { useAuthStore } from '@/stores/auth';
+import { apiCall } from '@/lib/api/client';
+import { toast } from '@/lib/toast';
 import { formatRelativeTime } from '@/utils/formatters/date';
 import { useQuery } from '@tanstack/react-query';
 import type { Database } from '@repo/types';
@@ -35,6 +41,7 @@ interface DMMessage {
   sender: { id: string; display_name: string; avatar_url: string | null } | null;
 }
 
+// Renders the message thread screen component.
 export default function MessageThreadScreen() {
   const { conversationId } = useLocalSearchParams<{ conversationId: string }>();
   const router = useRouter();
@@ -43,9 +50,19 @@ export default function MessageThreadScreen() {
   const [messageText, setMessageText] = useState('');
   const [sending, setSending] = useState(false);
 
-  // conversationId is "{idA}_{idB}" sorted alphabetically
-  const [idA, idB] = conversationId.split('_') as [string, string];
-  const partnerId = idA === profile?.id ? idB : idA;
+  // The route parameter is the other person's profile id. Older links used "{idA}_{idB}".
+  const partnerId = conversationId.includes('_')
+    ? (conversationId.split('_').find((id) => id !== profile?.id) ?? conversationId)
+    : conversationId;
+  const myId = profile?.id ?? '';
+  const [idA, idB] = [myId, partnerId].sort() as [string, string];
+
+  const { data: blockState } = useQuery({
+    queryKey: ['block', partnerId],
+    queryFn: async () =>
+      (await apiCall<{ blocked: boolean; blockedEitherWay: boolean }>(`/api/users/${partnerId}/block`)).data,
+    enabled: !!partnerId,
+  });
 
   const { data: partnerData } = useQuery({
     queryKey: ['profile', partnerId],
@@ -56,9 +73,18 @@ export default function MessageThreadScreen() {
     enabled: !!partnerId,
   });
 
+  const unavailableReason = partnerData?.deleted_at
+    ? 'This account has been deleted.'
+    : partnerData?.is_ghost
+      ? 'Guest profiles cannot receive messages.'
+      : blockState?.blockedEitherWay
+        ? "You can't message this person."
+        : null;
+
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery({
-      queryKey: ['dm', conversationId],
+      queryKey: ['dm', partnerId],
+      enabled: !!myId,
       queryFn: async ({ pageParam }) => {
         const result = await getDirectMessages(supabase, idA, idB, {
           ...(pageParam ? { cursor: pageParam as string } : {}),
@@ -73,11 +99,12 @@ export default function MessageThreadScreen() {
     });
 
   useEffect(() => {
+    if (!myId) return;
     const unsubscribe = subscribeDirectMessages(supabase, idA, idB, () => {
-      void queryClient.invalidateQueries({ queryKey: ['dm', conversationId] });
+      void queryClient.invalidateQueries({ queryKey: ['dm', partnerId] });
     });
     return () => unsubscribe();
-  }, [idA, idB, conversationId, queryClient]);
+  }, [myId, idA, idB, partnerId, queryClient]);
 
   const allMessages = data?.pages.flatMap((p) => (p.data as DMMessage[] | null) ?? []) ?? [];
   const messages = [...allMessages].reverse();
@@ -87,14 +114,18 @@ export default function MessageThreadScreen() {
     if (!trimmed || sending || !profile?.id) return;
     setSending(true);
     setMessageText('');
-    await sendMessage(supabase, {
-      sender_profile_id: profile.id,
-      recipient_profile_id: partnerId,
-      content: trimmed,
-      message_type: 'direct_message',
+    const { error } = await apiCall('/api/messages', {
+      method: 'POST',
+      body: JSON.stringify({ recipientId: partnerId, content: trimmed }),
     });
     setSending(false);
-    queryClient.invalidateQueries({ queryKey: ['dm', conversationId] });
+    if (error) {
+      setMessageText(trimmed);
+      toast.error(error.message);
+      return;
+    }
+    void queryClient.invalidateQueries({ queryKey: ['dm', partnerId] });
+    void queryClient.invalidateQueries({ queryKey: ['conversations'] });
   }
 
   function confirmDelete(messageId: string) {
@@ -104,8 +135,12 @@ export default function MessageThreadScreen() {
         text: 'Delete',
         style: 'destructive',
         onPress: async () => {
-          await deleteMessage(supabase, messageId);
-          queryClient.invalidateQueries({ queryKey: ['dm', conversationId] });
+          const { error } = await apiCall('/api/messages', {
+            method: 'DELETE',
+            body: JSON.stringify({ messageId }),
+          });
+          if (error) toast.error(error.message);
+          void queryClient.invalidateQueries({ queryKey: ['dm', partnerId] });
         },
       },
     ]);
@@ -169,9 +204,11 @@ export default function MessageThreadScreen() {
             </View>
           )}
         </View>
-        <Text className="text-base font-semibold text-neutral-800">
-          {partnerData?.display_name ?? '…'}
-        </Text>
+        <TouchableOpacity onPress={() => router.push(`/(app)/profile/${partnerId}` as never)}>
+          <Text className="text-base font-semibold text-neutral-800">
+            {partnerData?.display_name ?? '…'}
+          </Text>
+        </TouchableOpacity>
       </View>
 
       <KeyboardAvoidingView
@@ -210,30 +247,36 @@ export default function MessageThreadScreen() {
           renderItem={renderMessage}
         />
 
-        <View className="flex-row items-end gap-2 border-t border-neutral-200 bg-white px-4 py-3">
-          <TextInput
-            className="flex-1 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-2.5 text-sm text-neutral-900"
-            placeholder="Send a message…"
-            value={messageText}
-            onChangeText={setMessageText}
-            multiline
-            maxLength={1000}
-            returnKeyType="send"
-            onSubmitEditing={handleSend}
-            blurOnSubmit={false}
-          />
-          <TouchableOpacity
-            className="w-10 h-10 rounded-xl bg-primary items-center justify-center"
-            onPress={handleSend}
-            disabled={!messageText.trim() || sending}
-          >
-            {sending ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Send size={16} color="#fff" />
-            )}
-          </TouchableOpacity>
-        </View>
+        {unavailableReason ? (
+          <View className="border-t border-neutral-200 bg-white px-4 py-4">
+            <Text className="text-sm text-neutral-500 text-center">{unavailableReason}</Text>
+          </View>
+        ) : (
+          <View className="flex-row items-end gap-2 border-t border-neutral-200 bg-white px-4 py-3">
+            <TextInput
+              className="flex-1 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-2.5 text-sm text-neutral-900"
+              placeholder="Send a message…"
+              value={messageText}
+              onChangeText={setMessageText}
+              multiline
+              maxLength={1000}
+              returnKeyType="send"
+              onSubmitEditing={handleSend}
+              blurOnSubmit={false}
+            />
+            <TouchableOpacity
+              className="w-10 h-10 rounded-xl bg-primary items-center justify-center"
+              onPress={handleSend}
+              disabled={!messageText.trim() || sending}
+            >
+              {sending ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Send size={16} color="#fff" />
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

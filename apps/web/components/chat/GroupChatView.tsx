@@ -1,3 +1,7 @@
+/*
+ * This file defines the GroupChatView user-interface component.
+ */
+
 // GroupChatView — live competition group chat with realtime updates
 'use client';
 
@@ -18,6 +22,7 @@ interface Props {
   competition: CompetitionRow;
 }
 
+// Renders the group chat view component.
 export function GroupChatView({ competition }: Props) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -46,7 +51,7 @@ export function GroupChatView({ competition }: Props) {
 
   function handleSend(content: string) {
     sendMessage(content, {
-      onError: () => toast.error('Failed to send message'),
+      onError: (error) => toast.error(error instanceof Error ? error.message : 'Failed to send message'),
     });
   }
 
@@ -89,6 +94,7 @@ export function GroupChatView({ competition }: Props) {
             isOwn={msg.sender_profile_id === user?.id}
             canDelete={msg.sender_profile_id === user?.id || isHost}
             onDelete={handleDelete}
+            competitionId={competition.id}
           />
         ))}
 

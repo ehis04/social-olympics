@@ -1,3 +1,7 @@
+/*
+ * This file defines the layout module.
+ */
+
 // Competition detail layout — fetches competition + membership, renders header + top tabs.
 import { useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
@@ -17,6 +21,7 @@ type MemberRow = Database['public']['Tables']['competition_members']['Row'] & {
   profile: Database['public']['Tables']['profiles']['Row'] | null;
 };
 
+// Renders the competition detail layout component.
 export default function CompetitionDetailLayout() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -89,7 +94,7 @@ export default function CompetitionDetailLayout() {
       <CompetitionHeader
         competition={competitionData}
         currentMember={currentMember}
-        memberCount={members.length}
+        activeMemberCount={members.filter((member) => member.status === 'active').length}
         profileId={profile?.id ?? ''}
       />
 
@@ -101,7 +106,9 @@ export default function CompetitionDetailLayout() {
           contentContainerClassName="px-4"
         >
           {tabs.map((tab) => {
-            const active = pathname === tab.path || pathname.startsWith(tab.path);
+            // usePathname leaves out route groups such as (app), so compare without them.
+            const tabPath = tab.path.replace('/(app)', '');
+            const active = pathname === tabPath || pathname.startsWith(`${tabPath}/`);
             return (
               <TouchableOpacity
                 key={tab.label}

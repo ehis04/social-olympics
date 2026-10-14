@@ -1,6 +1,11 @@
+/*
+ * This file defines the auth users module.
+ */
+
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@repo/types';
 
+// Handles create test auth user.
 export async function createTestAuthUser(
   admin: SupabaseClient<Database>,
   displayName: string,
@@ -28,6 +33,7 @@ export async function createTestAuthUser(
   return userId;
 }
 
+// Handles delete test auth user.
 export async function deleteTestAuthUser(
   admin: SupabaseClient<Database>,
   userId: string | undefined,

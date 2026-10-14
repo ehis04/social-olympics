@@ -1,7 +1,12 @@
+/*
+ * This file defines the send message module.
+ */
+
 // Sends a group chat or direct message.
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
 
+// Handles send message.
 export async function sendMessage(
   client: SupabaseClient,
   payload: Record<string, unknown>,

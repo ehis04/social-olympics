@@ -1,11 +1,17 @@
+/*
+ * This file verifies get historical rating behavior.
+ */
+
 // Unit tests for getHistoricalRating — relative performance and similarity group inference.
 import { describe, expect, it } from 'vitest';
 import { getHistoricalRating } from '../../src/team-balance/get-historical-rating';
 import type { HistoricalResult } from '../../src/team-balance/get-historical-rating';
 
+// Handles time result.
 function timeResult(profileId: string, slug: string, ms: number): HistoricalResult {
   return { profileId, eventSlug: slug, resultValuePrimary: ms, resultType: 'time' };
 }
+// Handles score result.
 function scoreResult(profileId: string, slug: string, pts: number): HistoricalResult {
   return { profileId, eventSlug: slug, resultValuePrimary: pts, resultType: 'score' };
 }

@@ -1,3 +1,7 @@
+/*
+ * This file verifies resolve by medals behavior.
+ */
+
 // Unit tests for resolveByMedals.
 import { describe, expect, it } from 'vitest';
 import { resolveByMedals } from '../../src/tiebreakers/resolve-by-medals';

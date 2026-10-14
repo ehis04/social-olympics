@@ -1,3 +1,7 @@
+/*
+ * This migration updates the database for 00010 create results.
+ */
+
 -- Migration 00010: results and result_disputes tables
 
 CREATE TABLE public.results (

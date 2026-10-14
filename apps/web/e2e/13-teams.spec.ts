@@ -1,3 +1,7 @@
+/*
+ * This file verifies 13 teams behavior.
+ */
+
 // Journey 10 — team events: strength rating and team leaderboard tab
 import { test, expect } from '@playwright/test';
 import { AUTH_FILE, HOST_AUTH_FILE } from './fixtures/auth-state';

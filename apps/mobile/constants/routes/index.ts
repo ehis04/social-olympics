@@ -1,3 +1,7 @@
+/*
+ * This file defines the index module.
+ */
+
 // Mobile route path constants — avoids typos in router.push() calls.
 export const MOBILE_ROUTES = {
   LOGIN: '/(auth)/login',

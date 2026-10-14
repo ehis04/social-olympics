@@ -1,7 +1,12 @@
+/*
+ * This file renders the forgot password application page.
+ */
+
 import ForgotPasswordForm from '@/components/auth/ForgotPasswordForm';
 
 export const metadata = { title: 'Reset password: Social Olympics' };
 
+// Renders the forgot password page component.
 export default function ForgotPasswordPage() {
   return (
     <>

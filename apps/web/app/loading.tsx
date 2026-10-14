@@ -1,3 +1,7 @@
+/*
+ * This file defines the loading module.
+ */
+
 export default function Loading() {
   return (
     <div className="flex min-h-screen items-center justify-center">

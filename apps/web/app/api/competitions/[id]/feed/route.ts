@@ -1,8 +1,13 @@
+/*
+ * This file handles requests for the feed API route.
+ */
+
 // GET /api/competitions/[id]/feed — paginated activity feed
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerClient } from '@/lib/supabase/server';
 import { getFeed, getCompetitionMembers } from '@repo/supabase';
 import type { Database } from '@repo/types';
+import { getBlockedIds } from '@/lib/social/blocks';
 
 type MemberRow = Database['public']['Tables']['competition_members']['Row'];
 
@@ -10,6 +15,7 @@ interface Params {
   params: Promise<{ id: string }>;
 }
 
+// Handles get.
 export async function GET(req: NextRequest, { params }: Params) {
   const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();
@@ -47,6 +53,9 @@ export async function GET(req: NextRequest, { params }: Params) {
     }
   }
 
+  // Comments from people the caller has blocked are hidden from them.
+  const blocked = await getBlockedIds(client, user.id);
+
   const enriched = items.map((item) => {
     const rawReactions = reactionsMap[item.id as string] ?? [];
     const reactionCounts: Record<string, { count: number; reactedByMe: boolean }> = {};
@@ -56,7 +65,9 @@ export async function GET(req: NextRequest, { params }: Params) {
       if (r.profile_id === user.id) reactionCounts[r.emoji]!.reactedByMe = true;
     }
     const reactions = Object.entries(reactionCounts).map(([emoji, v]) => ({ emoji, ...v }));
-    return { ...item, reactions };
+    const comments = ((item.feed_comments as { profile_id?: string }[] | null) ?? [])
+      .filter((comment) => !comment.profile_id || !blocked.has(comment.profile_id));
+    return { ...item, feed_comments: comments, reactions };
   });
 
   return NextResponse.json({ data: enriched, hasMore: result.hasMore, nextCursor: result.nextCursor });

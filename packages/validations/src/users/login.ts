@@ -1,3 +1,7 @@
+/*
+ * This file defines the login module.
+ */
+
 // Login schema.
 
 import { z } from 'zod';

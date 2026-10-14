@@ -1,3 +1,7 @@
+/*
+ * This file handles requests for the teams API route.
+ */
+
 // GET /api/competitions/[id]/leaderboard/teams — team leaderboard for a competition
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerClient } from '@/lib/supabase/server';
@@ -13,6 +17,7 @@ interface Params {
   params: Promise<{ id: string }>;
 }
 
+// Handles get.
 export async function GET(_req: NextRequest, { params }: Params) {
   const client = await getServerClient();
   const {

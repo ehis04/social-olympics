@@ -1,9 +1,14 @@
+/*
+ * This file defines the resolve report module.
+ */
+
 // Resolves or dismisses a moderation report (admin client only).
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
 
 type ReportAction = 'suspend_host' | 'warn_user' | 'remove_competition' | 'dismiss';
 
+// Handles resolve report.
 export async function resolveReport(
   adminClient: SupabaseClient,
   reportId: string,

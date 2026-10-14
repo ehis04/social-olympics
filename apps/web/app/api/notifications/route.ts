@@ -1,8 +1,13 @@
+/*
+ * This file handles requests for the notifications API route.
+ */
+
 // GET/POST /api/notifications — fetch and mark notifications read
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerClient } from '@/lib/supabase/server';
 import { getNotifications, markNotificationsRead } from '@repo/supabase';
 
+// Handles get.
 export async function GET(_req: NextRequest) {
   const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();
@@ -14,6 +19,7 @@ export async function GET(_req: NextRequest) {
   return NextResponse.json({ data: data ?? [] });
 }
 
+// Handles post.
 export async function POST(req: NextRequest) {
   const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();

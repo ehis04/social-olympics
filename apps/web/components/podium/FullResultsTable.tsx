@@ -1,5 +1,10 @@
+/*
+ * This file defines the FullResultsTable user-interface component.
+ */
+
 // FullResultsTable — all finishers ranked below the podium display
 import Image from 'next/image';
+import { formatPoints } from '@/utils/formatters/points';
 import Link from 'next/link';
 import ROUTES from '@/constants/routes';
 
@@ -23,12 +28,14 @@ interface Props {
   currentUserId: string;
 }
 
+// Handles get flag emoji.
 function getFlagEmoji(code: string | null): string {
   if (!code || code.length !== 2) return '';
   const pts = code.toUpperCase().split('').map((c) => 127397 + c.charCodeAt(0));
   return String.fromCodePoint(...pts);
 }
 
+// Renders the full results table component.
 export function FullResultsTable({ finishers, currentUserId }: Props) {
   return (
     <div className="overflow-x-auto rounded-lg border border-grey-200">
@@ -53,7 +60,7 @@ export function FullResultsTable({ finishers, currentUserId }: Props) {
                 key={f.profile_id}
                 className={[
                   'transition-colors hover:bg-grey-50',
-                  isCurrentUser ? 'bg-primary-50' : '',
+                  isCurrentUser ? 'bg-primary-muted' : '',
                 ].join(' ')}
               >
                 <td className="px-4 py-3 font-mono font-semibold text-grey-700">
@@ -73,12 +80,12 @@ export function FullResultsTable({ finishers, currentUserId }: Props) {
                     <span className="font-medium text-grey-900">
                       {displayName}
                       {flag && <span className="ml-1.5">{flag}</span>}
-                      {isCurrentUser && <span className="ml-1.5 text-xs text-primary-600">(you)</span>}
+                      {isCurrentUser && <span className="ml-1.5 text-xs text-primary">(you)</span>}
                     </span>
                   </Link>
                 </td>
                 <td className="px-4 py-3 text-right font-mono font-semibold text-grey-900">
-                  {f.total_points}
+                  {formatPoints(Number(f.total_points))}
                 </td>
                 <td className="px-4 py-3 text-right text-grey-600 hidden sm:table-cell">
                   {f.events_completed}

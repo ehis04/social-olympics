@@ -1,12 +1,18 @@
+/*
+ * This file handles requests for the callback API route.
+ */
+
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getServerClient } from '@/lib/supabase/server';
+import { getSafeNextPath } from '@/lib/auth/safe-next';
 
+// Handles get.
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get('code');
   const error = request.nextUrl.searchParams.get('error');
   const errorDescription = request.nextUrl.searchParams.get('error_description');
-  const next = request.nextUrl.searchParams.get('next') ?? '/dashboard';
+  const next = getSafeNextPath(request.nextUrl.searchParams.get('next'));
 
   if (error) {
     const loginUrl = new URL('/login', request.url);

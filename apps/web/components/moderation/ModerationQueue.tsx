@@ -1,3 +1,7 @@
+/*
+ * This file defines the ModerationQueue user-interface component.
+ */
+
 'use client';
 
 // ModerationQueue — tabbed admin view for reviewing and actioning reports
@@ -37,7 +41,7 @@ type Tab = 'pending' | 'actioned';
 const ACTION_LABELS: Record<ReportAction, string> = {
   dismiss: 'Dismiss',
   warn_user: 'Warn user',
-  suspend_host: 'Suspend host',
+  suspend_host: 'Suspend user',
   remove_competition: 'Remove competition',
 };
 
@@ -48,6 +52,7 @@ const ACTION_STYLES: Record<ReportAction, string> = {
   remove_competition: 'border-red-300 text-red-700 hover:bg-red-50',
 };
 
+// Handles time ago.
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60_000);
@@ -58,6 +63,7 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
+// Renders the report card component.
 function ReportCard({ report, onAction }: { report: Report; onAction: (id: string, action: ReportAction, competitionId?: string) => Promise<void> }) {
   const [resolving, setResolving] = useState<ReportAction | null>(null);
   const isPending = report.status === 'pending';
@@ -72,8 +78,10 @@ function ReportCard({ report, onAction }: { report: Report; onAction: (id: strin
     setResolving(null);
   }
 
+  // Warnings and suspensions apply to the person responsible: the host for a competition,
+  // the author for a message or feed item, or the reported profile itself.
   const availableActions: ReportAction[] = report.target_type === 'competition'
-    ? ['remove_competition', 'warn_user', 'dismiss']
+    ? ['remove_competition', 'warn_user', 'suspend_host', 'dismiss']
     : ['warn_user', 'suspend_host', 'dismiss'];
 
   return (
@@ -126,6 +134,7 @@ function ReportCard({ report, onAction }: { report: Report; onAction: (id: strin
   );
 }
 
+// Renders the moderation queue component.
 export function ModerationQueue({ initialPending, initialActioned }: Props) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>('pending');

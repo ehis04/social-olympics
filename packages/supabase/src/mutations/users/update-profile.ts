@@ -1,7 +1,12 @@
+/*
+ * This file defines the update profile module.
+ */
+
 // Updates a profile row (caller must own the profile — enforced by RLS).
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
 
+// Handles update profile.
 export async function updateProfile(
   client: SupabaseClient,
   profileId: string,

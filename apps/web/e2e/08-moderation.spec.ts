@@ -1,3 +1,7 @@
+/*
+ * This file verifies 08 moderation behavior.
+ */
+
 // Journey 8 — moderation: report button flow
 import { test, expect } from '@playwright/test';
 import { AUTH_FILE } from './fixtures/auth-state';

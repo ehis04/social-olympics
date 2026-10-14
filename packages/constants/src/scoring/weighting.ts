@@ -1,3 +1,7 @@
+/*
+ * This file defines the weighting module.
+ */
+
 // Event weight multiplier constants and defaults.
 
 export const WEIGHT_TAGS = {

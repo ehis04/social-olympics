@@ -1,3 +1,7 @@
+/*
+ * This file defines the browser module.
+ */
+
 // Browser Supabase client for React client components.
 import { createBrowserClient as createSSRBrowserClient } from '@supabase/ssr';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -5,6 +9,7 @@ import type { Database } from '@repo/types';
 
 let client: SupabaseClient<Database> | undefined;
 
+// Handles create browser client.
 export function createBrowserClient(): SupabaseClient<Database> {
   if (client) return client;
 

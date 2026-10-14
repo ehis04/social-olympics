@@ -1,3 +1,7 @@
+/*
+ * This file handles requests for the reactions API route.
+ */
+
 // POST /api/feed/[feedItemId]/reactions — add a reaction; DELETE — remove it
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerClient } from '@/lib/supabase/server';
@@ -13,6 +17,7 @@ interface RequestBody {
 
 const ALLOWED_EMOJIS = ['👏', '🔥', '🥇', '😂', '😮'];
 
+// Handles post.
 export async function POST(request: NextRequest, { params }: Params) {
   const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();
@@ -40,6 +45,7 @@ export async function POST(request: NextRequest, { params }: Params) {
   return NextResponse.json({ data, error: null }, { status: 201 });
 }
 
+// Handles delete.
 export async function DELETE(request: NextRequest, { params }: Params) {
   const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();

@@ -1,3 +1,7 @@
+/*
+ * This file defines the FeedItemCard user-interface component.
+ */
+
 'use client';
 
 // FeedItemCard — activity feed entry with inline reactions, collapsible comments, and report button
@@ -9,7 +13,9 @@ import ROUTES from '@/constants/routes';
 import { useAuth } from '@/hooks/auth/useAuth';
 import { toast } from '@/lib/toast';
 import { ReportButton } from '@/components/moderation/ReportButton';
+import { getPlaceSuffix } from '@/utils/helpers/results';
 import type { FeedItem, FeedComment, FeedReaction } from '@/types/social';
+import { formatRelativeTime } from '@/utils/formatters/date';
 
 interface Props {
   item: FeedItem;
@@ -20,36 +26,63 @@ interface Props {
 
 const REACTION_EMOJIS = ['👏', '🔥', '🥇', '😂', '😮'];
 
-function formatActivityType(type: string, metadata: Record<string, unknown> | null): string {
-  const eventName = typeof metadata?.event_name === 'string' ? metadata.event_name : 'an event';
+interface FeedDescription {
+  lead: { id: string; display_name: string; avatar_url: string | null } | null;
+  text: string;
+  trailing?: { id: string; display_name: string; avatar_url: string | null } | null;
+}
 
-  switch (type) {
-    case 'result_confirmed': return `confirmed a result in ${eventName}`;
-    case 'event_started': return `started ${eventName}`;
-    case 'event_completed': return `completed ${eventName}`;
-    case 'member_joined': return 'joined the competition';
-    case 'gold_medal': return `won gold 🥇 in ${eventName}`;
-    case 'silver_medal': return `won silver 🥈 in ${eventName}`;
-    case 'bronze_medal': return `won bronze 🥉 in ${eventName}`;
-    case 'personal_best': return `set a personal best in ${eventName}`;
-    case 'dispute_raised': return `raised a dispute in ${eventName}`;
-    case 'dispute_resolved': return `resolved a dispute in ${eventName}`;
-    case 'tiebreaker_initiated': return 'initiated a tiebreaker';
-    case 'mvp_awarded': return 'was awarded MVP 🏆';
-    default: return type.replace(/_/g, ' ');
+// Handles medal for place.
+function medalForPlace(place: number): string {
+  if (place === 1) return ' 🥇';
+  if (place === 2) return ' 🥈';
+  if (place === 3) return ' 🥉';
+  return '';
+}
+
+// Builds the sentence shown for a feed item from its type and metadata.
+function describeFeedItem(item: FeedItem): FeedDescription {
+  const metadata = item.metadata;
+  const eventName = typeof metadata?.event_name === 'string' ? metadata.event_name : 'an event';
+  const actor = item.actor ?? null;
+  const subject = item.subject ?? null;
+
+  switch (item.event_type) {
+    case 'result_confirmed': {
+      const place = typeof metadata?.finishing_place === 'number' ? metadata.finishing_place : null;
+      const isDnf = metadata?.is_dnf === true;
+      if (subject && (place !== null || isDnf)) {
+        return {
+          lead: subject,
+          text: isDnf ? `did not finish ${eventName}` : `finished ${getPlaceSuffix(place!)}${medalForPlace(place!)} in ${eventName}`,
+        };
+      }
+      return { lead: actor, text: `confirmed a result in ${eventName}` };
+    }
+    case 'event_started': return { lead: actor, text: `started ${eventName}` };
+    case 'event_completed': return { lead: actor, text: `completed ${eventName}` };
+    case 'member_joined': return { lead: actor ?? subject, text: 'joined the competition' };
+    case 'personal_best': return { lead: subject ?? actor, text: `set a personal best in ${eventName}` };
+    case 'dispute_raised': return { lead: actor, text: `raised a dispute in ${eventName}` };
+    case 'dispute_resolved':
+      return {
+        lead: actor,
+        text: `${metadata?.outcome === 'dismiss' ? 'dismissed' : 'resolved'} a dispute in ${eventName}`,
+        trailing: subject && subject.id !== actor?.id ? subject : null,
+      };
+    case 'tiebreaker_initiated': return { lead: actor, text: 'started a tiebreaker' };
+    case 'mvp_awarded':
+      return {
+        lead: actor ?? subject,
+        text: typeof metadata?.event_name === 'string' ? `was voted MVP in ${eventName} 🏆` : 'was awarded MVP 🏆',
+      };
+    case 'competition_completed':
+      return { lead: null, text: '🏆 The competition is complete. Final standings are on the podium.' };
+    default: return { lead: actor, text: item.event_type.replace(/_/g, ' ') };
   }
 }
 
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60_000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
-}
-
+// Renders the small avatar component.
 function SmallAvatar({ profile }: { profile: { display_name: string; avatar_url: string | null } }) {
   return (
     <div className="relative h-6 w-6 shrink-0 overflow-hidden rounded-full bg-grey-200">
@@ -64,11 +97,11 @@ function SmallAvatar({ profile }: { profile: { display_name: string; avatar_url:
   );
 }
 
+// Renders the feed item card component.
 export function FeedItemCard({ item, competitionId, comments: initialComments = [], reactions: initialReactions = [] }: Props) {
   const { user } = useAuth();
-  const actor = item.actor;
-  const subject = item.subject;
-  const action = formatActivityType(item.activity_type, item.metadata);
+  const description = describeFeedItem(item);
+  const actor = description.lead;
 
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState<FeedComment[]>(initialComments);
@@ -141,10 +174,10 @@ export function FeedItemCard({ item, competitionId, comments: initialComments = 
   }
 
   const activeReactions = reactions.filter((r) => r.count > 0);
-  const isOwnItem = actor?.id === user?.id;
+  const isOwnItem = !!actor && actor.id === user?.id;
 
   return (
-    <div className="rounded-lg border border-grey-100 bg-white shadow-sm">
+    <div className="rounded-lg border border-grey-100 bg-white shadow-sm" data-testid="feed-item">
       {/* Main feed item */}
       <div className="flex items-start gap-3 p-4">
         {actor ? (
@@ -160,7 +193,7 @@ export function FeedItemCard({ item, competitionId, comments: initialComments = 
             </div>
           </Link>
         ) : (
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-100 text-lg">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-muted text-lg">
             🏅
           </div>
         )}
@@ -172,17 +205,25 @@ export function FeedItemCard({ item, competitionId, comments: initialComments = 
                 {actor.display_name}
               </Link>
             )}{' '}
-            <span>{action}</span>
-            {subject && subject.id !== actor?.id && (
+            <span>{description.text}</span>
+            {description.trailing && (
               <>
-                {' '}against{' '}
-                <Link href={ROUTES.PROFILE(subject.id)} className="font-semibold text-grey-900 hover:underline">
-                  {subject.display_name}
+                {' '}for{' '}
+                <Link href={ROUTES.PROFILE(description.trailing.id)} className="font-semibold text-grey-900 hover:underline">
+                  {description.trailing.display_name}
+                </Link>
+              </>
+            )}
+            {item.event_type === 'competition_completed' && competitionId && (
+              <>
+                {' '}
+                <Link href={ROUTES.COMPETITION_PODIUM(competitionId)} className="font-semibold text-primary hover:underline">
+                  View podium
                 </Link>
               </>
             )}
           </p>
-          <p className="mt-0.5 text-xs text-grey-400">{timeAgo(item.created_at)}</p>
+          <p className="mt-0.5 text-xs text-grey-400">{formatRelativeTime(item.created_at)}</p>
         </div>
 
         {!isOwnItem && (

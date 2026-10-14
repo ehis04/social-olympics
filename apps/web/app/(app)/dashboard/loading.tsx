@@ -1,6 +1,11 @@
+/*
+ * This file defines the loading module.
+ */
+
 // Dashboard loading skeleton
 import { SkeletonCard } from '@/components/ui/Skeletons';
 
+// Renders the dashboard loading component.
 export default function DashboardLoading() {
   return (
     <div>

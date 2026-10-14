@@ -1,6 +1,11 @@
+/*
+ * This file defines the loading module.
+ */
+
 // Competition members loading skeleton
 import { SkeletonAvatar, SkeletonLine } from '@/components/ui/Skeletons';
 
+// Renders the members loading component.
 export default function MembersLoading() {
   return (
     <div>

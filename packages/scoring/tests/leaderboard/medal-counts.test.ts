@@ -1,3 +1,7 @@
+/*
+ * This file verifies medal counts behavior.
+ */
+
 // Unit tests for getMedalCounts.
 import { describe, expect, it } from 'vitest';
 import { getMedalCounts } from '../../src/leaderboard/medal-counts';

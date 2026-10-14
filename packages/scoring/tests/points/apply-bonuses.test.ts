@@ -1,3 +1,7 @@
+/*
+ * This file verifies apply bonuses behavior.
+ */
+
 // Unit tests for applyMvpBonus and applyWorstPerformerPenalty.
 import { describe, expect, it } from 'vitest';
 import { applyMvpBonus, applyWorstPerformerPenalty } from '../../src/points/apply-bonuses';

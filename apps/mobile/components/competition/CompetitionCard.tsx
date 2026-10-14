@@ -1,3 +1,7 @@
+/*
+ * This file defines the CompetitionCard user-interface component.
+ */
+
 // Mobile competition card — matches web CompetitionCard data fields.
 import { TouchableOpacity, View, Text } from 'react-native';
 import { Users, Calendar, MapPin } from 'lucide-react-native';
@@ -15,6 +19,7 @@ interface Props {
   onJoin?: (id: string) => void;
 }
 
+// Renders the competition card component.
 export function CompetitionCard({ competition, memberCount, showJoinButton, onJoin }: Props) {
   const router = useRouter();
 

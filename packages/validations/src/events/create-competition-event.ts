@@ -1,3 +1,7 @@
+/*
+ * This file defines the create competition event module.
+ */
+
 // Schema for adding an event to a competition with weight config.
 
 import { z } from 'zod';

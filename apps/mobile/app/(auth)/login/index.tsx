@@ -1,3 +1,7 @@
+/*
+ * This file defines the index module.
+ */
+
 // Login screen — email/password authentication with Supabase.
 import { useState } from 'react';
 import {
@@ -20,6 +24,7 @@ import type { z } from 'zod';
 
 type LoginForm = z.infer<typeof LoginSchema>;
 
+// Renders the login screen component.
 export default function LoginScreen() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);

@@ -1,9 +1,14 @@
+/*
+ * This file defines the PrizePoolDisplay user-interface component.
+ */
+
 // Informational prize pot display; only renders when prize_pot_per_person is set
 interface Props {
   prizePerPerson: number;
   memberCount: number;
 }
 
+// Renders the prize pool display component.
 export default function PrizePoolDisplay({ prizePerPerson, memberCount }: Props) {
   const total = prizePerPerson * memberCount;
   const first = total * 0.5;

@@ -1,8 +1,14 @@
+/*
+ * This file handles requests for the chat API route.
+ */
+
 // GET/POST/DELETE /api/competitions/[id]/chat — group chat messages
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerClient } from '@/lib/supabase/server';
 import { createAdminClient, getGroupChat, getCompetitionMembers, sendMessage, deleteMessage } from '@repo/supabase';
 import type { Database } from '@repo/types';
+import { BLOCKED_CONTENT_MESSAGE, containsBlockedKeyword } from '@/lib/moderation/blocked-content';
+import { getBlockedIds } from '@/lib/social/blocks';
 
 type MemberRow = Database['public']['Tables']['competition_members']['Row'];
 type ServerClient = Awaited<ReturnType<typeof getServerClient>>;
@@ -11,12 +17,14 @@ interface Params {
   params: Promise<{ id: string }>;
 }
 
+// Handles get member or fail.
 async function getMemberOrFail(client: ServerClient, competitionId: string, userId: string) {
   const { data: membersData } = await getCompetitionMembers(client, competitionId);
   const members = (membersData ?? []) as MemberRow[];
-  return members.find((m) => m.profile_id === userId) ?? null;
+  return members.find((m) => m.profile_id === userId && m.status === 'active') ?? null;
 }
 
+// Handles get.
 export async function GET(req: NextRequest, { params }: Params) {
   const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();
@@ -34,9 +42,16 @@ export async function GET(req: NextRequest, { params }: Params) {
   const result = await getGroupChat(adminClient, (await params).id, pagination);
   if (result.error) return NextResponse.json({ error: 'Failed to fetch messages' }, { status: 500 });
 
-  return NextResponse.json({ data: result.data, hasMore: result.hasMore, nextCursor: result.nextCursor });
+  // Messages from people the caller has blocked are hidden from them.
+  const blocked = await getBlockedIds(client, user.id);
+  const messages = ((result.data ?? []) as { sender_profile_id: string }[]).filter(
+    (message) => !blocked.has(message.sender_profile_id),
+  );
+
+  return NextResponse.json({ data: messages, hasMore: result.hasMore, nextCursor: result.nextCursor });
 }
 
+// Handles post.
 export async function POST(req: NextRequest, { params }: Params) {
   const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();
@@ -46,11 +61,19 @@ export async function POST(req: NextRequest, { params }: Params) {
   const member = await getMemberOrFail(adminClient, (await params).id, user.id);
   if (!member) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-  const { content } = await req.json() as { content?: string };
+  let content: string | undefined;
+  try {
+    ({ content } = await req.json() as { content?: string });
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+  }
   if (!content?.trim()) return NextResponse.json({ error: 'Content required' }, { status: 400 });
-  if (containsBlockedContent(content)) {
+  if (content.trim().length > 1000) {
+    return NextResponse.json({ error: 'Messages must be 1000 characters or fewer' }, { status: 400 });
+  }
+  if (containsBlockedKeyword(content)) {
     return NextResponse.json(
-      { error: { code: 'CONTENT_BLOCKED', message: 'Message contains blocked content' } },
+      { error: { code: 'CONTENT_BLOCKED', message: BLOCKED_CONTENT_MESSAGE } },
       { status: 422 },
     );
   }
@@ -66,6 +89,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   return NextResponse.json({ data: { success: true } }, { status: 201 });
 }
 
+// Handles delete.
 export async function DELETE(req: NextRequest, { params }: Params) {
   const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();
@@ -98,8 +122,4 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   if (error) return NextResponse.json({ error: 'Failed to delete message' }, { status: 500 });
 
   return NextResponse.json({ data: { success: true } });
-}
-
-function containsBlockedContent(content: string): boolean {
-  return /\bfuck(?:ing)?\b/i.test(content);
 }

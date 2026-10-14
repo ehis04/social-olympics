@@ -1,3 +1,7 @@
+/*
+ * This file defines the index module.
+ */
+
 // Forgot password screen — sends reset email via Supabase.
 import { useState } from 'react';
 import {
@@ -13,6 +17,7 @@ import { useRouter } from 'expo-router';
 import { CheckCircle } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase/client';
 
+// Renders the forgot password screen component.
 export default function ForgotPasswordScreen() {
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -22,7 +27,12 @@ export default function ForgotPasswordScreen() {
   async function onSubmit() {
     if (!email) return;
     setLoading(true);
-    await supabase.auth.resetPasswordForEmail(email);
+    // The reset link opens the website's reset page; afterwards the person signs in here.
+    const baseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.replace(/\/$/, '');
+    await supabase.auth.resetPasswordForEmail(
+      email,
+      baseUrl ? { redirectTo: `${baseUrl}/api/auth/callback?next=/reset-password` } : undefined,
+    );
     setLoading(false);
     setSent(true);
   }

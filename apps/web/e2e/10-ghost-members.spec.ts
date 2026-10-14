@@ -1,3 +1,7 @@
+/*
+ * This file verifies 10 ghost members behavior.
+ */
+
 // Journey 6 — Members tab and ghost profile flow
 import { test, expect } from '@playwright/test';
 import { AUTH_FILE, HOST_AUTH_FILE } from './fixtures/auth-state';

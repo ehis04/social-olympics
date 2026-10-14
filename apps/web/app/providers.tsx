@@ -1,3 +1,7 @@
+/*
+ * This file defines the providers module.
+ */
+
 'use client';
 
 import { useEffect } from 'react';
@@ -11,6 +15,7 @@ import { useAuthStore } from '@/stores/auth';
 
 type ProfileRow = Database['public']['Tables']['profiles']['Row'];
 
+// Handles fetch current profile.
 async function fetchCurrentProfile(): Promise<ProfileRow | null> {
   const response = await fetch('/api/profile');
   if (!response.ok) return null;
@@ -19,6 +24,7 @@ async function fetchCurrentProfile(): Promise<ProfileRow | null> {
   return result.data ?? null;
 }
 
+// Renders the providers component.
 export default function Providers({ children }: { children: React.ReactNode }) {
   const { setSession, setUser, setProfile, setLoading } = useAuthStore();
 

@@ -1,8 +1,13 @@
+/*
+ * This file defines the layout module.
+ */
+
 // Authenticated root — guards all app screens, redirects to login if no session.
 import { useEffect } from 'react';
 import { Stack, useRouter } from 'expo-router';
 import { useAuthStore } from '@/stores/auth';
 
+// Renders the app layout component.
 export default function AppLayout() {
   const router = useRouter();
   const { session, loading } = useAuthStore();

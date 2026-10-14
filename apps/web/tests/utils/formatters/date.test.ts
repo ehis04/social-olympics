@@ -1,3 +1,7 @@
+/*
+ * This file verifies date behavior.
+ */
+
 import { describe, it, expect, beforeAll } from 'vitest';
 import { formatDate, formatRelativeTime } from '@/utils/formatters/date';
 

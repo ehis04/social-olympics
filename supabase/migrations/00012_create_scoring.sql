@@ -1,3 +1,7 @@
+/*
+ * This migration updates the database for 00012 create scoring.
+ */
+
 -- Migration 00012: event_points_config, tiebreakers, and tiebreaker_nominations tables
 
 CREATE TABLE public.event_points_config (

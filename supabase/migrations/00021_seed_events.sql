@@ -1,3 +1,7 @@
+/*
+ * This migration updates the database for 00021 seed events.
+ */
+
 -- Migration 00021: seed all system events (permanent data migration)
 
 INSERT INTO public.events (category_id, name, slug, result_type, is_team_event, min_team_size, max_team_size, similarity_group) VALUES

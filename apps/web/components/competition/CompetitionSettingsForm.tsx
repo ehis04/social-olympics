@@ -1,11 +1,15 @@
+/*
+ * This file defines the CompetitionSettingsForm user-interface component.
+ */
+
 'use client';
 
 // Competition settings form — editable fields, weighting editor, voting toggles, danger zone
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Lock, AlertTriangle } from 'lucide-react';
-import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { toast } from '@/lib/toast';
+import { getApiErrorMessage, readJson } from '@/lib/api/error-message';
 import type { Database } from '@repo/types';
 
 type CompetitionRow = Database['public']['Tables']['competitions']['Row'];
@@ -21,6 +25,7 @@ interface Props {
   competition: CompetitionRow;
   members: MemberWithProfile[];
   competitionEvents: CompetitionEventRow[];
+  isHost?: boolean;
 }
 
 const WEIGHT_OPTIONS: { label: string; tag: WeightTag; multiplier: number }[] = [
@@ -31,11 +36,10 @@ const WEIGHT_OPTIONS: { label: string; tag: WeightTag; multiplier: number }[] = 
   { label: 'Custom', tag: 'custom', multiplier: 1.0 },
 ];
 
-export default function CompetitionSettingsForm({ competition, members, competitionEvents }: Props) {
+// Renders the competition settings form component.
+export default function CompetitionSettingsForm({ competition, members, competitionEvents, isHost = true }: Props) {
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
-  const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
-  const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
   const [weightingChanged, setWeightingChanged] = useState(false);
 
   const [form, setForm] = useState({
@@ -102,8 +106,7 @@ export default function CompetitionSettingsForm({ competition, members, competit
       });
 
       if (!res.ok) {
-        const json = await res.json();
-        toast.error(json.error ?? 'Failed to save settings');
+        toast.error(getApiErrorMessage(await readJson(res), 'Failed to save settings'));
         return;
       }
 
@@ -117,30 +120,10 @@ export default function CompetitionSettingsForm({ competition, members, competit
     }
   }
 
-  async function handleComplete() {
-    try {
-      const res = await fetch(`/api/competitions/${competition.id}/complete`, {
-        method: 'POST',
-      });
-      if (!res.ok) {
-        const json = await res.json();
-        toast.error(json.error ?? 'Failed to complete competition');
-        return;
-      }
-      toast.success('Competition completed!');
-      router.refresh();
-    } catch {
-      toast.error('Something went wrong');
-    } finally {
-      setShowCompleteConfirm(false);
-    }
-  }
-
   const votingLocked = competition.voting_locked;
-  const canEditCohost =
-    competition.status === 'setup' || competition.status === 'open';
+  const canEditCohost = isHost;
   const eligibleCohosts = members.filter(
-    (m) => m.profile_id !== competition.host_id && m.status !== 'withdrawn',
+    (m) => m.profile_id !== competition.host_id && m.status === 'active',
   );
 
   return (
@@ -389,40 +372,6 @@ export default function CompetitionSettingsForm({ competition, members, competit
         {isSaving ? 'Saving…' : 'Save settings'}
       </button>
 
-      {/* Danger zone */}
-      {(competition.status === 'active' || competition.status === 'complete') && (
-        <section className="rounded-lg border-2 border-red-200 bg-white p-6">
-          <h2 className="mb-4 text-base font-bold text-red-700">Danger zone</h2>
-          <div className="space-y-3">
-            {competition.status === 'active' && (
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-grey-800">Complete competition</p>
-                  <p className="text-xs text-grey-500">
-                    Finalises all scores and generates the podium. Cannot be undone.
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowCompleteConfirm(true)}
-                  className="shrink-0 rounded-lg border border-red-300 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors"
-                >
-                  Complete
-                </button>
-              </div>
-            )}
-          </div>
-        </section>
-      )}
-
-      <ConfirmDialog
-        isOpen={showCompleteConfirm}
-        title="Complete competition?"
-        message="This will finalise all scores and generate the podium. All events will be locked. This cannot be undone."
-        confirmLabel="Complete"
-        isDanger
-        onConfirm={handleComplete}
-        onCancel={() => setShowCompleteConfirm(false)}
-      />
     </div>
   );
 }

@@ -1,3 +1,7 @@
+/*
+ * This file verifies calculate points behavior.
+ */
+
 // Unit tests for calculatePoints — all place + multiplier combinations and bounds.
 import { describe, expect, it } from 'vitest';
 import { calculatePoints } from '../../src/points/calculate-points';

@@ -1,3 +1,7 @@
+/*
+ * This file verifies count eligible behavior.
+ */
+
 // Unit tests for countEligibleResults.
 import { describe, expect, it } from 'vitest';
 import { countEligibleResults } from '../../src/best-of/count-eligible';

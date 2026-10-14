@@ -1,3 +1,7 @@
+/*
+ * This migration updates the database for 00023 add competition context to reports.
+ */
+
 -- Migration 00023: add competition context to moderation reports
 
 ALTER TYPE report_target_type ADD VALUE IF NOT EXISTS 'feed_item';

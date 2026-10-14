@@ -1,6 +1,11 @@
+/*
+ * This file defines the subscribe feed module.
+ */
+
 // Subscribes to new activity_feed inserts for a competition.
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+// Handles subscribe feed.
 export function subscribeFeed(
   client: SupabaseClient,
   competitionId: string,

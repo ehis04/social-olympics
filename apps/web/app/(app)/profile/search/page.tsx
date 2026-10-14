@@ -1,3 +1,7 @@
+/*
+ * This file renders the search application page.
+ */
+
 // Profile search page — find users and open their public profiles
 import Image from 'next/image';
 import Link from 'next/link';
@@ -18,6 +22,7 @@ interface Props {
   searchParams?: Promise<{ q?: string }>;
 }
 
+// Handles get flag emoji.
 function getFlagEmoji(code: string | null): string {
   if (!code || code.length !== 2) return '';
   const codePoints = code
@@ -27,12 +32,14 @@ function getFlagEmoji(code: string | null): string {
   return String.fromCodePoint(...codePoints);
 }
 
+// Handles search profiles.
 async function searchProfiles(q: string, currentUserId: string): Promise<ProfileRow[]> {
   const adminClient = createAdminClient();
   let query = adminClient
     .from('profiles')
     .select('id, display_name, avatar_url, bio, country_code')
     .eq('is_ghost', false)
+    .is('deleted_at', null)
     .neq('id', currentUserId)
     .order('display_name', { ascending: true })
     .limit(24);
@@ -48,6 +55,7 @@ async function searchProfiles(q: string, currentUserId: string): Promise<Profile
   return (data ?? []) as ProfileRow[];
 }
 
+// Renders the profile search page component.
 export default async function ProfileSearchPage({ searchParams }: Props) {
   const client = await getServerClient();
   const {

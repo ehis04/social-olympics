@@ -1,3 +1,7 @@
+/*
+ * This file defines the EventRecordingFlow user-interface component.
+ */
+
 'use client';
 
 import { useState } from 'react';
@@ -25,15 +29,18 @@ interface EventRecordingFlowProps {
   competition: CompetitionRow;
   members: Participant[];
   defaultSelectedProfileIds?: string[];
+  initialEntries?: Record<string, EntryState>;
   competitionId: string;
   eventId: string;
 }
 
+// Renders the event recording flow component.
 export function EventRecordingFlow({
   event,
   competition,
   members,
   defaultSelectedProfileIds,
+  initialEntries = {},
   competitionId,
   eventId,
 }: EventRecordingFlowProps) {
@@ -42,7 +49,7 @@ export function EventRecordingFlow({
   const [selectedIds, setSelectedIds] = useState<string[]>(
     defaultSelectedProfileIds ?? members.map((m) => m.profileId),
   );
-  const [entries, setEntries] = useState<Record<string, EntryState>>({});
+  const [entries, setEntries] = useState<Record<string, EntryState>>(initialEntries);
   const [isStopping, setIsStopping] = useState(false);
 
   const eventLibrary = event.events as Record<string, unknown> | null;
@@ -77,7 +84,7 @@ export function EventRecordingFlow({
   }
 
   async function handleStop() {
-    if (!confirm('Stop this event? It will return to pending so you can restart it with different participants.')) return;
+    if (!confirm('Reset this event? It returns to upcoming and any unconfirmed submissions are discarded, so you can restart it with different participants.')) return;
     setIsStopping(true);
     try {
       const res = await fetch(
@@ -89,7 +96,7 @@ export function EventRecordingFlow({
         toast.error(json.error ?? 'Failed to stop event');
         return;
       }
-      toast.success('Event stopped: it is now pending again');
+      toast.success('Event reset: it is upcoming again');
       router.push(ROUTES.EVENT_DETAIL(competitionId, eventId));
       router.refresh();
     } catch {
@@ -117,7 +124,7 @@ export function EventRecordingFlow({
           className="flex items-center gap-1.5 rounded-md border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
         >
           <Square className="h-3 w-3" />
-          {isStopping ? 'Stopping…' : 'Stop Event'}
+          {isStopping ? 'Resetting…' : 'Reset event'}
         </button>
       </div>
 

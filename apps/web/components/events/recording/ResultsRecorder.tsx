@@ -1,8 +1,14 @@
+/*
+ * This file defines the ResultsRecorder user-interface component.
+ */
+
 'use client';
 
 import { useState } from 'react';
 import Image from 'next/image';
 import { toast } from '@/lib/toast';
+import { getApiErrorMessage, readJson } from '@/lib/api/error-message';
+import { getResultInputConfig, isLowerBetter, parseResultInput } from '@repo/scoring';
 import type { EntryState } from './EventRecordingFlow';
 
 interface Participant {
@@ -22,65 +28,11 @@ interface ResultsRecorderProps {
   onComplete: () => void;
 }
 
-function parseValueToStored(resultType: string, raw: string): number | null {
-  const trimmed = raw.trim();
-  if (!trimmed) return null;
+const parseValueToStored = parseResultInput;
+const lowerIsBetter = isLowerBetter;
+const getInputConfig = getResultInputConfig;
 
-  if (resultType === 'time') {
-    if (trimmed.includes(':')) {
-      const [minStr, secStr] = trimmed.split(':');
-      const mins = parseInt(minStr ?? '0', 10);
-      const secs = parseFloat(secStr ?? '0');
-      if (isNaN(mins) || isNaN(secs)) return null;
-      return Math.round((mins * 60 + secs) * 1000);
-    }
-    const secs = parseFloat(trimmed);
-    if (isNaN(secs) || secs < 0) return null;
-    return Math.round(secs * 1000);
-  }
-
-  if (resultType === 'distance') {
-    const metres = parseFloat(trimmed);
-    if (isNaN(metres) || metres < 0) return null;
-    return Math.round(metres * 100);
-  }
-
-  const val = resultType === 'weight' ? parseFloat(trimmed) : parseInt(trimmed, 10);
-  if (isNaN(val) || val < 0) return null;
-  return val;
-}
-
-function lowerIsBetter(resultType: string): boolean {
-  return resultType === 'time' || resultType === 'inverted_score';
-}
-
-function getInputConfig(resultType: string): {
-  label: string;
-  placeholder: string;
-  unit: string;
-  inputMode: 'numeric' | 'decimal' | 'text';
-  step?: string;
-} {
-  switch (resultType) {
-    case 'time':
-      return { label: 'Time', placeholder: '11.40 or 1:52.30', unit: 'sec', inputMode: 'text' };
-    case 'distance':
-      return { label: 'Distance', placeholder: '6.32', unit: 'm', inputMode: 'decimal', step: '0.01' };
-    case 'score':
-      return { label: 'Score', placeholder: '0', unit: 'pts', inputMode: 'numeric', step: '1' };
-    case 'inverted_score':
-      return { label: 'Strokes', placeholder: '72', unit: 'strokes', inputMode: 'numeric', step: '1' };
-    case 'weight':
-      return { label: 'Weight', placeholder: '100.0', unit: 'kg', inputMode: 'decimal', step: '0.5' };
-    case 'compound':
-      return { label: 'Reps', placeholder: '0', unit: 'reps', inputMode: 'numeric', step: '1' };
-    case 'possession':
-      return { label: 'Points', placeholder: '0', unit: 'pts', inputMode: 'numeric', step: '1' };
-    default:
-      return { label: 'Value', placeholder: '0', unit: '', inputMode: 'decimal' };
-  }
-}
-
+// Handles compute ranks.
 function computeRanks(
   entries: Record<string, EntryState>,
   participantIds: string[],
@@ -105,6 +57,7 @@ function computeRanks(
   return ranks;
 }
 
+// Handles get rank badge class.
 function getRankBadgeClass(rank: number | null, isDnf: boolean): string {
   if (isDnf) return 'bg-grey-100 text-grey-400';
   if (rank === 1) return 'bg-yellow-100 text-yellow-700';
@@ -114,12 +67,14 @@ function getRankBadgeClass(rank: number | null, isDnf: boolean): string {
   return 'bg-grey-100 text-grey-400';
 }
 
+// Handles get rank label.
 function getRankLabel(rank: number | null, isDnf: boolean): string {
   if (isDnf) return 'DNF';
   if (rank !== null) return String(rank);
   return '-';
 }
 
+// Renders the results recorder component.
 export function ResultsRecorder({
   participants,
   entries,
@@ -194,9 +149,8 @@ export function ResultsRecorder({
         },
       );
 
-      const json = (await res.json()) as { error?: string };
       if (!res.ok) {
-        toast.error(json.error ?? 'Failed to record results');
+        toast.error(getApiErrorMessage(await readJson(res), 'Failed to record results'));
         return;
       }
 
@@ -258,10 +212,9 @@ export function ResultsRecorder({
                   <div className="flex flex-1 items-center gap-2 min-w-0">
                     <div className="relative flex-1 min-w-0">
                       <input
-                        type={inputConfig.inputMode === 'text' ? 'text' : 'number'}
+                        type="text"
                         inputMode={inputConfig.inputMode}
-                        step={inputConfig.step}
-                        min="0"
+                        aria-label={`${inputConfig.label} for ${participant.displayName}`}
                         value={entry.value}
                         onChange={(e) =>
                           updateEntry(participant.profileId, { value: e.target.value })

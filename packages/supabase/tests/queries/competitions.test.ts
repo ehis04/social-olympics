@@ -1,3 +1,7 @@
+/*
+ * This file verifies competitions behavior.
+ */
+
 // Integration tests for competition queries and mutations against local Supabase.
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createBrowserClient } from '../../src/client/browser';

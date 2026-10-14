@@ -1,3 +1,7 @@
+/*
+ * This file defines the member module.
+ */
+
 // Competition membership types.
 
 import type { MemberRole, MemberStatus } from '../database/enums';

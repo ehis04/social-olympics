@@ -1,6 +1,11 @@
+/*
+ * This file defines the subscribe group chat module.
+ */
+
 // Subscribes to new group chat messages for a competition.
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+// Handles subscribe group chat.
 export function subscribeGroupChat(
   client: SupabaseClient,
   competitionId: string,

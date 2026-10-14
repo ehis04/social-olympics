@@ -1,7 +1,12 @@
+/*
+ * This file verifies check tie behavior.
+ */
+
 // Unit tests for checkForTie.
 import { describe, expect, it } from 'vitest';
 import { checkForTie } from '../../src/tiebreakers/check-tie';
 
+// Handles make ranked.
 function makeRanked(profileId: string, rank: number, isTied: boolean) {
   return { profileId, rank, isTied, totalPoints: 0, gold: 0, silver: 0, bronze: 0 };
 }

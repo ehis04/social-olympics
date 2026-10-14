@@ -1,3 +1,7 @@
+/*
+ * This migration updates the database for 00002 create users.
+ */
+
 -- Migration 00002: profiles table, age check, and auto-profile trigger
 
 CREATE TABLE public.profiles (
@@ -17,6 +21,7 @@ CREATE TABLE public.profiles (
 );
 
 -- Raises exception if the registering user is under 16
+-- Defines the check_minimum_age database function.
 CREATE OR REPLACE FUNCTION public.check_minimum_age()
 RETURNS trigger AS $$
 BEGIN
@@ -36,6 +41,7 @@ CREATE TRIGGER on_auth_user_age_check
   EXECUTE FUNCTION public.check_minimum_age();
 
 -- Auto-creates a profile row when a new auth.users row is inserted
+-- Defines the handle_new_user database function.
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN

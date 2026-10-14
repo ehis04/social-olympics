@@ -1,3 +1,11 @@
+/*
+ * This file defines the next.config module.
+ */
+
+import { fileURLToPath } from 'node:url';
+
+const workspaceRoot = fileURLToPath(new URL('../../', import.meta.url));
+
 const isLocalSupabase = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? '').includes('127.0.0.1') ||
   (process.env.NEXT_PUBLIC_SUPABASE_URL ?? '').includes('localhost');
 
@@ -11,8 +19,10 @@ const supabaseConnectSources = isLocalSupabase
 
 /** @type {import('next').NextConfig} */
 const config = {
+  allowedDevOrigins: ['localhost', '127.0.0.1'],
+  turbopack: { root: workspaceRoot },
+  outputFileTracingRoot: workspaceRoot,
   transpilePackages: [
-    '@repo/ui',
     '@repo/types',
     '@repo/constants',
     '@repo/validations',

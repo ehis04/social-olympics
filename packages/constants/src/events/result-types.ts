@@ -1,3 +1,7 @@
+/*
+ * This file defines the result types module.
+ */
+
 // Configuration metadata for each result type used across the event library.
 
 export interface ResultTypeConfig {

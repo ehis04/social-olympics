@@ -1,7 +1,12 @@
+/*
+ * This file defines the resolve dispute module.
+ */
+
 // Resolves or dismisses a dispute, always moving the event back to confirmed.
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
 
+// Handles resolve dispute.
 export async function resolveDispute(
   client: SupabaseClient,
   disputeId: string,

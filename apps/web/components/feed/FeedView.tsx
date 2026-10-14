@@ -1,3 +1,7 @@
+/*
+ * This file defines the FeedView user-interface component.
+ */
+
 // FeedView — competition activity feed with realtime inserts and load-more
 'use client';
 
@@ -15,6 +19,7 @@ interface Props {
   competition: CompetitionRow;
 }
 
+// Renders the feed view component.
 export function FeedView({ competition }: Props) {
   const queryClient = useQueryClient();
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useFeed(competition.id);
@@ -55,6 +60,7 @@ export function FeedView({ competition }: Props) {
         <FeedItemCard
           key={item.id}
           item={item}
+          competitionId={competition.id}
           comments={item.feed_comments ?? []}
           reactions={item.reactions ?? []}
         />

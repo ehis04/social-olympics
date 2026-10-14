@@ -1,15 +1,21 @@
+/*
+ * This file defines the CompleteCompetitionButton user-interface component.
+ */
+
 // CompleteCompetitionButton — host-only button to mark competition complete
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/lib/toast';
+import { getApiErrorMessage, readJson } from '@/lib/api/error-message';
 import ROUTES from '@/constants/routes';
 
 interface Props {
   competitionId: string;
 }
 
+// Renders the complete competition button component.
 export function CompleteCompetitionButton({ competitionId }: Props) {
   const [confirming, setConfirming] = useState(false);
   const [isPending, setIsPending] = useState(false);
@@ -20,12 +26,11 @@ export function CompleteCompetitionButton({ competitionId }: Props) {
     try {
       const res = await fetch(`/api/competitions/${competitionId}/complete`, { method: 'POST' });
       if (!res.ok) {
-        const json = await res.json() as { error?: string };
-        toast.error(json.error ?? 'Failed to complete competition');
+        toast.error(getApiErrorMessage(await readJson(res), 'Failed to complete competition'));
         return;
       }
       toast.success('Competition completed: final ranks assigned');
-      router.push(ROUTES.COMPETITION_LEADERBOARD(competitionId));
+      router.push(ROUTES.COMPETITION_PODIUM(competitionId));
       router.refresh();
     } catch {
       toast.error('Something went wrong');
@@ -60,7 +65,7 @@ export function CompleteCompetitionButton({ competitionId }: Props) {
   return (
     <button
       onClick={() => setConfirming(true)}
-      className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700"
+      className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark"
     >
       Complete competition
     </button>

@@ -1,3 +1,7 @@
+/*
+ * This file defines the Skeletons user-interface component.
+ */
+
 // Skeleton primitives — reusable pulse placeholders for loading states
 
 export function SkeletonLine({ width = 'full', height = 4 }: { width?: string; height?: number }) {
@@ -6,10 +10,12 @@ export function SkeletonLine({ width = 'full', height = 4 }: { width?: string; h
   return <div className={`${w} ${h} animate-pulse rounded bg-grey-200`} />;
 }
 
+// Renders the skeleton avatar component.
 export function SkeletonAvatar({ size = 10 }: { size?: number }) {
   return <div className={`h-${size} w-${size} shrink-0 animate-pulse rounded-full bg-grey-200`} />;
 }
 
+// Renders the skeleton card component.
 export function SkeletonCard({ lines = 2 }: { lines?: number }) {
   return (
     <div className="rounded-lg border border-grey-200 bg-white p-5 space-y-3">
@@ -21,6 +27,7 @@ export function SkeletonCard({ lines = 2 }: { lines?: number }) {
   );
 }
 
+// Renders the skeleton row component.
 export function SkeletonRow() {
   return (
     <div className="flex items-center gap-3 px-4 py-3">
@@ -35,6 +42,7 @@ export function SkeletonRow() {
   );
 }
 
+// Renders the skeleton feed item component.
 export function SkeletonFeedItem() {
   return (
     <div className="rounded-lg border border-grey-100 bg-white p-4">
@@ -49,6 +57,7 @@ export function SkeletonFeedItem() {
   );
 }
 
+// Renders the skeleton table row component.
 export function SkeletonTableRow() {
   return (
     <tr className="border-b border-grey-100">

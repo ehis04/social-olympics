@@ -1,3 +1,7 @@
+/*
+ * This file defines the ForgotPasswordForm user-interface component.
+ */
+
 'use client';
 
 import { useState } from 'react';
@@ -13,6 +17,7 @@ const ForgotSchema = z.object({
 });
 type ForgotInput = z.infer<typeof ForgotSchema>;
 
+// Renders the forgot password form component.
 export default function ForgotPasswordForm() {
   const [submitted, setSubmitted] = useState(false);
 
@@ -58,7 +63,7 @@ export default function ForgotPasswordForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
+    <form method="post" onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
       <p className="text-sm text-grey-600">
         Enter your email address and we&apos;ll send you a link to reset your password.
       </p>

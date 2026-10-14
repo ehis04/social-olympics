@@ -1,3 +1,7 @@
+/*
+ * This file verifies 03 join competition behavior.
+ */
+
 // Journey 3 — user joins a competition via invite code
 import { test, expect } from '@playwright/test';
 import { AUTH_FILE } from './fixtures/auth-state';

@@ -1,9 +1,13 @@
+/*
+ * This file verifies Triggers extended behavior.
+ */
+
 -- supabase/tests/Triggers-extended.test.sql
 -- Extended pgTAP tests for database triggers and functions
 
 BEGIN;
 
-SELECT plan(18);
+SELECT plan(16);
 
 SET LOCAL role = postgres;
 
@@ -41,7 +45,7 @@ SELECT is(
 SELECT is(
   (SELECT total_competitions FROM public.career_stats
    WHERE profile_id = '20000000-0000-0000-0000-000000000001'),
-  0::bigint,
+  0::integer,
   'career_stats.total_competitions initialised to 0'
 );
 
@@ -87,7 +91,7 @@ DELETE FROM public.competition_events WHERE id = '20000000-0000-0000-0000-000000
 DELETE FROM public.competition_events WHERE id = '20000000-0000-0000-0000-000000000020';
 
 -- one extra call that would normally go to -1
-PERFORM public.decrement_competition_total_events('20000000-0000-0000-0000-000000000010');
+SELECT public.decrement_competition_total_events('20000000-0000-0000-0000-000000000010');
 
 SELECT is(
   (SELECT total_events FROM public.competitions
@@ -216,7 +220,7 @@ SELECT is(
 --   time result type → lower value is better
 -- ─────────────────────────────────────────────────────────────────────────────
 
-PERFORM public.update_personal_best(
+SELECT public.update_personal_best(
   '20000000-0000-0000-0000-000000000001',
   (SELECT id FROM public.events WHERE slug = '100m-sprint'),
   9.8, NULL,
@@ -232,7 +236,7 @@ SELECT is(
 );
 
 -- Better (lower) time should update
-PERFORM public.update_personal_best(
+SELECT public.update_personal_best(
   '20000000-0000-0000-0000-000000000001',
   (SELECT id FROM public.events WHERE slug = '100m-sprint'),
   9.5, NULL,
@@ -248,7 +252,7 @@ SELECT is(
 );
 
 -- Worse (higher) time should NOT update
-PERFORM public.update_personal_best(
+SELECT public.update_personal_best(
   '20000000-0000-0000-0000-000000000001',
   (SELECT id FROM public.events WHERE slug = '100m-sprint'),
   10.2, NULL,
@@ -267,7 +271,7 @@ SELECT is(
 -- TEST 18: career_stats updated after competition score changes
 -- ─────────────────────────────────────────────────────────────────────────────
 
-PERFORM public.update_career_stats('20000000-0000-0000-0000-000000000001');
+SELECT public.update_career_stats('20000000-0000-0000-0000-000000000001');
 
 SELECT ok(
   (SELECT total_points FROM public.career_stats

@@ -1,3 +1,7 @@
+/*
+ * This file handles requests for the events API route.
+ */
+
 // GET /api/competitions/[id]/members/[memberId]/events
 // Returns events a member is assigned to and events they have results in for a competition.
 import { NextResponse } from 'next/server';
@@ -8,11 +12,20 @@ interface RouteParams {
   params: Promise<{ id: string; memberId: string }>;
 }
 
+// Handles get.
 export async function GET(_req: Request, { params }: RouteParams) {
   const { id: competitionId, memberId: profileId } = await params;
   const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
+
+  // RLS only returns the competition when it is public or the caller is a member.
+  const { data: visibleCompetition } = await client
+    .from('competitions')
+    .select('id')
+    .eq('id', competitionId)
+    .maybeSingle();
+  if (!visibleCompetition) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const adminClient = createAdminClient();
 

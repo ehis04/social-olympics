@@ -1,3 +1,7 @@
+/*
+ * This file verifies events behavior.
+ */
+
 // Integration tests for event queries against local Supabase.
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { getCompetitionEvents } from '../../src/queries/events/get-competition-events';

@@ -1,3 +1,7 @@
+/*
+ * This file verifies get multiplier behavior.
+ */
+
 // Unit tests for getWeightMultiplier — all preset tags and custom bounds.
 import { describe, expect, it } from 'vitest';
 import { getWeightMultiplier } from '../../src/weighting/get-multiplier';

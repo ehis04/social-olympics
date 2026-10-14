@@ -1,3 +1,7 @@
+/*
+ * This file defines the GhostProfileForm user-interface component.
+ */
+
 'use client';
 
 // Modal form for creating a ghost (guest) profile within a competition
@@ -11,6 +15,7 @@ interface Props {
   onSuccess: () => void;
 }
 
+// Renders the ghost profile form component.
 export default function GhostProfileForm({ competitionId, onClose, onSuccess }: Props) {
   const [displayName, setDisplayName] = useState('');
   const [countryCode, setCountryCode] = useState('');

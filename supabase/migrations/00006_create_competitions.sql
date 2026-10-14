@@ -1,4 +1,12 @@
+/*
+ * This migration updates the database for 00006 create competitions.
+ */
+
 -- Migration 00006: competitions table and invite code generator
+
+-- Defines the generate_invite_code database function.
+
+-- Defines the generate_invite_code database function.
 
 CREATE OR REPLACE FUNCTION public.generate_invite_code()
 RETURNS text AS $$

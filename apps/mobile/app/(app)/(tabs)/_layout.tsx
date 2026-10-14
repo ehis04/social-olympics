@@ -1,8 +1,13 @@
+/*
+ * This file defines the layout module.
+ */
+
 // Bottom tab bar — Dashboard, Discover, Notifications (with badge), Profile.
 import { Tabs } from 'expo-router';
 import { LayoutDashboard, Compass, Bell, User } from 'lucide-react-native';
 import { View } from 'react-native';
 
+// Renders the tabs layout component.
 export default function TabsLayout() {
   return (
     <Tabs

@@ -1,3 +1,7 @@
+/*
+ * This file verifies check tolerance behavior.
+ */
+
 // Unit tests for checkBalanceTolerance.
 import { describe, expect, it } from 'vitest';
 import { checkBalanceTolerance } from '../../src/team-balance/check-tolerance';

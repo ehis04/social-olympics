@@ -1,3 +1,7 @@
+/*
+ * This file renders the chat application page.
+ */
+
 // Competition chat page — group chat for a competition
 import { redirect } from 'next/navigation';
 import { getServerClient } from '@/lib/supabase/server';
@@ -13,6 +17,7 @@ interface Props {
   params: Promise<{ id: string }>;
 }
 
+// Renders the chat page component.
 export default async function ChatPage({ params }: Props) {
   const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();

@@ -1,7 +1,12 @@
+/*
+ * This migration updates the database for 00019 triggers.
+ */
+
 -- Migration 00019: all platform triggers
 
 -- Trigger function: fires when a result is confirmed; recalculates scores,
 -- updates personal bests, and inserts an activity feed row
+-- Defines the handle_result_confirmed database function.
 CREATE OR REPLACE FUNCTION public.handle_result_confirmed()
 RETURNS trigger AS $$
 DECLARE
@@ -68,6 +73,7 @@ CREATE TRIGGER on_result_confirmed
   EXECUTE FUNCTION public.handle_result_confirmed();
 
 -- Trigger function: increments total_events when a competition_event is added
+-- Defines the handle_competition_event_added database function.
 CREATE OR REPLACE FUNCTION public.handle_competition_event_added()
 RETURNS trigger AS $$
 BEGIN
@@ -82,6 +88,7 @@ CREATE TRIGGER on_competition_event_added
 
 -- Trigger function: decrements total_events and recalculates all member scores
 -- when a competition_event is removed
+-- Defines the handle_competition_event_removed database function.
 CREATE OR REPLACE FUNCTION public.handle_competition_event_removed()
 RETURNS trigger AS $$
 DECLARE
@@ -105,6 +112,7 @@ CREATE TRIGGER on_competition_event_removed
   FOR EACH ROW EXECUTE FUNCTION public.handle_competition_event_removed();
 
 -- Trigger function: recalculates all member scores when a weight multiplier changes
+-- Defines the handle_weight_multiplier_changed database function.
 CREATE OR REPLACE FUNCTION public.handle_weight_multiplier_changed()
 RETURNS trigger AS $$
 DECLARE
@@ -128,6 +136,7 @@ CREATE TRIGGER on_competition_event_weight_changed
   EXECUTE FUNCTION public.handle_weight_multiplier_changed();
 
 -- Trigger function: sets competition to active when its first event is started
+-- Defines the handle_first_event_started database function.
 CREATE OR REPLACE FUNCTION public.handle_first_event_started()
 RETURNS trigger AS $$
 BEGIN

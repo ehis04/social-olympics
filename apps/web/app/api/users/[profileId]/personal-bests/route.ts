@@ -1,11 +1,14 @@
+/*
+ * This file handles requests for the personal bests API route.
+ */
+
 // GET /api/users/[profileId]/personal-bests — fetch sorted personal bests for a profile
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerClient } from '@/lib/supabase/server';
 import { createAdminClient, getPersonalBests } from '@repo/supabase';
 
 interface PersonalBestRow {
-  category_name?: string | null;
-  event_name?: string | null;
+  events?: { name: string; event_categories: { name: string } | null } | null;
   [key: string]: unknown;
 }
 
@@ -13,6 +16,7 @@ interface Params {
   params: Promise<{ profileId: string }>;
 }
 
+// Handles get.
 export async function GET(_req: NextRequest, { params }: Params) {
   const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();
@@ -26,10 +30,10 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
   // Client-side sort by category then event name — nested relation ordering is unreliable at runtime
   bests.sort((a, b) => {
-    const catA = a.category_name ?? '';
-    const catB = b.category_name ?? '';
+    const catA = a.events?.event_categories?.name ?? '';
+    const catB = b.events?.event_categories?.name ?? '';
     if (catA !== catB) return catA.localeCompare(catB);
-    return (a.event_name ?? '').localeCompare(b.event_name ?? '');
+    return (a.events?.name ?? '').localeCompare(b.events?.name ?? '');
   });
 
   return NextResponse.json({ data: bests, error: null });

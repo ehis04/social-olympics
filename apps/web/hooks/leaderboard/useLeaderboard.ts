@@ -1,3 +1,7 @@
+/*
+ * This file provides the useLeaderboard React hook.
+ */
+
 // TanStack Query hook for competition leaderboard
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/auth/useAuth';
@@ -18,6 +22,7 @@ export interface RankedMember {
   };
 }
 
+// Handles fetch leaderboard.
 async function fetchLeaderboard(competitionId: string): Promise<RankedMember[]> {
   const res = await fetch(`/api/competitions/${competitionId}/leaderboard`);
   if (!res.ok) throw new Error('Failed to fetch leaderboard');
@@ -25,6 +30,7 @@ async function fetchLeaderboard(competitionId: string): Promise<RankedMember[]> 
   return json.data as RankedMember[];
 }
 
+// Provides the use leaderboard hook.
 export function useLeaderboard(competitionId: string | undefined) {
   const { session } = useAuth();
 
@@ -36,6 +42,7 @@ export function useLeaderboard(competitionId: string | undefined) {
   });
 }
 
+// Handles fetch team leaderboard.
 async function fetchTeamLeaderboard(competitionId: string): Promise<unknown[]> {
   const res = await fetch(`/api/competitions/${competitionId}/leaderboard/teams`);
   if (!res.ok) throw new Error('Failed to fetch team leaderboard');
@@ -43,6 +50,7 @@ async function fetchTeamLeaderboard(competitionId: string): Promise<unknown[]> {
   return json.data as unknown[];
 }
 
+// Provides the use team leaderboard hook.
 export function useTeamLeaderboard(competitionId: string | undefined) {
   const { session } = useAuth();
 

@@ -1,7 +1,12 @@
+/*
+ * This file handles requests for the competitions API route.
+ */
+
 // GET /api/competitions — public discovery. POST — create a competition.
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getServerClient } from '@/lib/supabase/server';
+import { BLOCKED_CONTENT_MESSAGE, containsBlockedKeyword } from '@/lib/moderation/blocked-content';
 import { addCompetitionEvent, addMember, createAdminClient, createCompetition, createGhostProfile, getPublicCompetitions } from '@repo/supabase';
 import type { Database } from '@repo/types';
 
@@ -41,6 +46,7 @@ const WEIGHT_TAG_MULTIPLIERS: Record<WeightTag, number> = {
   custom: 1,
 };
 
+// Handles get.
 export async function GET(request: NextRequest) {
   const client = await getServerClient();
   const { searchParams } = new URL(request.url);
@@ -70,6 +76,7 @@ export async function GET(request: NextRequest) {
   });
 }
 
+// Handles post.
 export async function POST(request: NextRequest) {
   const client = await getServerClient();
   const {
@@ -93,7 +100,22 @@ export async function POST(request: NextRequest) {
   }
 
   const input = parsed.data;
+  if (containsBlockedKeyword(input.name) || containsBlockedKeyword(input.description)) {
+    return NextResponse.json({ error: BLOCKED_CONTENT_MESSAGE }, { status: 422 });
+  }
   const adminClient = createAdminClient();
+  const { data: suspension } = await adminClient
+    .from('profile_suspensions')
+    .select('profile_id')
+    .eq('profile_id', user.id)
+    .maybeSingle();
+  if (suspension) {
+    return NextResponse.json(
+      { error: 'Your account has been suspended from creating competitions after a moderation review.' },
+      { status: 403 },
+    );
+  }
+
   const { data: competitionData, error: competitionError } = await createCompetition(adminClient, {
     name: input.name,
     host_id: user.id,
@@ -101,7 +123,7 @@ export async function POST(request: NextRequest) {
     min_events_required: input.min_events_required,
     mvp_voting_enabled: input.mvp_voting_enabled,
     worst_performer_enabled: input.worst_performer_enabled,
-    total_events: input.selectedEventIds.length,
+    // total_events is maintained by a database trigger as events are added.
     ...(input.description ? { description: input.description } : {}),
     ...(input.country_code ? { country_code: input.country_code } : {}),
     ...(input.city ? { city: input.city } : {}),
@@ -215,6 +237,7 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({ data: competition, error: null }, { status: 201 });
 }
 
+// Handles is weight tag.
 function isWeightTag(value: unknown): value is WeightTag {
   return (
     value === 'not_important' ||

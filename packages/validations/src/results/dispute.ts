@@ -1,3 +1,7 @@
+/*
+ * This file defines the dispute module.
+ */
+
 // Dispute raising schema.
 
 import { z } from 'zod';

@@ -1,3 +1,7 @@
+/*
+ * This migration updates the database for 00015 create platform.
+ */
+
 -- Migration 00015: reports, notifications, and push_tokens tables
 
 CREATE TABLE public.reports (

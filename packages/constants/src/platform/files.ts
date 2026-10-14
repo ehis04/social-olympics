@@ -1,3 +1,7 @@
+/*
+ * This file defines the files module.
+ */
+
 // Accepted file types and URL validation for uploads and evidence links.
 
 export const ACCEPTED_AVATAR_TYPES = ['image/jpeg', 'image/png'] as const;

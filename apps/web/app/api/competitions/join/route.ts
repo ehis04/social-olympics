@@ -1,12 +1,17 @@
+/*
+ * This file handles requests for the join API route.
+ */
+
 // POST /api/competitions/join — join a competition using an 8-character invite code
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerClient } from '@/lib/supabase/server';
-import { getCompetitionByInviteCode, addMember } from '@repo/supabase';
+import { getCompetitionByInviteCode, addMember, createAdminClient } from '@repo/supabase';
 import { JoinByCodeSchema } from '@repo/validations';
 import type { Database } from '@repo/types';
 
 type CompetitionRow = Database['public']['Tables']['competitions']['Row'];
 
+// Handles post.
 export async function POST(req: NextRequest) {
   const client = await getServerClient();
   const {
@@ -29,7 +34,10 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { data: compData } = await getCompetitionByInviteCode(client, parsed.data.invite_code);
+  // Private competitions are intentionally hidden by RLS until membership is
+  // granted. Validate the invitation using a server-only client first.
+  const adminClient = createAdminClient();
+  const { data: compData } = await getCompetitionByInviteCode(adminClient, parsed.data.invite_code);
   if (!compData) {
     return NextResponse.json(
       { error: 'Invalid invite code. Please check and try again.' },
@@ -39,36 +47,37 @@ export async function POST(req: NextRequest) {
 
   const competition = compData as CompetitionRow;
 
-  if (competition.status === 'archived') {
-    return NextResponse.json({ error: 'This competition has been archived.' }, { status: 400 });
+  if (['archived', 'complete'].includes(competition.status)) {
+    return NextResponse.json({ error: 'This competition is closed to new members.' }, { status: 400 });
   }
 
   // Check not already a member
-  const { data: existing } = await client
+  const { data: existing } = await adminClient
     .from('competition_members')
     .select('id, status')
     .eq('competition_id', competition.id)
     .eq('profile_id', user.id)
-    .single();
+    .maybeSingle();
 
   if (existing) {
-    if (existing.status === 'withdrawn') {
-      await client
-        .from('competition_members')
-        .update({ status: 'active' })
-        .eq('id', existing.id);
-      return NextResponse.json({ data: { competitionId: competition.id } });
+    if (existing.status === 'active') {
+      return NextResponse.json({ data: { competitionId: competition.id, alreadyMember: true } });
     }
-    return NextResponse.json(
-      { error: 'You are already a member of this competition.' },
-      { status: 409 },
-    );
+    // Invited or former members accept the invitation by joining with the code.
+    const { error: updateError } = await adminClient
+      .from('competition_members')
+      .update({ status: 'active', joined_at: new Date().toISOString() })
+      .eq('id', existing.id);
+    if (updateError) return NextResponse.json({ error: 'Failed to join competition' }, { status: 500 });
+    return NextResponse.json({ data: { competitionId: competition.id } });
   }
 
-  const { error } = await addMember(client, competition.id, user.id, 'competitor');
+  // Once a competition has started, new members join as spectators (the host can promote them).
+  const { data: member, error } = await addMember(adminClient, competition.id, user.id, 'competitor');
   if (error) {
     return NextResponse.json({ error: 'Failed to join competition' }, { status: 500 });
   }
 
-  return NextResponse.json({ data: { competitionId: competition.id } }, { status: 201 });
+  const role = (member as { role?: string } | null)?.role ?? 'competitor';
+  return NextResponse.json({ data: { competitionId: competition.id, role } }, { status: 201 });
 }

@@ -1,3 +1,7 @@
+/*
+ * This file verifies results behavior.
+ */
+
 import { describe, it, expect } from 'vitest';
 import { getPlaceSuffix, canSubmitResult } from '@/utils/helpers/results';
 
@@ -27,7 +31,10 @@ describe('canSubmitResult', () => {
     expect(canSubmitResult('spectator', 'active')).toBe(false);
   });
 
-  it('returns false for competitor with non-active event', () => {
-    expect(canSubmitResult('competitor', 'results_pending')).toBe(false);
+  it('allows remaining competitors to submit while results are pending', () => {
+    expect(canSubmitResult('competitor', 'results_pending')).toBe(true);
+  });
+  it('rejects submissions after confirmation', () => {
+    expect(canSubmitResult('competitor', 'confirmed')).toBe(false);
   });
 });

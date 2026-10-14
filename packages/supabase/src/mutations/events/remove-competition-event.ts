@@ -1,7 +1,12 @@
+/*
+ * This file defines the remove competition event module.
+ */
+
 // Removes a competition event (trigger auto-decrements total_events and recalculates scores).
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
 
+// Handles remove competition event.
 export async function removeCompetitionEvent(
   client: SupabaseClient,
   id: string,

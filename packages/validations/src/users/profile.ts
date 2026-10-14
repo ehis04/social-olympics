@@ -1,3 +1,7 @@
+/*
+ * This file defines the profile module.
+ */
+
 // Profile update schema.
 
 import { z } from 'zod';

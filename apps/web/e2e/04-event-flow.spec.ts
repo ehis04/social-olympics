@@ -1,3 +1,7 @@
+/*
+ * This file verifies 04 event flow behavior.
+ */
+
 // Journey 4 — event lifecycle: view events, submit result
 import { test, expect } from '@playwright/test';
 import { AUTH_FILE } from './fixtures/auth-state';

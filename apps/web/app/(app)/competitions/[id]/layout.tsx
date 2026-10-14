@@ -1,3 +1,7 @@
+/*
+ * This file defines the id application layout.
+ */
+
 // Competition detail layout — fetches competition and membership, renders header + tabs
 import { notFound, redirect } from 'next/navigation';
 import { getServerClient } from '@/lib/supabase/server';
@@ -17,6 +21,7 @@ interface Props {
   params: Promise<{ id: string }>;
 }
 
+// Renders the competition detail layout component.
 export default async function CompetitionDetailLayout({ children, params }: Props) {
   const client = await getServerClient();
   const { data: { user } } = await client.auth.getUser();
@@ -29,6 +34,7 @@ export default async function CompetitionDetailLayout({ children, params }: Prop
   const members = (membersData ?? []) as MemberRow[];
 
   const currentMember = members.find((m) => m.profile_id === user!.id) ?? null;
+  const activeMembers = members.filter((m) => m.status === 'active');
 
   if (!competition.is_public && !currentMember) {
     redirect(ROUTES.DASHBOARD);
@@ -58,7 +64,8 @@ export default async function CompetitionDetailLayout({ children, params }: Prop
       <CompetitionHeader
         competition={competition}
         currentMember={currentMember}
-        memberCount={members.length}
+        memberCount={activeMembers.length}
+        competitorCount={activeMembers.filter((m) => m.role === 'competitor').length}
       />
       <TabBar tabs={tabs} />
       <div className="mt-6">{children}</div>

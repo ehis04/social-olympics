@@ -1,7 +1,12 @@
+/*
+ * This file defines the submit weightlifting bid module.
+ */
+
 // Submits a weightlifting bid for a round.
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ApiResponse } from '@repo/types';
 
+// Handles submit weightlifting bid.
 export async function submitWeightliftingBid(
   client: SupabaseClient,
   payload: Record<string, unknown>,

@@ -1,8 +1,13 @@
+/*
+ * This file handles requests for the user API route.
+ */
+
 // GET /api/competitions/user — returns all competitions the current user is a member of
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerClient } from '@/lib/supabase/server';
 import { createAdminClient, getUserCompetitions } from '@repo/supabase';
 
+// Handles get.
 export async function GET(_req: NextRequest) {
   const client = await getServerClient();
   const {

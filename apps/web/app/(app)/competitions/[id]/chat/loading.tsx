@@ -1,6 +1,11 @@
+/*
+ * This file defines the loading module.
+ */
+
 // Competition chat loading skeleton
 import { SkeletonAvatar, SkeletonLine } from '@/components/ui/Skeletons';
 
+// Renders the chat bubble skeleton component.
 function ChatBubbleSkeleton({ self }: { self?: boolean }) {
   return (
     <div className={`flex items-end gap-2 ${self ? 'flex-row-reverse' : ''}`}>
@@ -15,6 +20,7 @@ function ChatBubbleSkeleton({ self }: { self?: boolean }) {
   );
 }
 
+// Renders the chat loading component.
 export default function ChatLoading() {
   return (
     <div className="flex h-full flex-col">

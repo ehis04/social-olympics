@@ -1,4 +1,8 @@
-// Event detail screen — results, host confirmation, voting, team/strength panels.
+/*
+ * This file defines the index module.
+ */
+
+// Event detail screen — results, submission, host recording and confirmation, disputes, teams and awards.
 import { useState } from 'react';
 import {
   View,
@@ -7,12 +11,14 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
+  Modal,
+  TextInput,
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Play, CheckCircle, AlertTriangle, ChevronLeft } from 'lucide-react-native';
+import { Play, CheckCircle, AlertTriangle, ChevronLeft, XCircle, ClipboardList } from 'lucide-react-native';
 import { Image } from 'expo-image';
 import { supabase } from '@/lib/supabase/client';
 import {
@@ -27,9 +33,11 @@ import { triggerSuccess, triggerError } from '@/utils/helpers/haptics';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { ResultSubmissionForm } from '@/components/events/ResultSubmissionForm';
 import { ConfirmResultsPanel } from '@/components/events/ConfirmResultsPanel';
-import { StrengthVoteWidget } from '@/components/events/StrengthVoteWidget';
-import { TeamAssignmentPanel } from '@/components/events/TeamAssignmentPanel';
+import { TeamEventPanel, type TeamEventState } from '@/components/events/TeamEventPanel';
 import { PerformanceVotePanel } from '@/components/events/PerformanceVotePanel';
+import { HostRecorderPanel } from '@/components/events/HostRecorderPanel';
+import { HostDisputePanel, type OpenDispute } from '@/components/events/HostDisputePanel';
+import { EventAwardsPanel } from '@/components/events/EventAwardsPanel';
 import { MOBILE_ROUTES } from '@/constants/routes';
 import { useAuthStore } from '@/stores/auth';
 import { formatResultValue } from '@/utils/formatters/result';
@@ -46,11 +54,13 @@ interface ResultRow {
   id: string;
   profile_id: string | null;
   result_value_primary: number | null;
+  is_dnf: boolean | null;
+  notes: string | null;
   points_awarded: number | null;
   finishing_place: number | null;
   confirmed_at: string | null;
-  disputed_at: string | null;
   submitted_at: string | null;
+  result_disputes: { id: string; status: string; reason: string; created_at: string }[] | null;
   profiles: { id: string; display_name: string | null; avatar_url: string | null } | null;
 }
 
@@ -66,19 +76,23 @@ interface CompetitionEvent {
   events: {
     name: string | null;
     result_type: ResultType | null;
+    is_team_event: boolean | null;
     event_categories: { name: string | null } | null;
   } | null;
 }
 
+// Handles get place suffix.
 function getPlaceSuffix(place: number): string {
   const suffixes: Record<number, string> = { 1: 'st', 2: 'nd', 3: 'rd' };
   return `${place}${suffixes[place] ?? 'th'}`;
 }
 
+// Handles can submit result.
 function canSubmitResult(role: MemberRole, status: string): boolean {
-  return (role === 'competitor' || role === 'cohost') && status === 'active';
+  return (role === 'competitor' || role === 'cohost') && ['active', 'results_pending'].includes(status);
 }
 
+// Renders the event detail screen component.
 export default function EventDetailScreen() {
   const { id, eventId } = useLocalSearchParams<{ id: string; eventId: string }>();
   const router = useRouter();
@@ -87,7 +101,11 @@ export default function EventDetailScreen() {
 
   const [showSubmitForm, setShowSubmitForm] = useState(false);
   const [showConfirmPanel, setShowConfirmPanel] = useState(false);
+  const [showRecorder, setShowRecorder] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
+  const [disputeResultId, setDisputeResultId] = useState<string | null>(null);
+  const [disputeReason, setDisputeReason] = useState('');
+  const [isDisputing, setIsDisputing] = useState(false);
 
   const { data: eventData, isLoading: eventLoading, refetch: refetchEvent, isRefetching } = useQuery({
     queryKey: ['event', eventId],
@@ -125,10 +143,36 @@ export default function EventDetailScreen() {
     enabled: !!eventId,
   });
 
+  // People the host assigned to this event; used to pre-select them when recording.
+  const { data: assignedIds } = useQuery({
+    queryKey: ['event', eventId, 'participants'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('competition_event_participants')
+        .select('profile_id')
+        .eq('competition_event_id', eventId);
+      return (data ?? []).map((row) => row.profile_id as string);
+    },
+    enabled: !!eventId,
+  });
+
+  // Team events load their player pool, ratings and teams from the web API.
+  const { data: teamState, refetch: refetchTeams } = useQuery({
+    queryKey: ['event', eventId, 'teams'],
+    queryFn: async () => {
+      const { data } = await apiCall<TeamEventState>(`/api/competitions/${id}/events/${eventId}/teams`);
+      return data;
+    },
+    enabled: !!eventData?.events?.is_team_event,
+  });
+
   function refetchAll() {
     refetchEvent();
     refetchResults();
-    queryClient.invalidateQueries({ queryKey: ['competition', id, 'events'] });
+    refetchTeams();
+    void queryClient.invalidateQueries({ queryKey: ['competition', id, 'events'] });
+    void queryClient.invalidateQueries({ queryKey: ['event', eventId, 'awards'] });
+    void queryClient.invalidateQueries({ queryKey: ['competition', id, 'leaderboard'] });
   }
 
   if (eventLoading || !eventData) {
@@ -153,7 +197,7 @@ export default function EventDetailScreen() {
   const resultType = event.events?.result_type ?? 'score';
   const category = event.events?.event_categories?.name ?? '';
   const status = event.status ?? 'pending';
-  const isTeamEvent = event.is_team_event ?? false;
+  const isTeamEvent = event.events?.is_team_event ?? false;
 
   const isPending = status === 'pending';
   const isActive = status === 'active';
@@ -181,18 +225,43 @@ export default function EventDetailScreen() {
   const disputeWindowOpen =
     event.dispute_window_closes_at != null &&
     new Date(event.dispute_window_closes_at) > new Date();
+  // Disputes are raised against confirmed results while the dispute window is open.
   const canDispute =
     !isHost &&
     !!currentUserResult?.confirmed_at &&
-    isResultsPending &&
+    (isConfirmed || status === 'disputed') &&
     disputeWindowOpen &&
-    !currentUserResult?.disputed_at;
+    !(currentUserResult?.result_disputes ?? []).some((d) => d.status === 'open');
 
-  const showPerformanceVoting = isConfirmed && memberRole !== null && !isHost;
-  const showStrengthVoting = isTeamEvent && isActive && !isHost && memberRole !== null;
-  const showTeamAssignment = isTeamEvent && isHost && isActive;
+  const isLiveEvent = isActive || isResultsPending;
+  const isCancelled = status === 'cancelled';
+  const competitionFinished = competition?.status === 'complete' || competition?.status === 'archived';
+  const hasTeams = (teamState?.teams.length ?? 0) > 0;
+
+  const showPerformanceVoting = isConfirmed && memberRole === 'competitor';
+  const showTeamPanel = isTeamEvent && !!teamState && !isCancelled;
+  // Hosts record everyone's results for individual events, or for team events before teams are formed.
+  const canRecord = isHost && isLiveEvent && !hasTeams && !competitionFinished;
+  const canCancel = isHost && !competitionFinished && !['confirmed', 'cancelled', 'disputed'].includes(status);
+
+  const openDisputes: OpenDispute[] = isHost
+    ? results.flatMap((result) =>
+        (result.result_disputes ?? [])
+          .filter((dispute) => dispute.status === 'open')
+          .map((dispute) => ({
+            disputeId: dispute.id,
+            displayName: result.profiles?.display_name ?? 'Unknown',
+            reason: dispute.reason,
+            raisedAt: dispute.created_at,
+            resultValue: result.result_value_primary,
+            isDnf: !!result.is_dnf,
+            place: result.finishing_place,
+          })),
+      )
+    : [];
 
   const competitors = members
+    .filter((m) => m.status === 'active' && m.role !== 'spectator')
     .map((m) => {
       const mp = m as unknown as { profile: { id: string; display_name: string; avatar_url: string | null } | null };
       if (!mp.profile) return null;
@@ -217,22 +286,55 @@ export default function EventDetailScreen() {
     refetchAll();
   }
 
-  async function handleDispute(resultId: string) {
-    Alert.prompt(
-      'Raise Dispute',
-      'Describe the reason for your dispute:',
-      async (reason) => {
-        if (!reason?.trim()) return;
-        const { error } = await apiCall(`/api/competitions/${id}/results/${resultId}/dispute`, {
-          method: 'POST',
-          body: JSON.stringify({ reason: reason.trim() }),
-        });
-        if (error) { toast.error(error.message); return; }
-        toast.success('Dispute raised');
-        refetchAll();
-      },
-      'plain-text'
+  const recorderParticipants = competitors.map((c) => ({ profileId: c.profileId, displayName: c.displayName }));
+  const recorderExisting = results
+    .filter((r) => r.profile_id)
+    .map((r) => ({ profileId: r.profile_id!, value: r.result_value_primary, isDnf: !!r.is_dnf, notes: r.notes }));
+  const competitorIds = new Set(recorderParticipants.map((p) => p.profileId));
+  const assigned = (assignedIds ?? []).filter((profileId) => competitorIds.has(profileId));
+  const recorderDefaults = assigned.length > 0
+    ? [...new Set([...assigned, ...recorderExisting.map((e) => e.profileId).filter((profileId) => competitorIds.has(profileId))])]
+    : recorderParticipants.map((p) => p.profileId);
+
+  function confirmCancel() {
+    Alert.alert(
+      'Cancel this event?',
+      'It will not count towards anyone\u2019s score and members will be told. This cannot be undone.',
+      [
+        { text: 'Keep event', style: 'cancel' },
+        {
+          text: 'Cancel event',
+          style: 'destructive',
+          onPress: async () => {
+            const { error } = await apiCall(`/api/competitions/${id}/events/${eventId}/cancel`, {
+              method: 'POST',
+              body: JSON.stringify({}),
+            });
+            if (error) { toast.error(error.message); return; }
+            toast.success('Event cancelled');
+            refetchAll();
+          },
+        },
+      ],
     );
+  }
+
+  async function handleDispute(resultId: string) {
+    setDisputeReason('');
+    setDisputeResultId(resultId);
+  }
+
+  async function submitDispute() {
+    if (!disputeResultId || !disputeReason.trim()) return;
+    setIsDisputing(true);
+    const { error } = await apiCall(`/api/results/${disputeResultId}/dispute`, {
+      method: 'POST', body: JSON.stringify({ reason: disputeReason.trim() }),
+    });
+    setIsDisputing(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Dispute raised');
+    setDisputeResultId(null);
+    refetchAll();
   }
 
   return (
@@ -268,9 +370,10 @@ export default function EventDetailScreen() {
             <StatusBadge status={status as CompetitionEventStatus} />
           </View>
 
+          <View className="flex-row flex-wrap gap-2 mt-3">
           {canStart && (
             <TouchableOpacity
-              className="flex-row items-center gap-2 bg-primary rounded-lg px-4 py-2.5 mt-3 self-start"
+              className="flex-row items-center gap-2 bg-primary rounded-lg px-4 py-2.5 self-start"
               onPress={handleStart}
               disabled={isStarting}
             >
@@ -284,6 +387,25 @@ export default function EventDetailScreen() {
               )}
             </TouchableOpacity>
           )}
+          {canRecord && !showRecorder && (
+            <TouchableOpacity
+              className="flex-row items-center gap-2 border border-primary rounded-lg px-4 py-2.5"
+              onPress={() => setShowRecorder(true)}
+            >
+              <ClipboardList size={14} color="#2D6A4F" />
+              <Text className="text-primary font-semibold text-sm">Record results</Text>
+            </TouchableOpacity>
+          )}
+          {canCancel && (
+            <TouchableOpacity
+              className="flex-row items-center gap-2 border border-neutral-200 rounded-lg px-4 py-2.5"
+              onPress={confirmCancel}
+            >
+              <XCircle size={14} color="#6B7280" />
+              <Text className="text-neutral-600 font-semibold text-sm">Cancel event</Text>
+            </TouchableOpacity>
+          )}
+          </View>
         </View>
 
         {/* Status banner */}
@@ -309,29 +431,54 @@ export default function EventDetailScreen() {
             <Text className="text-sm font-medium text-green-800">Results confirmed</Text>
           </View>
         )}
+        {isCancelled && (
+          <View className="flex-row items-center gap-2 mx-4 mb-3 rounded-lg border border-neutral-200 bg-neutral-100 px-4 py-3">
+            <XCircle size={14} color="#6B7280" />
+            <Text className="text-sm font-medium text-neutral-700">This event was cancelled and does not count towards scores</Text>
+          </View>
+        )}
 
-        {/* Strength voting */}
-        {showStrengthVoting && profile?.id && (
+        {/* Host dispute review */}
+        {openDisputes.length > 0 && (
           <View className="mb-3">
-            <StrengthVoteWidget
+            <HostDisputePanel
               competitionId={id}
-              competitionEventId={eventId}
-              pendingRatings={[]}
-              currentUserId={profile.id}
-              onVoted={refetchAll}
+              resultType={resultType}
+              disputes={openDisputes}
+              onChanged={refetchAll}
             />
           </View>
         )}
 
-        {/* Team assignment */}
-        {showTeamAssignment && (
+        {/* Host recorder */}
+        {showRecorder && canRecord && (
           <View className="mb-3">
-            <TeamAssignmentPanel
+            <HostRecorderPanel
               competitionId={id}
               competitionEventId={eventId}
-              ratedPlayers={[]}
-              existingTeams={null}
-              onAssigned={refetchAll}
+              resultType={resultType}
+              participants={recorderParticipants}
+              existing={recorderExisting}
+              defaultIncluded={recorderDefaults}
+              onClose={() => setShowRecorder(false)}
+              onRecorded={() => { setShowRecorder(false); refetchAll(); }}
+            />
+          </View>
+        )}
+
+        {/* Team ratings, balancing and team results */}
+        {showTeamPanel && teamState && (
+          <View className="mb-3">
+            <TeamEventPanel
+              competitionId={id}
+              competitionEventId={eventId}
+              state={teamState}
+              viewerId={profile?.id ?? null}
+              isHost={isHost}
+              isCompetitor={memberRole === 'competitor' && currentMember?.status === 'active'}
+              eventStatus={status}
+              resultType={resultType}
+              onChanged={refetchAll}
             />
           </View>
         )}
@@ -402,7 +549,7 @@ export default function EventDetailScreen() {
               const confirmed = !!result.confirmed_at;
               const isCurrentUser =
                 result.profiles?.id === profile?.id || result.profile_id === profile?.id;
-              const isDisputed = !!result.disputed_at;
+              const isDisputed = (result.result_disputes ?? []).some((d) => d.status === 'open');
               const canDisputeThis =
                 !isHost && isCurrentUser && canDispute && confirmed && !isDisputed;
 
@@ -442,11 +589,11 @@ export default function EventDetailScreen() {
                         <Text className="text-xs text-neutral-400"> (you)</Text>
                       ) : null}
                     </Text>
-                    {rawValue != null && (
-                      <Text className="text-xs text-neutral-500">
-                        {formatResultValue(rawValue, resultType as ResultType)}
-                      </Text>
-                    )}
+                    {result.is_dnf ? (
+                      <Text className="text-xs font-semibold text-error">DNF</Text>
+                    ) : rawValue != null ? (
+                      <Text className="text-xs text-neutral-500">{formatResultValue(rawValue, resultType)}</Text>
+                    ) : null}
                   </View>
 
                   <View className="items-end">
@@ -478,6 +625,20 @@ export default function EventDetailScreen() {
           )}
         </View>
 
+        {/* Awards */}
+        {isConfirmed && (
+          <View className="mb-3">
+            <EventAwardsPanel
+              competitionId={id}
+              competitionEventId={eventId}
+              mvpEnabled={competition?.mvp_voting_enabled ?? false}
+              worstEnabled={competition?.worst_performer_enabled ?? false}
+              canFinalise={isHost && !competitionFinished}
+              onFinalised={refetchAll}
+            />
+          </View>
+        )}
+
         {/* Performance voting */}
         {showPerformanceVoting && profile?.id && (
           <View className="mb-3">
@@ -495,6 +656,23 @@ export default function EventDetailScreen() {
           </View>
         )}
       </ScrollView>
+      <Modal visible={disputeResultId !== null} transparent animationType="fade" onRequestClose={() => setDisputeResultId(null)}>
+        <View className="flex-1 justify-center bg-black/40 px-6">
+          <View className="rounded-xl bg-white p-5 gap-4">
+            <Text className="text-lg font-semibold">Raise dispute</Text>
+            <TextInput accessibilityLabel="Dispute reason" placeholder="Describe the reason for your dispute" multiline
+              value={disputeReason} onChangeText={setDisputeReason} maxLength={500}
+              className="min-h-24 rounded-lg border border-neutral-300 p-3" />
+            <TouchableOpacity accessibilityRole="button" disabled={isDisputing || !disputeReason.trim()} onPress={submitDispute}
+              className="rounded-lg bg-primary p-3">
+              <Text className="text-center text-white">{isDisputing ? 'Submitting…' : 'Submit dispute'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity accessibilityRole="button" disabled={isDisputing} onPress={() => setDisputeResultId(null)}>
+              <Text className="text-center">Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
