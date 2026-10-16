@@ -59,3 +59,6 @@ apps/mobile/*.p12
 
 # Local demo-data tooling (contains personal account details; see docs/local/LOCAL_DEMO_GUIDE.md)
 /scripts/
+
+# TypeScript incremental build info
+*.tsbuildinfo

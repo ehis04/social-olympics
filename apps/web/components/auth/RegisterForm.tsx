@@ -108,6 +108,11 @@ export default function RegisterForm({ next = null }: { next?: string | null }) 
           We sent a confirmation link to <span className="font-semibold">{confirmationEmail}</span>.
           Open it to activate your account, then sign in.
         </p>
+        <p className="text-xs text-grey-500">
+          No email after a few minutes? Check your spam folder. If you already have an account with this
+          address, no new email is sent: sign in, or use{' '}
+          <Link href="/forgot-password" className="font-semibold text-primary hover:underline">Forgot password</Link>.
+        </p>
         <Link href={withNext('/login', next) as Route} className="inline-block text-sm font-semibold text-primary hover:underline">
           Back to sign in
         </Link>
