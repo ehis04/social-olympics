@@ -118,8 +118,12 @@ export default function RegisterScreen() {
     return (
       <View className="flex-1 bg-white px-6 justify-center">
         <Text className="text-2xl font-bold text-primary mb-3">Check your email</Text>
-        <Text className="text-neutral-600 text-base leading-6 mb-8">
+        <Text className="text-neutral-600 text-base leading-6 mb-4">
           We sent a confirmation link to {confirmationEmail}. Open it to activate your account, then sign in here.
+        </Text>
+        <Text className="text-neutral-500 text-sm leading-5 mb-8">
+          No email after a few minutes? Check your spam folder. If you already have an account with this address, no
+          new email is sent: sign in, or use Forgot password on the sign-in screen.
         </Text>
         <TouchableOpacity
           className="bg-primary rounded-lg py-4 items-center"
