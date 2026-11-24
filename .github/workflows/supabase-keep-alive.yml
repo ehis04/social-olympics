@@ -1,9 +1,7 @@
-name: Supabase Keep-Alive
+name: Infrastructure Keep-Alive
 
-# Free Supabase projects are paused after about a week without database activity.
-# This makes one small read from the production database every day so the app stays online
-# even when nobody is using it. It fails (and GitHub emails you) if the project is paused
-# or the URL/key secrets are wrong.
+# This makes one small request to Supabase and Upstash every day so both free services stay active
+# even when nobody is using the app. It fails (and GitHub emails you) if a service or secret is wrong.
 on:
   schedule:
     - cron: '17 6 * * *'
@@ -24,3 +22,12 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+      - name: Ping Upstash Redis
+        run: |
+          curl --fail-with-body --silent --show-error --retry 3 --retry-delay 20 \
+            "${UPSTASH_REDIS_REST_URL}/ping" \
+            -H "Authorization: Bearer ${UPSTASH_REDIS_REST_TOKEN}"
+        env:
+          UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
+          UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
