@@ -25,11 +25,13 @@ jobs:
 
       - name: Refresh Upstash activity marker
         run: |
+          command=$(jq --compact-output --null-input --arg value "$(date -u +%s)" \
+            '["SET","social-olympics:keepalive",$value,"EX",604800]')
           response=$(curl --fail-with-body --silent --show-error --retry 3 --retry-delay 20 \
             "${UPSTASH_REDIS_REST_URL}" \
             -H "Authorization: Bearer ${UPSTASH_REDIS_REST_TOKEN}" \
             -H "Content-Type: application/json" \
-            --data "{\"command\":[\"SET\",\"social-olympics:keepalive\",\"$(date -u +%s)\",\"EX\",\"604800\"]}")
+            --data "$command")
           echo "$response" | jq --exit-status '.result == "OK"'
         env:
           UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
