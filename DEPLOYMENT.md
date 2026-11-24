@@ -112,6 +112,7 @@ Add these under *Settings → Secrets and variables → Actions*:
 | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` | from section 2 |
 | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Upstash console → database → REST API |
 | `ADMIN_PROFILE_IDS` | your own profile ID (after you sign up), comma-separated for more admins |
+| `EXPO_TOKEN` | Expo account → Access Tokens; required by the manual Mobile Build workflow |
 | `EXPO_ACCESS_TOKEN` | optional: only if *enhanced push security* is on for the Expo project |
 | `NEXT_PUBLIC_CONTACT_EMAIL` | optional: address shown on the Privacy and Terms pages |
 
@@ -138,6 +139,8 @@ done
 ```
 
 `eas.json` profiles: `development` (internal simulator/APK build), `preview` (installable APK / ad-hoc iOS for testers), `production` (store builds, version numbers managed by EAS and increased automatically).
+
+To run a cloud build from GitHub, add `EXPO_TOKEN` as a repository Actions secret, then open *Actions → Mobile Build → Run workflow* and choose the profile and platform. This workflow builds artifacts only; submitting to either store remains a separate, deliberate step.
 
 For local development with Expo Go, set `EXPO_PUBLIC_API_BASE_URL` in `apps/mobile/.env` to your computer's network address, for example `http://192.168.1.20:3000`. The tracked `apps/mobile/.env.example` contains the current production Worker URL.
 
