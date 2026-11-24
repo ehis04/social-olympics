@@ -16,6 +16,7 @@
     "@repo/scoring": "workspace:*"
   },
   "devDependencies": {
+    "typescript": "^6.0.3",
     "vitest": "^1.6.0"
   }
 }

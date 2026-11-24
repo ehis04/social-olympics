@@ -20,21 +20,29 @@ export async function raiseDispute(
 
     if (error) return { data: null, error: { code: error.code, message: error.message } };
 
-    // Get the competition_event_id from the disputed result
-    const dispute = data as { result_id: string } | null;
-    if (dispute?.result_id) {
-      const { data: result } = await client
+    // Get the competition_event_id from the disputed result.
+    const resultId = payload.result_id;
+    if (typeof resultId === 'string') {
+      const { data: result, error: resultError } = await client
         .from('results')
         .select('competition_event_id')
-        .eq('id', dispute.result_id)
+        .eq('id', resultId)
         .single();
+
+      if (resultError) {
+        return { data: null, error: { code: resultError.code, message: resultError.message } };
+      }
 
       const r = result as { competition_event_id: string } | null;
       if (r?.competition_event_id) {
-        await client
+        const { error: updateError } = await client
           .from('competition_events')
           .update({ status: 'disputed' })
           .eq('id', r.competition_event_id);
+
+        if (updateError) {
+          return { data: null, error: { code: updateError.code, message: updateError.message } };
+        }
       }
     }
 
