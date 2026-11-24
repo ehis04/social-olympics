@@ -64,7 +64,7 @@ From *Project Settings → API*: the **Project URL**, the **anon (public) key** 
 
 1. Create a Cloudflare account. Under *Workers & Pages* choose a `workers.dev` subdomain, or add your own domain later.
 2. Create an API token with the **Edit Cloudflare Workers** template. Note your **Account ID**.
-3. The Worker is named `social-olympics` (`apps/web/wrangler.toml`), so the first URL will be `https://social-olympics.<subdomain>.workers.dev`. To use your own domain, add it under the Worker's *Settings → Domains & Routes*.
+3. The Worker is named `social-olympics` (`apps/web/wrangler.toml`) and is currently deployed at `https://social-olympics.ehisoghina.workers.dev`. To use your own domain, add it under the Worker's *Settings → Domains & Routes*.
 
 The middleware file is deliberately `apps/web/middleware.ts`, not Next.js 16's `proxy.ts`. Proxy only runs on Node.js, which the Cloudflare adapter cannot deploy. CI builds the Worker bundle on every push, so this cannot break unnoticed.
 
@@ -139,7 +139,7 @@ done
 
 `eas.json` profiles: `development` (internal simulator/APK build), `preview` (installable APK / ad-hoc iOS for testers), `production` (store builds, version numbers managed by EAS and increased automatically).
 
-For local development with Expo Go, set `EXPO_PUBLIC_API_BASE_URL` in `apps/mobile/.env` to your computer's network address, for example `http://192.168.1.20:3000`. The current value points at an old `pages.dev` address.
+For local development with Expo Go, set `EXPO_PUBLIC_API_BASE_URL` in `apps/mobile/.env` to your computer's network address, for example `http://192.168.1.20:3000`. The tracked `apps/mobile/.env.example` contains the current production Worker URL.
 
 ### 4.2 Push notifications
 

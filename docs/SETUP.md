@@ -9,7 +9,7 @@
 ## Clone the Repository
 
 ```bash
-git clone https://github.com/your-org/social-olympics.git
+git clone https://github.com/ehis04/social-olympics.git
 cd social-olympics
 ```
 
