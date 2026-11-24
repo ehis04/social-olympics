@@ -1,7 +1,7 @@
 name: Infrastructure Keep-Alive
 
-# This makes one small request to Supabase and Upstash every day so both free services stay active
-# even when nobody is using the app. It fails (and GitHub emails you) if a service or secret is wrong.
+# Daily requests keep both free services active even when nobody is using the app.
+# The expiring Redis marker is refreshed on each run and does not accumulate data.
 on:
   schedule:
     - cron: '17 6 * * *'
@@ -23,11 +23,14 @@ jobs:
           SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
-      - name: Ping Upstash Redis
+      - name: Refresh Upstash activity marker
         run: |
-          curl --fail-with-body --silent --show-error --retry 3 --retry-delay 20 \
-            "${UPSTASH_REDIS_REST_URL}/ping" \
-            -H "Authorization: Bearer ${UPSTASH_REDIS_REST_TOKEN}"
+          response=$(curl --fail-with-body --silent --show-error --retry 3 --retry-delay 20 \
+            "${UPSTASH_REDIS_REST_URL}" \
+            -H "Authorization: Bearer ${UPSTASH_REDIS_REST_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data "{\"command\":[\"SET\",\"social-olympics:keepalive\",\"$(date -u +%s)\",\"EX\",\"604800\"]}")
+          echo "$response" | jq --exit-status '.result == "OK"'
         env:
           UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
           UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
