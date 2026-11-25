@@ -10,7 +10,22 @@ const LOCAL_SERVICE_ROLE_KEY =
 
 // Handles create test admin client.
 export function createTestAdminClient() {
-  process.env['NEXT_PUBLIC_SUPABASE_URL'] ??= LOCAL_SUPABASE_URL;
+  const supabaseUrl = process.env['NEXT_PUBLIC_SUPABASE_URL'] ?? LOCAL_SUPABASE_URL;
+  let hostname: string;
+
+  try {
+    hostname = new URL(supabaseUrl).hostname;
+  } catch {
+    throw new Error('Supabase integration tests require a valid local Supabase URL.');
+  }
+
+  if (hostname !== 'localhost' && hostname !== '127.0.0.1' && hostname !== '[::1]') {
+    throw new Error(
+      `Refusing to run Supabase integration tests against non-local host "${hostname}".`,
+    );
+  }
+
+  process.env['NEXT_PUBLIC_SUPABASE_URL'] = supabaseUrl;
   process.env['SUPABASE_SERVICE_ROLE_KEY'] ??= LOCAL_SERVICE_ROLE_KEY;
 
   return createAdminClient();

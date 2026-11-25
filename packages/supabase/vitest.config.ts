@@ -12,6 +12,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
+    fileParallelism: isCI,
 
     exclude: isCI
       ? ['**/node_modules/**', '**/tests/**']

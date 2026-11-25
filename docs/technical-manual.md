@@ -22,7 +22,7 @@ This is the developer reference for the Social Olympics codebase: setup, archite
 
 ## 1. Prerequisites
 
-- Node.js 20+
+- Node.js 26 (see `.nvmrc`)
 - pnpm 9+
 - Docker (required for local Supabase)
 - Supabase CLI (`npm install -g supabase`)

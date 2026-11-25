@@ -19,17 +19,17 @@ This document describes the full test suite for the Social Olympics platform: wh
 
 The test suite spans four layers:
 
-### Unit Tests — Vitest (packages + web) and Jest (mobile)
+### Unit Tests — Vitest (packages + web)
 
 Unit tests cover individual functions and components in isolation. The scoring package is the most critical unit-tested layer — every scoring rule and edge case must have a corresponding test.
 
 - **Tool:** Vitest for `packages/*` and `apps/web`
-- **Tool:** Jest for `apps/mobile`
+- **Mobile:** `apps/mobile` currently has typecheck and lint scripts but no automated test script.
 - **Location:** `*.test.ts` / `*.test.tsx` files co-located with source, or in `__tests__/` directories
 
 ### Integration Tests — Vitest + Local Supabase
 
-Integration tests run against a real local Supabase instance (Docker). They test database queries and mutations, RLS policies, and multi-step data flows.
+The `packages/supabase/tests/` Vitest suite creates and deletes test records in Supabase. It requires a local Supabase instance (Docker); the test admin client now refuses non-local Supabase URLs. Locally, test files run one at a time to avoid overloading the shared database.
 
 - **Tool:** Vitest
 - **Location:** `packages/supabase/tests/`
@@ -43,7 +43,7 @@ End-to-end tests simulate full user journeys in a real browser against a running
 - **Location:** `apps/web/e2e/`
 - **Config:** `apps/web/playwright.config.ts`
 
-**Must run against a production build, not the dev server.** Running the full 18-spec suite against the Turbopack dev server crashes it after roughly 25 tests on WSL2 — memory use grows unbounded and the suite fails with `net::ERR_EMPTY_RESPONSE` / `net::ERR_CONNECTION_REFUSED`. Always build and serve before running E2E:
+The Playwright configuration starts `pnpm dev` by default. To exercise a production build instead, start it yourself on port 3000 before running the tests; Playwright reuses an existing server:
 
 ```bash
 cd apps/web
@@ -51,7 +51,7 @@ pnpm build
 pnpm start
 ```
 
-`pnpm start` runs the compiled Node.js HTTP server with no Turbopack runtime compilation, and is stable for the full suite.
+The current `dev` script uses the webpack-based Next.js dev server. E2E behavior against a production build should still be verified separately before release.
 
 ### Database Tests — pgTAP via Supabase CLI
 
@@ -64,13 +64,13 @@ Database-level tests written in SQL using pgTAP. They test RLS policies, trigger
 
 ## 2. Running Tests
 
-### All tests (unit + integration)
+### Unit and package tests
 
 ```bash
 pnpm turbo run test
 ```
 
-Runs all Vitest and Jest test suites across the monorepo in parallel.
+Runs the configured Vitest suites. The Supabase integration tests require local Supabase when `CI` is not `true`; CI excludes `packages/supabase/tests/**`.
 
 ### Scoring package only
 
@@ -98,28 +98,21 @@ Requires local Supabase running. Build and serve a production build of the web a
 
 ```bash
 cd apps/web
-pnpm build
-pnpm start
+pnpm e2e
 ```
 
-In a separate terminal, with the E2E env vars loaded:
-
-```bash
-cd apps/web
-set -a && source .env.e2e && set +a
-npx playwright test
-```
+`pnpm e2e` loads `.env.e2e`, starts the Playwright-configured dev server if one is not already listening, and runs the suite. Copy `.env.e2e.example` and fill it with local-only Supabase credentials, test-user credentials, and IDs for pre-created test records. There is no repository command that currently creates the required E2E accounts/data. The `20-seeded-history` spec also skips unless `LOCAL_DEMO_DATA.json` exists at the repository root.
 
 To run a single journey:
 
 ```bash
-npx playwright test --grep "competition creation"
+pnpm exec playwright test --grep "competition creation"
 ```
 
 To run with the Playwright UI (interactive):
 
 ```bash
-npx playwright test --ui
+pnpm exec playwright test --ui
 ```
 
 **If login fails with "Failed to fetch" against local Supabase:** this is a CSP issue, not an auth issue. The `connect-src` directive in `apps/web/next.config.mjs` must allow `http://127.0.0.1:54321` (and `ws://127.0.0.1:54321` for Realtime) whenever `NEXT_PUBLIC_SUPABASE_URL` points at a local address — regardless of `NODE_ENV`. A production build (`pnpm start`) sets `NODE_ENV=production`, so any CSP logic keyed off `NODE_ENV` rather than the actual Supabase URL will incorrectly lock out local Supabase. See [Known Issues and Workarounds](technical-manual.md#11-known-issues-and-workarounds) in the technical manual.
@@ -146,14 +139,14 @@ pnpm turbo run lint
 ### Prerequisites
 
 - Docker Desktop installed and running
-- Node.js 20+
+- Node.js 26 (see `.nvmrc`)
 - pnpm 9+
-- Supabase CLI (`npm install -g supabase`)
+- Supabase CLI (included in the root package dependencies)
 
 ### Starting Local Supabase
 
 ```bash
-supabase start
+pnpm db:start
 ```
 
 This starts PostgreSQL, Auth, Realtime and Storage locally via Docker. On first run it downloads the required images (~2 GB).
@@ -171,16 +164,9 @@ Use these values in your `.env.local` files.
 
 ### E2E Environment Variables
 
-Create `apps/web/.env.e2e` with the following:
+Copy `apps/web/.env.e2e.example` to `apps/web/.env.e2e`. Use the local URL and keys printed by `pnpm db:start`, and create the test users and records in that local project. Do not point mutation-heavy tests at production or use production Upstash credentials. The example lists the test credentials and record IDs read by the suite.
 
-```
-NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<local anon key>
-SUPABASE_SERVICE_ROLE_KEY=<local service role key>
-UPSTASH_REDIS_REST_URL=<your upstash url>
-UPSTASH_REDIS_REST_TOKEN=<your upstash token>
-ADMIN_PROFILE_IDS=<a test admin profile UUID>
-```
+Base event/category data is inserted by migrations. The optional `db.seed` step is disabled because the configured `./seed.sql` file does not exist.
 
 ### Supabase Integration Test Note
 
@@ -367,7 +353,7 @@ pnpm --filter=./apps/web exec opennextjs-cloudflare build   # proves the Worker 
 
 Unit tests run without Docker. Supabase integration tests are skipped (`passWithNoTests: true`).
 
-The Playwright E2E suite and the pgTAP tests need a local Supabase with seeded data, so they are run locally before merging (see sections 3 and 4) rather than in CI.
+The Playwright E2E suite and pgTAP tests are not run in CI. E2E requires manually provisioned local users/data; `20-seeded-history` requires a local demo manifest. pgTAP and the Supabase package integration suite also require a working local Supabase instance.
 
 ### On merge to main
 

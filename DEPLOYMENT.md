@@ -97,7 +97,7 @@ Cloudflare dashboard → Workers → social-olympics → *Deployments* → choos
 |---|---|---|
 | `ci.yml` | every push and pull request | typecheck, lint, unit tests, and a Cloudflare Worker build |
 | `supabase-migrations.yml` | push to `develop` touching migrations | pushes migrations to the staging project (only needed if you run a separate staging project) |
-| `supabase-keep-alive.yml` | daily, or run manually | one small read from Supabase plus an expiring activity marker in Upstash, keeping both free services active; uses the Supabase and Upstash secrets |
+| `supabase-keep-alive.yml` | three times daily, or run manually | one small read from Supabase plus an expiring activity marker in Upstash, keeping both free services active; uses the Supabase and Upstash secrets |
 | `deploy.yml` | push to `main` (or run manually) | pushes migrations to production, **then** builds and deploys the Worker |
 
 Add these under *Settings → Secrets and variables → Actions*:
@@ -116,7 +116,7 @@ Add these under *Settings → Secrets and variables → Actions*:
 | `EXPO_ACCESS_TOKEN` | optional: only if *enhanced push security* is on for the Expo project |
 | `NEXT_PUBLIC_CONTACT_EMAIL` | optional: address shown on the Privacy and Terms pages |
 
-Without Upstash the app falls back to an in-memory limiter per Worker instance, which is much weaker, so set it up before launch (the free tier is enough). The daily keep-alive workflow refreshes a single seven-day marker so an idle database still receives regular activity without accumulating data. If Upstash is unreachable, requests are let through rather than failing.
+Without Upstash the app falls back to an in-memory limiter per Worker instance, which is much weaker, so set it up before launch (the free tier is enough). The keep-alive workflow runs three times daily and refreshes a single seven-day marker so an idle database still receives regular activity without accumulating data. If Upstash is unreachable, requests are let through rather than failing.
 
 ---
 
